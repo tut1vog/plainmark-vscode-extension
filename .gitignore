@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+*.vsix
+
+# Test output
+coverage/
+test-results/
+.vscode-test/
+.vscode-test-web/
+__screenshots__/
+.vitest-attachments/
+
+# Logs
+*.log
+pnpm-debug.log*
+
+# Local files
+*.local.*
+.env
+.env.*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Personal scratch / notes (user-owned, not part of the project)
+vibe-assessment.md

@@ -1,0 +1,6 @@
+allowBuilds:
+  '@playwright/browser-chromium': true
+  esbuild: true
+  simple-git-hooks: true
+patchedDependencies:
+  '@lezer/markdown': patches/@lezer__markdown.patch

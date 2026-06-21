@@ -1,0 +1,62 @@
+{
+  "crlf": [
+    "commonmark#16",
+    "commonmark#79",
+    "commonmark#85",
+    "commonmark#110",
+    "commonmark#111",
+    "commonmark#148",
+    "commonmark#149",
+    "commonmark#152",
+    "commonmark#155",
+    "commonmark#167",
+    "commonmark#171",
+    "commonmark#184",
+    "commonmark#188",
+    "commonmark#190",
+    "commonmark#191",
+    "commonmark#226",
+    "commonmark#264",
+    "commonmark#289",
+    "commonmark#318",
+    "commonmark#633",
+    "commonmark#634",
+    "commonmark#635",
+    "commonmark#636",
+    "commonmark#637",
+    "commonmark#638",
+    "commonmark#639",
+    "gfm#1",
+    "gfm#2",
+    "gfm#3",
+    "gfm#5",
+    "gfm#8",
+    "gfm#9",
+    "gfm#10",
+    "gfm#11",
+    "gfm#12",
+    "gfm#13",
+    "gfm#14",
+    "gfm#15",
+    "gfm#16",
+    "gfm#22",
+    "gfm#23",
+    "gfm#27"
+  ],
+  "trailing-1sp": [
+    "commonmark#126",
+    "commonmark#237"
+  ],
+  "trailing-2sp": [
+    "commonmark#126",
+    "commonmark#237"
+  ],
+  "trailing-3sp": [
+    "commonmark#126",
+    "commonmark#237"
+  ],
+  "trailing-blank": [
+    "commonmark#126",
+    "commonmark#237"
+  ]
+}

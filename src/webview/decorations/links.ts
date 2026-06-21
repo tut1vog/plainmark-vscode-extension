@@ -1,0 +1,209 @@
+import { type EditorState, type Range } from '@codemirror/state';
+import { Decoration, EditorView } from '@codemirror/view';
+import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
+import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import { should_reveal_for_selection } from './selection_reveal.js';
+import { create_logger } from '../../log.js';
+
+const log = create_logger('widget');
+
+const HREF_ATTR = 'data-plainmark-href';
+
+function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
+  for (let c = node.firstChild; c; c = c.nextSibling) if (c.name === name) return c;
+  return null;
+}
+
+function find_last_child(node: SyntaxNode, name: string): SyntaxNode | null {
+  for (let c = node.lastChild; c; c = c.prevSibling) if (c.name === name) return c;
+  return null;
+}
+
+function link_marks(node: SyntaxNode): SyntaxNode[] {
+  const out: SyntaxNode[] = [];
+  for (let c = node.firstChild; c; c = c.nextSibling) {
+    if (c.name === 'LinkMark') out.push(c);
+  }
+  return out;
+}
+
+// Letter-spacing + transparent (same as text_styles.ts).
+// Marker text stays in layout; letter-spacing pulls adjacent chars back over
+// the transparent marker → no visible gap at rest. Shift on reveal returns
+// (known tradeoff). See text_styles.ts comment.
+const hide_marker = Decoration.mark({ class: 'plainmark-inline-marker-hidden' });
+const marker_mark = Decoration.mark({ class: 'plainmark-link-marker' });
+
+function link_mark(href: string): Decoration {
+  return Decoration.mark({
+    class: 'plainmark-link',
+    attributes: { [HREF_ATTR]: href },
+  });
+}
+
+// `[text](url "title")` — children: LinkMark `[`, inline content, LinkMark `]`,
+// LinkMark `(`, URL, optional LinkTitle, LinkMark `)`. Off-line: hide everything
+// except the bracketed text; on-line: keep all bytes visible, style markers.
+const link_handler: NodeHandler = {
+  nodeNames: ['Link'],
+  // Reveal: ignore the plugin's line-level `revealed`; apply Typora-style
+  // selection-aware reveal via should_reveal_for_selection.
+  handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
+    const n = node.node;
+    const marks = link_marks(n);
+    if (marks.length < 4) return [];
+    const open = marks[0];
+    const close_bracket = marks[1];
+    const open_paren = marks[2];
+    const close_paren = marks[marks.length - 1];
+    if (open.from !== n.from || close_paren.to !== n.to) return [];
+    const text_from = open.to;
+    const text_to = close_bracket.from;
+    if (text_from >= text_to) return [];
+
+    const url_node = find_first_child(n, 'URL');
+    const href = url_node ? state.doc.sliceString(url_node.from, url_node.to) : '';
+
+    const decorations: Range<Decoration>[] = [link_mark(href).range(text_from, text_to)];
+
+    if (should_reveal_for_selection(state, n.from, n.to)) {
+      decorations.push(marker_mark.range(open.from, open.to));
+      decorations.push(marker_mark.range(close_bracket.from, close_bracket.to));
+      decorations.push(marker_mark.range(open_paren.from, open_paren.to));
+      decorations.push(marker_mark.range(close_paren.from, close_paren.to));
+      return decorations;
+    }
+
+    decorations.push(hide_marker.range(open.from, open.to));
+    decorations.push(hide_marker.range(close_bracket.from, close_paren.to));
+    return decorations;
+  },
+};
+
+// CommonMark `<url>` — Lezer shape: Autolink → [LinkMark `<`, URL, LinkMark `>`].
+// The GFM bare-URL form does NOT produce an Autolink node — it emits a top-level
+// URL node directly (see bare_url_handler below).
+const autolink_handler: NodeHandler = {
+  nodeNames: ['Autolink'],
+  handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
+    const n = node.node;
+    const url_node = find_first_child(n, 'URL');
+    const open = find_first_child(n, 'LinkMark');
+    const close = find_last_child(n, 'LinkMark');
+    if (!url_node || !open || !close || open === close) return [];
+
+    const href = state.doc.sliceString(url_node.from, url_node.to);
+    const decorations: Range<Decoration>[] = [
+      link_mark(href).range(url_node.from, url_node.to),
+    ];
+
+    if (should_reveal_for_selection(state, n.from, n.to)) {
+      decorations.push(marker_mark.range(open.from, open.to));
+      decorations.push(marker_mark.range(close.from, close.to));
+    } else {
+      decorations.push(hide_marker.range(open.from, open.to));
+      decorations.push(hide_marker.range(close.from, close.to));
+    }
+    return decorations;
+  },
+};
+
+// GFM bare-URL autolink — the parser emits a top-level URL node (no Autolink
+// wrap), `node_modules/@lezer/markdown/dist/index.js:2260`. The same URL node
+// type also appears as a child of Link / Image / Autolink / LinkReference,
+// owned by their respective handlers — filter on parent to avoid overlap.
+const URL_PARENT_OWNED = new Set(['Link', 'Image', 'Autolink', 'LinkReference']);
+
+const bare_url_handler: NodeHandler = {
+  nodeNames: ['URL'],
+  handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
+    const parent = node.node.parent;
+    if (parent && URL_PARENT_OWNED.has(parent.name)) return [];
+    const href = state.doc.sliceString(node.from, node.to);
+    return [link_mark(href).range(node.from, node.to)];
+  },
+};
+
+export const link_handlers: readonly NodeHandler[] = [
+  link_handler,
+  autolink_handler,
+  bare_url_handler,
+];
+
+const links_theme = EditorView.theme({
+  '.plainmark-link': {
+    color: 'var(--plainmark-link-color, var(--vscode-textLink-foreground, currentColor))',
+    textDecoration: 'var(--plainmark-link-decoration, underline)',
+    cursor: 'var(--plainmark-link-cursor, text)',
+  },
+  // Noop-default hover (PatternFly theming-hooks idiom) — a plain click never follows (modifier-only navigation), so hover must not advertise "click to follow".
+  '.plainmark-link:hover': {
+    color:
+      'var(--plainmark-link-color-hover, var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground, currentColor)))',
+    textDecoration: 'var(--plainmark-link-decoration-hover, underline)',
+  },
+  '.plainmark-link-marker': {
+    color:
+      'var(--plainmark-link-marker-color, var(--vscode-descriptionForeground, currentColor))',
+  },
+});
+
+function dispatch_link_click(href: string): void {
+  document.dispatchEvent(
+    new CustomEvent('plainmark-link-click', { bubbles: true, detail: { href } }),
+  );
+}
+
+// Navigation fires on `click` (post-mouseup), not `mousedown`. Deferring to
+// release lets the pointer-state reveal gate finish its cycle before
+// navigation, and the mousedown-snapshot href survives the mouseup layout
+// shift (markers reveal, hidden bytes flip to inline) that can move the link
+// span out from under the click coords. Only Cmd/Ctrl+click navigates; a plain
+// click always defers to caret placement. Module-level state is safe — only
+// one click sequence is in flight at a time.
+// Correct only for the single production webview / single EditorView realm; a second realm would share this in-flight href.
+let mousedown_link_href: string | null = null;
+
+const link_click_handler = EditorView.domEventHandlers({
+  mousedown(event) {
+    mousedown_link_href = null;
+    if (event.button !== 0) return false;
+    const target = event.target;
+    if (!(target instanceof Element)) return false;
+    const link = target.closest(`[${HREF_ATTR}]`);
+    if (!link) return false;
+    const href = link.getAttribute(HREF_ATTR);
+    if (!href) {
+      log.debug('link mousedown: span has no href');
+      return false;
+    }
+    mousedown_link_href = href;
+    // Defer to CM6's default handler so the caret moves to the click position;
+    // navigation (if any) fires on click after mouseup. preventDefault is NOT
+    // called here — the press needs to count as a caret-placement gesture too.
+    return false;
+  },
+  click(event) {
+    const href = mousedown_link_href;
+    mousedown_link_href = null;
+    if (href === null) return false;
+    if (event.button !== 0) return false;
+    if (!(event.metaKey || event.ctrlKey)) {
+      log.debug('plain link click: defer to caret placement');
+      return false;
+    }
+    // Navigate to the mousedown-snapshot href, not a target re-resolved here:
+    // the mouseup reveal shifts DOM layout before `click` fires, so the element
+    // under the click coords may no longer be the link span.
+    event.preventDefault();
+    log.debug('link click dispatching', { href_len: href.length });
+    dispatch_link_click(href);
+    return true;
+  },
+});
+
+export const links_extension = [
+  make_inline_decorations_plugin(link_handlers),
+  links_theme,
+  link_click_handler,
+];

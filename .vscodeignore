@@ -1,0 +1,44 @@
+# Source & tooling — everything the published extension does not need at runtime.
+# Only `package.json`, `LICENSE`, `media/` icons, and the prebuilt `dist/` outputs ship.
+
+# Sources
+src/**
+scripts/**
+tests/**
+.vitest-attachments/**
+**/__screenshots__/**
+
+# Compiled integration tests — built into dist/ but never loaded at runtime
+dist/integration/**
+
+# Dev-only tooling not needed by the published extension
+.github/**
+knip.jsonc
+patches/**
+
+# Docs (project-internal; not user-facing)
+docs/**
+
+# Lockfiles & build configs
+pnpm-lock.yaml
+pnpm-workspace.yaml
+eslint.config.mjs
+tsconfig.json
+vitest.config.ts
+vitest.browser.config.ts
+.prettierrc*
+
+# VS Code workspace settings (developer-local, not for the package)
+.vscode/**
+.gitignore
+
+# Sourcemaps — large, debug-only, and not needed at install/run time
+dist/**/*.map
+
+# OS / editor noise
+**/.DS_Store
+**/Thumbs.db
+**/*.swp
+
+# Self
+*.vsix

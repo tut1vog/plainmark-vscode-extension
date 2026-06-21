@@ -1,0 +1,286 @@
+{
+  "name": "plainmark",
+  "displayName": "Plainmark",
+  "description": "Free WYSIWYG Markdown editor with Obsidian-style live preview for VS Code Desktop and vscode.dev — rich-text editing for tables, math, diagrams, and callouts.",
+  "version": "0.0.1",
+  "publisher": "tut1vog",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tut1vog/plainmark-vscode-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tut1vog/plainmark-vscode-extension/issues"
+  },
+  "homepage": "https://github.com/tut1vog/plainmark-vscode-extension#readme",
+  "icon": "media/plainmark.png",
+  "keywords": [
+    "markdown",
+    "wysiwyg",
+    "live preview",
+    "rich text",
+    "editor",
+    "obsidian",
+    "web"
+  ],
+  "galleryBanner": {
+    "color": "#1f2428",
+    "theme": "dark"
+  },
+  "markdown": "github",
+  "engines": {
+    "vscode": "^1.96.0",
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@11.0.9",
+  "type": "module",
+  "categories": [
+    "Formatters",
+    "Other"
+  ],
+  "main": "./dist/extension.cjs",
+  "browser": "./dist/extension.web.cjs",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Workspace-defined plainmark.styles and plainmark.tableKeybindings are ignored until the workspace is trusted, because both inject content into the editor webview.",
+      "restrictedConfigurations": [
+        "plainmark.styles",
+        "plainmark.tableKeybindings"
+      ]
+    },
+    "virtualWorkspaces": true
+  },
+  "activationEvents": [],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "tut1vog.plainmark",
+        "displayName": "Plainmark",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          },
+          {
+            "filenamePattern": "*.markdown"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "commands": [
+      {
+        "command": "tut1vog.plainmark.noop_undo",
+        "title": "Plainmark: Undo (handled by webview CM6)"
+      },
+      {
+        "command": "tut1vog.plainmark.noop_redo",
+        "title": "Plainmark: Redo (handled by webview CM6)"
+      },
+      {
+        "command": "tut1vog.plainmark.insertTable",
+        "title": "Plainmark: Insert table"
+      },
+      {
+        "command": "tut1vog.plainmark.insertFootnote",
+        "title": "Plainmark: Insert footnote"
+      },
+      {
+        "command": "tut1vog.plainmark.openInTextEditor",
+        "title": "Plainmark: Open in Text Editor",
+        "icon": "$(code)"
+      },
+      {
+        "command": "tut1vog.plainmark.openInPlainmark",
+        "title": "Plainmark: Open in Plainmark",
+        "icon": {
+          "light": "./media/plainmark-light.svg",
+          "dark": "./media/plainmark-dark.svg"
+        }
+      },
+      {
+        "command": "tut1vog.plainmark.scrollToHeading",
+        "title": "Plainmark: Scroll to Heading"
+      },
+      {
+        "command": "tut1vog.plainmark.selectTheme",
+        "title": "Plainmark: Select Theme"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "tut1vog.plainmark.outline",
+          "name": "Plainmark Outline",
+          "when": "tut1vog.plainmark.editorIsActive"
+        }
+      ]
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "tut1vog.plainmark.scrollToHeading",
+          "when": "false"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "tut1vog.plainmark.openInTextEditor",
+          "when": "activeCustomEditorId == 'tut1vog.plainmark'",
+          "group": "navigation"
+        },
+        {
+          "command": "tut1vog.plainmark.openInPlainmark",
+          "when": "(resourceExtname == .md || resourceExtname == .markdown) && activeCustomEditorId == ''",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "tut1vog.plainmark.noop_undo",
+        "key": "ctrl+z",
+        "mac": "cmd+z",
+        "when": "activeCustomEditorId == 'tut1vog.plainmark'"
+      },
+      {
+        "command": "tut1vog.plainmark.noop_redo",
+        "key": "ctrl+y",
+        "mac": "cmd+shift+z",
+        "when": "activeCustomEditorId == 'tut1vog.plainmark'"
+      },
+      {
+        "command": "tut1vog.plainmark.noop_redo",
+        "key": "ctrl+shift+z",
+        "when": "activeCustomEditorId == 'tut1vog.plainmark' && !isMac"
+      },
+      {
+        "command": "tut1vog.plainmark.insertFootnote",
+        "key": "ctrl+shift+6",
+        "mac": "cmd+shift+6",
+        "when": "activeCustomEditorId == 'tut1vog.plainmark'"
+      },
+      {
+        "command": "tut1vog.plainmark.openInTextEditor",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m",
+        "when": "tut1vog.plainmark.editorIsActive"
+      },
+      {
+        "command": "tut1vog.plainmark.openInPlainmark",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m",
+        "when": "(resourceExtname == .md || resourceExtname == .markdown) && activeCustomEditorId == ''"
+      }
+    ],
+    "configuration": {
+      "title": "Plainmark",
+      "properties": {
+        "plainmark.theme": {
+          "type": "string",
+          "enum": [
+            "default",
+            "github-light",
+            "github-dark"
+          ],
+          "enumDescriptions": [
+            "Adapts to the active VS Code color theme",
+            "GitHub light palette, regardless of the VS Code color theme",
+            "GitHub dark palette, regardless of the VS Code color theme"
+          ],
+          "scope": "window",
+          "default": "default",
+          "markdownDescription": "Built-in theme for the Plainmark editor. `default` adapts to the VS Code color theme; the GitHub themes apply a fixed palette. CSS from `#plainmark.styles#` still overrides the theme. Pick via the **Plainmark: Select Theme** command."
+        },
+        "plainmark.styles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "scope": "resource",
+          "default": [],
+          "markdownDescription": "CSS files applied to the Plainmark preview. Accepts: workspace-relative paths (e.g. `./.vscode/plainmark.css`), absolute filesystem paths, and `file:` URIs. **v1 limitations**: `https://` and `http://` are declined (supply-chain surface); `@font-face` with remote `url()` is unsupported. User-scope entries are overridden by workspace-scope entries; both override Plainmark's built-in defaults. **Stability**: only `--plainmark-*` CSS variables are stable theming API — CSS class names and DOM structure are internal and may change in any release. See `docs/theming-guide.md`."
+        },
+        "plainmark.tableKeybindings": {
+          "type": "object",
+          "scope": "resource",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "markdownDescription": "Keyboard shortcuts for table structural operations, active while editing a table cell. Keys use CodeMirror syntax — `Mod` (⌘ on macOS, Ctrl elsewhere), `Alt` (⌥ on macOS), `Shift`, `Ctrl` — joined with `-`, e.g. `Mod-Shift-Backspace`. Every binding must include a modifier; set a value to `\"\"` to unbind. Recognized actions (defaults in parentheses): `insert_row_above` (`Alt-Shift-ArrowUp`), `insert_row_below` (`Mod-Enter`), `insert_column_left` (`Alt-Shift-ArrowLeft`), `insert_column_right` (`Alt-Shift-ArrowRight`), `delete_row` (`Mod-Shift-Backspace`), `delete_column` (unbound), `delete_table` (unbound), `swap_row_up` (`Alt-ArrowUp`), `swap_row_down` (`Alt-ArrowDown`), `swap_column_left` (`Alt-ArrowLeft`), `swap_column_right` (`Alt-ArrowRight`), `align_left`/`align_center`/`align_right`/`align_none` (unbound). Values that are invalid, modifier-less, duplicated, or that collide with editing/navigation keys (`Tab`, `Enter`, arrows, `Mod-z`) are ignored with a warning. Changing this setting reloads the editor view."
+        },
+        "plainmark.imagePasteLocation": {
+          "type": "string",
+          "scope": "resource",
+          "default": ".",
+          "markdownDescription": "Folder where images pasted into the Plainmark editor are saved. Relative paths resolve against the current document's folder; the default `.` saves the image next to the document. Two variables are supported, matching VS Code's Markdown image-copy setting (`markdown.copyFiles.destination`):\n\n- `${documentWorkspaceFolder}` — the workspace folder that contains the document; falls back to the document's folder when it is not in a workspace.\n- `${documentBaseName}` — the document's file name without its extension.\n\nFor example, `${documentWorkspaceFolder}/assets` saves every image under a single workspace `assets` folder, while `assets/${documentBaseName}` gives each note its own image folder. Pasted files are named `image-YYYYMMDD-HHMMSS.<ext>` (the extension comes from the image type) and never overwrite an existing file. Pasting an image is unavailable in unsaved (untitled) documents and on read-only file systems."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:dev": "node scripts/build.mjs --dev",
+    "build:watch": "node scripts/build.mjs --dev --watch",
+    "build:check": "tsc --noEmit && node scripts/check-sizes.mjs",
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "spec:matrix": "node scripts/gen-spec-matrix.mjs",
+    "spec:check": "node scripts/gen-spec-matrix.mjs --check",
+    "spec:smoke": "node scripts/gen-smoke-list.mjs",
+    "deadcode": "knip",
+    "test:unit": "vitest run src",
+    "test:source-preservation": "vitest run tests/source-preservation --passWithNoTests",
+    "test:fuzz": "vitest run tests/fuzz --passWithNoTests",
+    "test:visual": "vitest run -c vitest.browser.config.ts",
+    "test:visual:update": "vitest run -c vitest.browser.config.ts -u",
+    "test:visual:watch": "vitest -c vitest.browser.config.ts",
+    "test:integration:desktop:build": "node scripts/build-integration-tests.mjs",
+    "test:integration:desktop": "pnpm run build:dev && pnpm run test:integration:desktop:build && node tests/integration/electron/run-tests.mjs",
+    "test:integration:web:build": "node scripts/build-integration-tests-web.mjs",
+    "test:integration:web": "pnpm run build:dev && pnpm run test:integration:web:build && node tests/integration/web/run-tests.mjs",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm run lint && pnpm run test:unit && pnpm run test:source-preservation && pnpm run build:check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.96.0",
+    "@vitest/browser": "^4.1.5",
+    "@vitest/browser-playwright": "^4.1.5",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-web": "^0.0.80",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.0.0",
+    "glob": "^13.0.6",
+    "knip": "^6.15.0",
+    "mocha": "^11.7.6",
+    "playwright": "^1.59.1",
+    "prettier": "^3.0.0",
+    "simple-git-hooks": "^2.11.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.0.0",
+    "vite": "^7.3.3",
+    "vitest": "^4.1.5"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.0",
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/lang-yaml": "^6.1.3",
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.42.1",
+    "@lezer/common": "^1.5.2",
+    "@lezer/highlight": "^1.2.3",
+    "@lezer/markdown": "1.6.3",
+    "@mathjax/mathjax-newcm-font": "4.1.2",
+    "@mathjax/src": "4.1.2",
+    "mermaid": "11.15.0"
+  }
+}

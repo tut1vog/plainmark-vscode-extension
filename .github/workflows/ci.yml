@@ -1,0 +1,127 @@
+name: CI
+
+# Day-one matrix is Linux × Desktop+Web, latest stable VS Code only.
+# macOS / Windows / VS Code version matrix are reactive adds, not day-one
+# investment. Wired in T28.9.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Newer pushes to the same branch cancel in-flight runs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PNPM_VERSION: 11.0.9
+  NODE_VERSION: 22
+
+jobs:
+  static:
+    name: Lint + type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run build:check
+      - run: pnpm run spec:check
+      - run: pnpm run deadcode
+
+  unit-and-source:
+    name: Unit + source-preservation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:unit
+      - run: pnpm run test:source-preservation
+
+  fuzz:
+    name: Fuzz suite (T28.2 – T28.4)
+    runs-on: ubuntu-latest
+    # Blocking — promoted from soft-fail at T28.10 close-out. The
+    # initial run is clean (no new regressions; allowlisted upstream
+    # divergences are pinned in fixtures/metamorphic-known-divergences.json).
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:fuzz
+
+  visual:
+    name: Visual + browser fuzz (Playwright Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run build:dev
+      - run: pnpm run test:visual
+
+  integration-desktop:
+    name: Integration — VS Code Desktop (T28.7)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:dev
+      - run: pnpm run test:integration:desktop:build
+      # VS Code Desktop is an Electron app — Linux needs a virtual display.
+      - run: xvfb-run -a node tests/integration/electron/run-tests.mjs
+
+  integration-web:
+    name: Integration — VS Code Web (T28.8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run build:dev
+      - run: pnpm run test:integration:web:build
+      - run: node tests/integration/web/run-tests.mjs

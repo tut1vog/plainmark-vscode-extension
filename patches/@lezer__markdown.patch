@@ -1,0 +1,118 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index c7a9a0635880e92239067e985e3d03a73c2f3281..cdc55d559a7562fb3af0c229f353f1442e8b4df1 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -1388,6 +1388,30 @@ try {
+     Punctuation = new RegExp("[\\p{S}|\\p{P}]", "u");
+ }
+ catch (_) { }
++// PLAINMARK PATCH (markdown-cjk-friendly): CJK adjacency lifts the flanking-rule punctuation
++// restriction, since CJK text has no inter-word spaces. Spec:
++// https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md
++let CJK = /[\u3000-\u33FF\uFE10-\uFE1F\uFE30-\uFE6F\uFF00-\uFFEF]/;
++let IdeographicVS = /^\b$/;
++try {
++    CJK = new RegExp("[\\p{sc=Han}\\p{sc=Hangul}\\p{sc=Hiragana}\\p{sc=Katakana}\\p{sc=Bopomofo}\\p{sc=Yi}\\u3000-\\u303F\\u3190-\\u319F\\u3200-\\u33FF\\uFE10-\\uFE1F\\uFE30-\\uFE6F\\uFF00-\\uFFEF]", "u");
++    IdeographicVS = new RegExp("[\\u{E0100}-\\u{E01EF}]", "u");
++}
++catch (_) { }
++// Code-point-aware adjacency tests: the 1-code-unit before/after slices used for the
++// space/punctuation tests would split surrogate pairs (CJK Extension B+, variation selectors).
++function cjkAdjacentBefore(cx, at) {
++    let chars = Array.from(cx.slice(Math.max(0, at - 2), at));
++    return chars.length > 0 && CJK.test(chars[chars.length - 1]);
++}
++function cjkAdjacentAfter(cx, at) {
++    let chars = Array.from(cx.slice(at, Math.min(cx.end, at + 2)));
++    return chars.length > 0 && CJK.test(chars[0]);
++}
++function ideographicVSBefore(cx, at) {
++    let chars = Array.from(cx.slice(Math.max(0, at - 2), at));
++    return chars.length > 0 && IdeographicVS.test(chars[chars.length - 1]);
++}
+ const DefaultInline = {
+     Escape(cx, next, start) {
+         if (next != 92 /* '\\' */ || start == cx.end - 1)
+@@ -1459,8 +1483,10 @@ const DefaultInline = {
+         let before = cx.slice(start - 1, start), after = cx.slice(pos, pos + 1);
+         let pBefore = Punctuation.test(before), pAfter = Punctuation.test(after);
+         let sBefore = /\s|^$/.test(before), sAfter = /\s|^$/.test(after);
+-        let leftFlanking = !sAfter && (!pAfter || sBefore || pBefore);
+-        let rightFlanking = !sBefore && (!pBefore || sAfter || pAfter);
++        // PLAINMARK PATCH (markdown-cjk-friendly): extra CJK adjacency terms in both flanking tests.
++        let cjkBefore = cjkAdjacentBefore(cx, start), cjkAfter = cjkAdjacentAfter(cx, pos);
++        let leftFlanking = !sAfter && (!pAfter || sBefore || pBefore || cjkAfter || cjkBefore || ideographicVSBefore(cx, start));
++        let rightFlanking = !sBefore && (!pBefore || sAfter || pAfter || cjkBefore || cjkAfter);
+         let canOpen = leftFlanking && (next == 42 || !rightFlanking || pBefore);
+         let canClose = rightFlanking && (next == 42 || !leftFlanking || pAfter);
+         return cx.append(new InlineDelimiter(next == 95 ? EmphasisUnderscore : EmphasisAsterisk, start, pos, (canOpen ? 1 /* Mark.Open */ : 0 /* Mark.None */) | (canClose ? 2 /* Mark.Close */ : 0 /* Mark.None */)));
+@@ -2041,7 +2067,9 @@ const Strikethrough = {
+                 let before = cx.slice(pos - 1, pos), after = cx.slice(pos + 2, pos + 3);
+                 let sBefore = /\s|^$/.test(before), sAfter = /\s|^$/.test(after);
+                 let pBefore = Punctuation.test(before), pAfter = Punctuation.test(after);
+-                return cx.addDelimiter(StrikethroughDelim, pos, pos + 2, !sAfter && (!pAfter || sBefore || pBefore), !sBefore && (!pBefore || sAfter || pAfter));
++                // PLAINMARK PATCH (markdown-cjk-friendly): same CJK adjacency terms as Emphasis.
++                let cjkBefore = cjkAdjacentBefore(cx, pos), cjkAfter = cjkAdjacentAfter(cx, pos + 2);
++                return cx.addDelimiter(StrikethroughDelim, pos, pos + 2, !sAfter && (!pAfter || sBefore || pBefore || cjkAfter || cjkBefore || ideographicVSBefore(cx, pos)), !sBefore && (!pBefore || sAfter || pAfter || cjkBefore || cjkAfter));
+             },
+             after: "Emphasis"
+         }]
+diff --git a/dist/index.js b/dist/index.js
+index 07ce727452fe191aba6d5b3090c4585dd2135853..2feb184a886509f691f7c64f2debe9d93bfdb1a4 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1386,6 +1386,30 @@ try {
+     Punctuation = new RegExp("[\\p{S}|\\p{P}]", "u");
+ }
+ catch (_) { }
++// PLAINMARK PATCH (markdown-cjk-friendly): CJK adjacency lifts the flanking-rule punctuation
++// restriction, since CJK text has no inter-word spaces. Spec:
++// https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md
++let CJK = /[\u3000-\u33FF\uFE10-\uFE1F\uFE30-\uFE6F\uFF00-\uFFEF]/;
++let IdeographicVS = /^\b$/;
++try {
++    CJK = new RegExp("[\\p{sc=Han}\\p{sc=Hangul}\\p{sc=Hiragana}\\p{sc=Katakana}\\p{sc=Bopomofo}\\p{sc=Yi}\\u3000-\\u303F\\u3190-\\u319F\\u3200-\\u33FF\\uFE10-\\uFE1F\\uFE30-\\uFE6F\\uFF00-\\uFFEF]", "u");
++    IdeographicVS = new RegExp("[\\u{E0100}-\\u{E01EF}]", "u");
++}
++catch (_) { }
++// Code-point-aware adjacency tests: the 1-code-unit before/after slices used for the
++// space/punctuation tests would split surrogate pairs (CJK Extension B+, variation selectors).
++function cjkAdjacentBefore(cx, at) {
++    let chars = Array.from(cx.slice(Math.max(0, at - 2), at));
++    return chars.length > 0 && CJK.test(chars[chars.length - 1]);
++}
++function cjkAdjacentAfter(cx, at) {
++    let chars = Array.from(cx.slice(at, Math.min(cx.end, at + 2)));
++    return chars.length > 0 && CJK.test(chars[0]);
++}
++function ideographicVSBefore(cx, at) {
++    let chars = Array.from(cx.slice(Math.max(0, at - 2), at));
++    return chars.length > 0 && IdeographicVS.test(chars[chars.length - 1]);
++}
+ const DefaultInline = {
+     Escape(cx, next, start) {
+         if (next != 92 /* '\\' */ || start == cx.end - 1)
+@@ -1457,8 +1481,10 @@ const DefaultInline = {
+         let before = cx.slice(start - 1, start), after = cx.slice(pos, pos + 1);
+         let pBefore = Punctuation.test(before), pAfter = Punctuation.test(after);
+         let sBefore = /\s|^$/.test(before), sAfter = /\s|^$/.test(after);
+-        let leftFlanking = !sAfter && (!pAfter || sBefore || pBefore);
+-        let rightFlanking = !sBefore && (!pBefore || sAfter || pAfter);
++        // PLAINMARK PATCH (markdown-cjk-friendly): extra CJK adjacency terms in both flanking tests.
++        let cjkBefore = cjkAdjacentBefore(cx, start), cjkAfter = cjkAdjacentAfter(cx, pos);
++        let leftFlanking = !sAfter && (!pAfter || sBefore || pBefore || cjkAfter || cjkBefore || ideographicVSBefore(cx, start));
++        let rightFlanking = !sBefore && (!pBefore || sAfter || pAfter || cjkBefore || cjkAfter);
+         let canOpen = leftFlanking && (next == 42 || !rightFlanking || pBefore);
+         let canClose = rightFlanking && (next == 42 || !leftFlanking || pAfter);
+         return cx.append(new InlineDelimiter(next == 95 ? EmphasisUnderscore : EmphasisAsterisk, start, pos, (canOpen ? 1 /* Mark.Open */ : 0 /* Mark.None */) | (canClose ? 2 /* Mark.Close */ : 0 /* Mark.None */)));
+@@ -2039,7 +2065,9 @@ const Strikethrough = {
+                 let before = cx.slice(pos - 1, pos), after = cx.slice(pos + 2, pos + 3);
+                 let sBefore = /\s|^$/.test(before), sAfter = /\s|^$/.test(after);
+                 let pBefore = Punctuation.test(before), pAfter = Punctuation.test(after);
+-                return cx.addDelimiter(StrikethroughDelim, pos, pos + 2, !sAfter && (!pAfter || sBefore || pBefore), !sBefore && (!pBefore || sAfter || pAfter));
++                // PLAINMARK PATCH (markdown-cjk-friendly): same CJK adjacency terms as Emphasis.
++                let cjkBefore = cjkAdjacentBefore(cx, pos), cjkAfter = cjkAdjacentAfter(cx, pos + 2);
++                return cx.addDelimiter(StrikethroughDelim, pos, pos + 2, !sAfter && (!pAfter || sBefore || pBefore || cjkAfter || cjkBefore || ideographicVSBefore(cx, pos)), !sBefore && (!pBefore || sAfter || pAfter || cjkBefore || cjkAfter));
+             },
+             after: "Emphasis"
+         }]

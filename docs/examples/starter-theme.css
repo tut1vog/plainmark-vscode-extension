@@ -1,0 +1,50 @@
+/* Plainmark starter theme — copy into your workspace (e.g. .vscode/plainmark.css)
+ * and point the setting at it:  "plainmark.styles": ["./.vscode/plainmark.css"]
+ * Edits apply live on save. Full variable reference: docs/theming-guide.md.
+ * Delete anything you don't want to change — defaults follow your VS Code theme. */
+
+:root {
+  /* ---- Page ------------------------------------------------------------ */
+  /* Re-skin Plainmark documents only; the rest of VS Code keeps its theme. */
+  /* --plainmark-editor-background: #faf6ef; */
+  /* --plainmark-editor-foreground: #3b3631; */
+
+  /* Body typeface, base size (default 16px), and line height (default 1.5). */
+  /* --plainmark-font-text: "Charter", "Iowan Old Style", Georgia, serif; */
+  /* --plainmark-font-size: 17px; */
+  /* --plainmark-body-line-height: 1.6; */
+
+  /* Prose column width; `none` = full pane. */
+  /* --plainmark-container-max-width: 760px; */
+
+  /* ---- One-knob clusters ------------------------------------------------ */
+  /* All dimmed surfaces at once: link/list markers, checked tasks,
+     footnote definitions, code language labels. */
+  /* --plainmark-muted-color: #8a8075; */
+
+  /* Inline code and fenced code blocks together. */
+  /* --plainmark-code-background: rgba(0, 0, 0, 0.05); */
+
+  /* ---- Headings ---------------------------------------------------------- */
+  --plainmark-h1-size: 2em;
+  --plainmark-h1-weight: 600;
+
+  /* ---- Blockquotes ------------------------------------------------------- */
+  --plainmark-blockquote-border-color: color-mix(in srgb, var(--vscode-foreground) 30%, transparent);
+  /* Traditional pull-quote feel: */
+  /* --plainmark-blockquote-style: italic; */
+
+  /* ---- Links ------------------------------------------------------------- */
+  /* --plainmark-link-color: #c9510c; */
+  /* --plainmark-link-decoration: none; */
+
+  /* ---- Tables ------------------------------------------------------------ */
+  --plainmark-table-row-alt-background: color-mix(in srgb, var(--vscode-foreground) 4%, transparent);
+}
+
+/* Mode-specific values: VS Code sets vscode-light / vscode-dark /
+   vscode-high-contrast / vscode-high-contrast-light on <body>. */
+body.vscode-dark {
+  /* e.g. a slightly stronger zebra stripe under dark themes: */
+  /* --plainmark-table-row-alt-background: color-mix(in srgb, var(--vscode-foreground) 6%, transparent); */
+}

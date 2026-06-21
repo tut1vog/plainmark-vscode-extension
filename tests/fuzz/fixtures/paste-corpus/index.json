@@ -1,0 +1,64 @@
+{
+  "note": "Synthetic paste fixtures representative of common real-world clipboard payloads. Direct capture from Google Docs / Notion / Word / GitHub is the T28.10 follow-up — agent runtime has no GUI browser, so this initial corpus is hand-authored covering the same shape spectrum the research doc enumerates (rich-formatted spans, table HTML, code blocks, lists, mixed inline). Each entry must include text/plain; text/html is optional. Source-preservation invariant: bytes outside the cursor position pre-paste must be byte-identical to bytes before / after the inserted span post-paste.",
+  "entries": [
+    {
+      "name": "plain-text-only",
+      "text_plain": "Hello, world!"
+    },
+    {
+      "name": "html-paragraph-with-formatting",
+      "text_plain": "Hello bold italic.",
+      "text_html": "<p>Hello <b>bold</b> <i>italic</i>.</p>"
+    },
+    {
+      "name": "html-bullet-list",
+      "text_plain": "one\ntwo\nthree",
+      "text_html": "<ul><li>one</li><li>two</li><li>three</li></ul>"
+    },
+    {
+      "name": "html-table",
+      "text_plain": "A\tB\nC\tD",
+      "text_html": "<table><tr><td>A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr></table>"
+    },
+    {
+      "name": "html-link",
+      "text_plain": "click here",
+      "text_html": "<a href=\"https://example.test/page\">click here</a>"
+    },
+    {
+      "name": "google-docs-style-spans",
+      "text_plain": "Mixed formatting paragraph.",
+      "text_html": "<meta charset=\"utf-8\"><span style=\"font-family:Arial;font-size:11pt;color:#000000;\">Mixed <span style=\"font-weight:700;\">formatting</span> <span style=\"font-style:italic;\">paragraph</span>.</span>"
+    },
+    {
+      "name": "word-mso-paragraph",
+      "text_plain": "Word-style paragraph.",
+      "text_html": "<!--StartFragment--><p class=\"MsoNormal\" style=\"margin:0in;font-family:Calibri;\"><span lang=\"EN-US\">Word-style paragraph.</span></p><!--EndFragment-->"
+    },
+    {
+      "name": "github-rendered-code-block",
+      "text_plain": "const x = 1;\nconsole.log(x);",
+      "text_html": "<pre><code class=\"language-js\">const x = 1;\nconsole.log(x);\n</code></pre>"
+    },
+    {
+      "name": "nested-divs",
+      "text_plain": "outer\ninner one\ninner two",
+      "text_html": "<div>outer<div>inner one</div><div>inner two</div></div>"
+    },
+    {
+      "name": "h1-and-paragraph",
+      "text_plain": "Heading\nBody text.",
+      "text_html": "<h1>Heading</h1><p>Body text.</p>"
+    },
+    {
+      "name": "inline-code-and-strong",
+      "text_plain": "Use foo() to get bar.",
+      "text_html": "Use <code>foo()</code> to get <strong>bar</strong>."
+    },
+    {
+      "name": "multi-line-quoted",
+      "text_plain": "line one\nline two\nline three",
+      "text_html": "<blockquote><p>line one</p><p>line two</p><p>line three</p></blockquote>"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/knip/schema-jsonc.json",
+  "entry": [
+    "src/extension.ts",
+    "src/extension.web.ts",
+    "src/webview/index.ts",
+    "src/webview/mathjax-bundle.ts",
+    "src/webview/mermaid-bundle.ts",
+    "tests/**/*.{test,spec}.ts",
+    "tests/integration/**/*.ts"
+  ],
+  "project": ["src/**/*.ts"],
+  // Browser-mode runtime reached only transitively via @vitest/browser-playwright, so knip can't see the edge.
+  "ignoreDependencies": ["@vitest/browser"]
+}
