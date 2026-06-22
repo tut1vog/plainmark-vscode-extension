@@ -77,6 +77,13 @@ describe('TBL-R-3: emit_table_cell — plain text and escapes', () => {
     expect(h.textContent).toContain('\\');
     expect(h.textContent).not.toContain('\\\\');
   });
+
+  it('renders \\$ as a literal $ (reported regression: serializer must not double the backslash)', () => {
+    const frag = emit('| \\$38-\\$45 |\n|---|\n| body |\n', (t) => t.includes('\\$'));
+    const h = host(frag);
+    expect(h.textContent).toBe('$38-$45');
+    expect(h.textContent).not.toContain('\\');
+  });
 });
 
 describe('TBL-R-3: emit_table_cell — inline formatting', () => {

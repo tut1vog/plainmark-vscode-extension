@@ -63,6 +63,7 @@ const editable_fixtures = [
   'mismatched-cols.md',
   'multi-line-cell.md',
   'adjacent-paragraph.md',
+  'escapes.md',
 ];
 
 describe('INV-SP-1 INV-SP-2 TBL-SP-1 table edit-cycle: bytes outside the edited table are preserved', () => {
@@ -219,6 +220,46 @@ describe('TBL-E-7 TBL-SP-6 GFM absorption of a trailing pipe-bearing line (adjac
     expect(result).toContain('| pipe | in');
     // MC1: the absorbed row's third cell exceeds the 2-column header and is dropped.
     expect(result).not.toContain('text follows immediately');
+  });
+});
+
+describe('TBL-SP-4 ESC-R-1: backslash escapes in cells survive the edit cycle (escapes.md)', () => {
+  it('a no-op edit cycle reproduces the escape-bearing table byte-for-byte', () => {
+    const doc = read_fixture('escapes.md');
+    const [table] = find_tables(make_state(doc));
+    const { result } = apply_edit_cycle(doc, table.from);
+    expect(result).toBe(doc);
+  });
+
+  it('editing a sibling cell never doubles an escape backslash (\\$ stays \\$, not \\\\$)', () => {
+    const doc = read_fixture('escapes.md');
+    const [table] = find_tables(make_state(doc));
+    const { result, from } = apply_edit_cycle(doc, table.from, (model) => {
+      model.rows[1][0] = 'Gadget';
+    });
+    expect(result.slice(0, from)).toBe(doc.slice(0, from));
+    // A markdown escape must keep its single backslash through an edit; doubling
+    // it to \\$ would re-render as a literal backslash plus the character.
+    expect(result).toContain('\\$38-\\$45');
+    expect(result).not.toContain('\\\\$38');
+    expect(result).toContain('rate \\| range');
+    expect(result).toContain('\\*firm\\*');
+    expect(result).not.toContain('\\\\*firm');
+    // A genuine literal backslash (\\ -> one backslash) is still preserved as \\.
+    expect(result).toContain('C:\\\\temp');
+  });
+
+  it('the cell model is verbatim markdown source (escapes intact, soft breaks only)', () => {
+    const doc = read_fixture('escapes.md');
+    const state = make_state(doc);
+    const [table] = find_tables(state);
+    const model = build_model_from_extraction(
+      locate_table_extraction(state, table.from)!,
+      state.doc,
+    );
+    expect(model.rows[1][1]).toBe('\\$38-\\$45');
+    expect(model.rows[1][2]).toBe('rate \\| range');
+    expect(model.rows[2][1]).toBe('C:\\\\temp');
   });
 });
 

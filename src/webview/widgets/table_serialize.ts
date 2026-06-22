@@ -11,10 +11,13 @@ function byte_length(text: string): number {
 }
 
 export function escape_cell_text(text: string): string {
-  // Escape `\` before `|`: GFM consumes a backslash before any ASCII punctuation, so a lone `\|` round-trips as a delimiter and splits the cell.
+  // Cell content is verbatim markdown source: escape only an unescaped `|` (even
+  // run of leading backslashes) so it can't split the cell. Backslashes stay —
+  // they are markdown escapes (`\$`, `\\`); doubling them corrupts the escape.
   return text
-    .replace(/\\/g, '\\\\')
-    .replace(/\|/g, '\\|')
+    .replace(/(\\*)\|/g, (_match, slashes: string) =>
+      slashes.length % 2 === 0 ? `${slashes}\\|` : `${slashes}|`,
+    )
     .replace(/\n/g, '<br>');
 }
 
@@ -24,7 +27,9 @@ export function escape_cell_text(text: string): string {
 export const BR_HTML_SOURCE = String.raw`<br\s*/?>`;
 
 export function parse_cell_text(raw: string): string {
-  return raw.replace(new RegExp(BR_HTML_SOURCE, 'gi'), '\n').replace(/\\([\\|])/g, '$1');
+  // Inverse of escape_cell_text: the cell model is verbatim markdown source, so
+  // backslash escapes (`\$`, `\|`, `\\`) stay intact; only soft breaks decode.
+  return raw.replace(new RegExp(BR_HTML_SOURCE, 'gi'), '\n');
 }
 
 // width is already floored at 3, so every branch yields a valid GFM delimiter.

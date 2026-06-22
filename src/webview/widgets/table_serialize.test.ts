@@ -20,16 +20,16 @@ function lines(model: TableModel): string[] {
   return serialize_table(model).split('\n');
 }
 
-describe('TBL-SP-4 escape_cell_text — E1 pipe over-escape', () => {
-  it('escapes every pipe to \\|', () => {
+describe('TBL-SP-4 escape_cell_text — escape unescaped pipes (markdown-source model)', () => {
+  it('escapes a raw pipe to \\|', () => {
     expect(escape_cell_text('a|b')).toBe('a\\|b');
   });
 
-  it('escapes multiple pipes including consecutive ones', () => {
+  it('escapes multiple raw pipes including consecutive ones', () => {
     expect(escape_cell_text('|a||b|')).toBe('\\|a\\|\\|b\\|');
   });
 
-  it('escapes pipes regardless of code-span context (no exceptions)', () => {
+  it('escapes raw pipes regardless of code-span context (no exceptions)', () => {
     expect(escape_cell_text('`a | b`')).toBe('`a \\| b`');
   });
 
@@ -37,14 +37,20 @@ describe('TBL-SP-4 escape_cell_text — E1 pipe over-escape', () => {
     expect(escape_cell_text('plain text')).toBe('plain text');
   });
 
-  it('escapes every backslash to \\\\', () => {
-    expect(escape_cell_text('a\\b')).toBe('a\\\\b');
+  it('leaves an already-escaped pipe alone (no double-escape)', () => {
+    expect(escape_cell_text('a\\|b')).toBe('a\\|b');
   });
 
-  it('escapes a backslash before a pipe so the pipe stays escaped', () => {
-    // Without backslash escaping, 'a\\|b' parses back as escaped-backslash + a
-    // live delimiter pipe and the cell splits into 'a\\' + 'b'.
-    expect(escape_cell_text('a\\|b')).toBe('a\\\\\\|b');
+  it('escapes a raw pipe that follows a literal (even-run) backslash', () => {
+    // 'a\\|b' is a literal backslash then a raw pipe; the backslash run is even
+    // so it is left, and the pipe still escapes — re-reads as backslash + pipe.
+    expect(escape_cell_text('a\\\\|b')).toBe('a\\\\\\|b');
+  });
+
+  it('never doubles a backslash, so markdown escapes survive verbatim', () => {
+    expect(escape_cell_text('a\\b')).toBe('a\\b');
+    expect(escape_cell_text('\\$50')).toBe('\\$50');
+    expect(escape_cell_text('C:\\path')).toBe('C:\\path');
   });
 });
 
@@ -58,18 +64,17 @@ describe('TBL-SP-5 escape_cell_text — N4 newline to <br>', () => {
   });
 });
 
-describe('TBL-SP-4 parse_cell_text — E1 reverse', () => {
-  it('unescapes \\| to |', () => {
-    expect(parse_cell_text('a\\|b')).toBe('a|b');
+describe('TBL-SP-4 parse_cell_text — keeps markdown escapes verbatim', () => {
+  it('leaves \\| intact (an escaped pipe is the markdown for a literal pipe)', () => {
+    expect(parse_cell_text('a\\|b')).toBe('a\\|b');
   });
 
-  it('unescapes \\\\ to a single backslash', () => {
-    expect(parse_cell_text('a\\\\b')).toBe('a\\b');
+  it('leaves \\\\ intact (a literal backslash stays as its markdown escape)', () => {
+    expect(parse_cell_text('a\\\\b')).toBe('a\\\\b');
   });
 
-  it('round-trips with escape_cell_text', () => {
-    const logical = 'pipe | here | too';
-    expect(parse_cell_text(escape_cell_text(logical))).toBe(logical);
+  it('leaves a punctuation escape like \\$ intact', () => {
+    expect(parse_cell_text('\\$38-\\$45')).toBe('\\$38-\\$45');
   });
 
   it('DEF-6: converts <br> to newline case-insensitively, matching render (BR1)', () => {
@@ -77,21 +82,34 @@ describe('TBL-SP-4 parse_cell_text — E1 reverse', () => {
     expect(parse_cell_text('a<Br/>b')).toBe('a\nb');
     expect(parse_cell_text('a<BR />b')).toBe('a\nb');
   });
+});
 
-  it('round-trips backslash-bearing cells without losing or splitting bytes', () => {
-    const logical_cells = [
+describe('TBL-SP-4 TBL-SP-9 cell text round-trips at the source level', () => {
+  // The cell model is verbatim markdown source: canonical source (pipes escaped,
+  // soft breaks as <br>) survives escape(parse(...)) byte-identically. This is
+  // the meaningful invariant now that backslashes are preserved, not doubled.
+  it('escape(parse(source)) reproduces canonical cell source byte-for-byte', () => {
+    const canonical_sources = [
+      'plain',
       'a\\|b',
       '\\|',
-      'a\\b',
-      'a\\\\b',
       'C:\\path',
-      'a\\\\|b',
+      'a\\\\b',
       'trailing\\',
-      'a\\b|c',
+      '\\$38-\\$45',
+      '\\*literal\\*',
+      '`code \\| x`',
+      'line1<br>line2',
     ];
-    for (const cell of logical_cells) {
-      expect(parse_cell_text(escape_cell_text(cell))).toBe(cell);
+    for (const src of canonical_sources) {
+      expect(escape_cell_text(parse_cell_text(src))).toBe(src);
     }
+  });
+
+  it('a raw (user-typed) pipe is normalized to \\| and is then stable', () => {
+    const once = escape_cell_text('a|b');
+    expect(once).toBe('a\\|b');
+    expect(escape_cell_text(parse_cell_text(once))).toBe(once);
   });
 });
 
@@ -108,14 +126,14 @@ describe('TBL-SP-5 parse_cell_text — N4 reverse', () => {
     expect(parse_cell_text('a<br />b')).toBe('a\nb');
   });
 
-  it('round-trips a multi-line cell with escape_cell_text', () => {
-    const logical = 'first\nsecond\nthird';
-    expect(parse_cell_text(escape_cell_text(logical))).toBe(logical);
+  it('round-trips a multi-line model cell through escape then parse', () => {
+    const model = 'first\nsecond\nthird';
+    expect(parse_cell_text(escape_cell_text(model))).toBe(model);
   });
 
-  it('round-trips a cell mixing pipes and newlines', () => {
-    const logical = 'a | b\nc | d';
-    expect(parse_cell_text(escape_cell_text(logical))).toBe(logical);
+  it('round-trips a cell mixing escaped pipes and breaks at the source level', () => {
+    const source = 'a \\| b<br>c \\| d';
+    expect(escape_cell_text(parse_cell_text(source))).toBe(source);
   });
 });
 
@@ -367,10 +385,10 @@ describe('TBL-SP-9 serialize_table — round-trip stability (AC6)', () => {
     );
   });
 
-  it('round-trips logical cell content through escape then parse', () => {
-    const logical_cells = ['plain', 'has | pipe', 'has\nbreak', '`code | x`'];
-    for (const cell of logical_cells) {
-      expect(parse_cell_text(escape_cell_text(cell))).toBe(cell);
+  it('canonical cell source round-trips through parse then escape', () => {
+    const sources = ['plain', 'has \\| pipe', 'has<br>break', '`code \\| x`', '\\$5 each'];
+    for (const src of sources) {
+      expect(escape_cell_text(parse_cell_text(src))).toBe(src);
     }
   });
 });
