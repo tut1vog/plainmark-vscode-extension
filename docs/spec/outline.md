@@ -32,9 +32,9 @@ Notation in examples: `|` = caret, `→` = action/result, `\n` = literal newline
 
 What the outline view is and what it shows. Section code `R`.
 
-- **OUT-R-1** `[smoke]` — A TreeView with id `tut1vog.plainmark.outline` and title "Plainmark Outline" MUST be contributed to the Explorer view container.
+- **OUT-R-1** `[smoke]` — A TreeView with id `tutivog.plainmark.outline` and title "Plainmark Outline" MUST be contributed to the Explorer view container.
   _Example:_ with a `.md` open in Plainmark, an "Plainmark Outline" section appears in the Explorer sidebar below the file tree.
-- **OUT-R-2** `[smoke]` — The view MUST be visible only while a Plainmark custom editor is the active editor, gated on the `tut1vog.plainmark.editorIsActive` context key; it MUST NOT show when the active editor is a text editor or a non-Plainmark tab.
+- **OUT-R-2** `[smoke]` — The view MUST be visible only while a Plainmark custom editor is the active editor, gated on the `tutivog.plainmark.editorIsActive` context key; it MUST NOT show when the active editor is a text editor or a non-Plainmark tab.
   _Example:_ toggling a file from Plainmark to the text editor hides the outline view; toggling back shows it.
 - **OUT-R-3** — Tree items MUST be the document's markdown headings nested by level: a heading is a child of the nearest preceding heading of lower level, and a sibling of the nearest preceding heading of equal level.
   _Example:_ `# A\n## B\n## C\n### D` → `A` { `B`, `C` { `D` } }.
@@ -49,7 +49,7 @@ Where headings come from and when the tree recomputes. Section code `D`.
 
 - **OUT-D-1** `[smoke]` — Headings MUST be sourced by executing the `vscode.executeDocumentSymbolProvider` command against the document URI (the built-in markdown symbol provider), so extraction works while the file is open in the custom editor and requires no active text editor.
   _Example:_ the provider calls `executeDocumentSymbolProvider(document.uri)` and maps the returned `DocumentSymbol[]` to tree items; no `window.activeTextEditor` is read.
-- **OUT-D-2** `[smoke]` — The active Plainmark document MUST be tracked via `window.tabGroups` tab-change events, recognizing a `TabInputCustom` whose `viewType` equals `tut1vog.plainmark`; `window.onDidChangeActiveTextEditor` MUST NOT be relied on, as it does not fire for custom editors.
+- **OUT-D-2** `[smoke]` — The active Plainmark document MUST be tracked via `window.tabGroups` tab-change events, recognizing a `TabInputCustom` whose `viewType` equals `tutivog.plainmark`; `window.onDidChangeActiveTextEditor` MUST NOT be relied on, as it does not fire for custom editors.
   _Example:_ switching between two Plainmark tabs repoints the outline at the newly active tab's URI via `onDidChangeTabs`.
 - **OUT-D-3** `[smoke]` — The tree MUST refresh when the active Plainmark document changes and when that document's text changes (`workspace.onDidChangeTextDocument`); text-change refreshes MUST be debounced so a burst of keystrokes does not re-query symbols on every change.
   _Example:_ typing a new `## ` heading updates the outline once the debounce settles, not on each character.

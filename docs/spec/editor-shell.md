@@ -28,7 +28,7 @@ This file owns the *scaffold and wiring*, not the behaviors that ride on it:
   and the per-construct theme extensions are referenced here, not restated.
 - **Host / Web code separation** is `invariants.md` `INV-HOST-1`; shell clauses
   that are that invariant are tagged `[inherits:INV-HOST-1]`.
-- **Outline navigation** — the `tut1vog.plainmark.outline` TreeView, its
+- **Outline navigation** — the `tutivog.plainmark.outline` TreeView, its
   `scrollToHeading` command, and the `scroll_to_heading` routing are owned by
   `outline.md` (`OUT-*`), not restated as shell contributions or routing here.
 
@@ -162,28 +162,28 @@ Command registration in the host provider and the `contributes` block in
 declared in `package.json` `contributes.commands` AND registered via
 `vscode.commands.registerCommand` in `PlainmarkEditorProvider.register`.
 
-- **SHELL-C-1** `[smoke]` — The extension MUST contribute a `customEditors` entry with `viewType` `tut1vog.plainmark`, selecting `*.md` and `*.markdown`, at `priority: "option"` (so it does not seize markdown files from the default text editor).
+- **SHELL-C-1** `[smoke]` — The extension MUST contribute a `customEditors` entry with `viewType` `tutivog.plainmark`, selecting `*.md` and `*.markdown`, at `priority: "option"` (so it does not seize markdown files from the default text editor).
   _Example:_ opening a `.md` file offers Plainmark via "Reopen Editor With…", not as the forced default.
 
 - **SHELL-C-2** — The provider MUST register the custom editor with `register(context)` returning a single composite `Disposable` aggregating the editor registration and every contributed command, so deactivation disposes them together.
   _Example:_ `vscode.Disposable.from(editor, noop_undo, noop_redo, insert_table, insert_footnote, open_in_text_editor, open_in_plainmark)`.
 
-- **SHELL-C-3** `[smoke]` — `tut1vog.plainmark.insertTable` MUST be registered and, when invoked, MUST post `{ type: 'insert_table' }` to the active Plainmark panel's webview.
+- **SHELL-C-3** `[smoke]` — `tutivog.plainmark.insertTable` MUST be registered and, when invoked, MUST post `{ type: 'insert_table' }` to the active Plainmark panel's webview.
   _Example:_ Command Palette → "Plainmark: Insert table" → active panel receives `insert_table`.
 
-- **SHELL-C-4** `[smoke]` — `tut1vog.plainmark.insertFootnote` MUST be registered, post `{ type: 'insert_footnote' }` to the active panel, and be bound to `ctrl+shift+6` / `cmd+shift+6` when `activeCustomEditorId == 'tut1vog.plainmark'`.
+- **SHELL-C-4** `[smoke]` — `tutivog.plainmark.insertFootnote` MUST be registered, post `{ type: 'insert_footnote' }` to the active panel, and be bound to `ctrl+shift+6` / `cmd+shift+6` when `activeCustomEditorId == 'tutivog.plainmark'`.
   _Example:_ Cmd+Shift+6 in a Plainmark tab → active panel receives `insert_footnote`.
 
-- **SHELL-C-5** — `tut1vog.plainmark.noop_undo` and `tut1vog.plainmark.noop_redo` MUST be registered as inert commands and bound (via `keybindings`, `when: activeCustomEditorId == 'tut1vog.plainmark'`) to the platform undo/redo chords, to muzzle the workbench undo/redo while Plainmark is active. (Undo-ownership rationale owned by `INV-UNDO-2` / `SYNC-H-6`.)
+- **SHELL-C-5** — `tutivog.plainmark.noop_undo` and `tutivog.plainmark.noop_redo` MUST be registered as inert commands and bound (via `keybindings`, `when: activeCustomEditorId == 'tutivog.plainmark'`) to the platform undo/redo chords, to muzzle the workbench undo/redo while Plainmark is active. (Undo-ownership rationale owned by `INV-UNDO-2` / `SYNC-H-6`.)
   _Example:_ Ctrl+Z in a Plainmark tab fires `noop_undo` (a log-only no-op); CM6 owns the actual undo.
 
-- **SHELL-C-6** `[smoke]` — `tut1vog.plainmark.openInTextEditor` MUST be registered, contributed to `editor/title` and a keybinding, gated by the `tut1vog.plainmark.editorIsActive` context key, and MUST toggle the active document to the built-in text editor (`vscode.openWith … 'default'`) then close the Plainmark source tab.
+- **SHELL-C-6** `[smoke]` — `tutivog.plainmark.openInTextEditor` MUST be registered, contributed to `editor/title` and a keybinding, gated by the `tutivog.plainmark.editorIsActive` context key, and MUST toggle the active document to the built-in text editor (`vscode.openWith … 'default'`) then close the Plainmark source tab.
   _Example:_ title-bar `$(code)` button in a Plainmark tab → the same document opens in the default text editor and the Plainmark tab closes.
 
-- **SHELL-C-7** `[smoke]` — `tut1vog.plainmark.openInPlainmark` MUST be registered, contributed to `editor/title` and a keybinding gated by `(resourceExtname == .md || resourceExtname == .markdown) && activeCustomEditorId == ''`, and MUST toggle a markdown text editor to Plainmark (`vscode.openWith … viewType`) then close the source text tab. The gate keys on file extension, NOT `resourceLangId == markdown`, so the button stays present when VS Code assigns a markdown-syntax `.md` file a non-`markdown` language (e.g. the chat **Instructions** / prompt-file languages on `.md` files under a configured instructions-files location) — matching the file set the `customEditors` `*.md` / `*.markdown` selector already opens.
+- **SHELL-C-7** `[smoke]` — `tutivog.plainmark.openInPlainmark` MUST be registered, contributed to `editor/title` and a keybinding gated by `(resourceExtname == .md || resourceExtname == .markdown) && activeCustomEditorId == ''`, and MUST toggle a markdown text editor to Plainmark (`vscode.openWith … viewType`) then close the source text tab. The gate keys on file extension, NOT `resourceLangId == markdown`, so the button stays present when VS Code assigns a markdown-syntax `.md` file a non-`markdown` language (e.g. the chat **Instructions** / prompt-file languages on `.md` files under a configured instructions-files location) — matching the file set the `customEditors` `*.md` / `*.markdown` selector already opens.
   _Example:_ title-bar Plainmark icon button (SHELL-C-11) on a `.md` text editor — including one VS Code labels as the **Instructions** language — opens in Plainmark and closes the text tab.
 
-- **SHELL-C-8** — The `tut1vog.plainmark.editorIsActive` context key MUST be maintained via `setContext` and refreshed on view-state changes and panel disposal, so the `openInTextEditor` menu/keybinding `when` clause is accurate.
+- **SHELL-C-8** — The `tutivog.plainmark.editorIsActive` context key MUST be maintained via `setContext` and refreshed on view-state changes and panel disposal, so the `openInTextEditor` menu/keybinding `when` clause is accurate.
   _Example:_ focusing a Plainmark panel sets `editorIsActive` true; closing the last Plainmark panel sets it false.
 
 - **SHELL-C-9** — The extension MUST contribute a `plainmark.styles` array configuration (resource scope) whose changes are observed per-document by the provider; the config-change reload behavior is owned by `sync-and-persistence.md` (`SYNC-P-12`).

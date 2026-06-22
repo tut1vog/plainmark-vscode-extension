@@ -5,9 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 <!-- Add after first Marketplace publish:
-[![Version](https://img.shields.io/visual-studio-marketplace/v/tut1vog.plainmark)](https://marketplace.visualstudio.com/items?itemName=tut1vog.plainmark)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/tut1vog.plainmark)](https://marketplace.visualstudio.com/items?itemName=tut1vog.plainmark)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/tut1vog.plainmark)](https://marketplace.visualstudio.com/items?itemName=tut1vog.plainmark)
+[![Version](https://img.shields.io/visual-studio-marketplace/v/tutivog.plainmark)](https://marketplace.visualstudio.com/items?itemName=tutivog.plainmark)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/tutivog.plainmark)](https://marketplace.visualstudio.com/items?itemName=tutivog.plainmark)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/tutivog.plainmark)](https://marketplace.visualstudio.com/items?itemName=tutivog.plainmark)
 -->
 
 ![Plainmark live preview demo](https://raw.githubusercontent.com/tut1vog/plainmark-vscode-extension/main/media/demo.gif)
@@ -41,7 +41,7 @@ Plainmark's number-one job is to never corrupt your documents. Every edit is pro
 
 ## Getting started
 
-1. Install Plainmark from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=tut1vog.plainmark) — or drag the `.vsix` into VS Code and run **Developer: Reload Window**.
+1. Install Plainmark from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=tutivog.plainmark) — or drag the `.vsix` into VS Code and run **Developer: Reload Window**.
 2. Open any `.md` or `.markdown` file and click **Open in Plainmark** in the editor title bar — or press `Ctrl/Cmd+Shift+M`.
 3. Edit as you would in any WYSIWYG editor. The same shortcut toggles back to the plain-text editor at any time.
 

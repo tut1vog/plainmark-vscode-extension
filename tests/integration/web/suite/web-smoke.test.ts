@@ -6,7 +6,7 @@
 //      resolves without throwing and `isActive` becomes true.
 //   2. The console.error spy installed before activation captures zero
 //      calls — would have caught T19.13's cold-boot CSS-var race.
-//   3. `vscode.commands.executeCommand('vscode.openWith', uri, 'tut1vog.plainmark')`
+//   3. `vscode.commands.executeCommand('vscode.openWith', uri, 'tutivog.plainmark')`
 //      for a virtual `.md` URI does not throw and registers a TextDocument.
 
 // Browser bundle — Node's `assert` module isn't available; use a minimal
@@ -63,7 +63,7 @@ suite('Plainmark web smoke (T28.8) SHELL-A-5', () => {
     } else {
       uri = vscode.Uri.parse('untitled:smoke.md');
     }
-    await vscode.commands.executeCommand('vscode.openWith', uri, 'tut1vog.plainmark');
+    await vscode.commands.executeCommand('vscode.openWith', uri, 'tutivog.plainmark');
     // Give the webview a brief moment to settle before we ask about the doc.
     await new Promise((r) => setTimeout(r, 500));
     const docs = vscode.workspace.textDocuments;

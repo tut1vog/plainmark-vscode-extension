@@ -2,7 +2,7 @@
   "name": "plainmark",
   "displayName": "Plainmark",
   "description": "Free WYSIWYG Markdown editor with Obsidian-style live preview for VS Code Desktop and vscode.dev — rich-text editing for tables, math, diagrams, and callouts.",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "tutivog",
   "license": "MIT",
   "repository": {
@@ -55,7 +55,7 @@
   "contributes": {
     "customEditors": [
       {
-        "viewType": "tut1vog.plainmark",
+        "viewType": "tutivog.plainmark",
         "displayName": "Plainmark",
         "selector": [
           {
@@ -70,28 +70,28 @@
     ],
     "commands": [
       {
-        "command": "tut1vog.plainmark.noop_undo",
+        "command": "tutivog.plainmark.noop_undo",
         "title": "Plainmark: Undo (handled by webview CM6)"
       },
       {
-        "command": "tut1vog.plainmark.noop_redo",
+        "command": "tutivog.plainmark.noop_redo",
         "title": "Plainmark: Redo (handled by webview CM6)"
       },
       {
-        "command": "tut1vog.plainmark.insertTable",
+        "command": "tutivog.plainmark.insertTable",
         "title": "Plainmark: Insert table"
       },
       {
-        "command": "tut1vog.plainmark.insertFootnote",
+        "command": "tutivog.plainmark.insertFootnote",
         "title": "Plainmark: Insert footnote"
       },
       {
-        "command": "tut1vog.plainmark.openInTextEditor",
+        "command": "tutivog.plainmark.openInTextEditor",
         "title": "Plainmark: Open in Text Editor",
         "icon": "$(code)"
       },
       {
-        "command": "tut1vog.plainmark.openInPlainmark",
+        "command": "tutivog.plainmark.openInPlainmark",
         "title": "Plainmark: Open in Plainmark",
         "icon": {
           "light": "./media/plainmark-light.svg",
@@ -99,38 +99,38 @@
         }
       },
       {
-        "command": "tut1vog.plainmark.scrollToHeading",
+        "command": "tutivog.plainmark.scrollToHeading",
         "title": "Plainmark: Scroll to Heading"
       },
       {
-        "command": "tut1vog.plainmark.selectTheme",
+        "command": "tutivog.plainmark.selectTheme",
         "title": "Plainmark: Select Theme"
       }
     ],
     "views": {
       "explorer": [
         {
-          "id": "tut1vog.plainmark.outline",
+          "id": "tutivog.plainmark.outline",
           "name": "Plainmark Outline",
-          "when": "tut1vog.plainmark.editorIsActive"
+          "when": "tutivog.plainmark.editorIsActive"
         }
       ]
     },
     "menus": {
       "commandPalette": [
         {
-          "command": "tut1vog.plainmark.scrollToHeading",
+          "command": "tutivog.plainmark.scrollToHeading",
           "when": "false"
         }
       ],
       "editor/title": [
         {
-          "command": "tut1vog.plainmark.openInTextEditor",
-          "when": "activeCustomEditorId == 'tut1vog.plainmark'",
+          "command": "tutivog.plainmark.openInTextEditor",
+          "when": "activeCustomEditorId == 'tutivog.plainmark'",
           "group": "navigation"
         },
         {
-          "command": "tut1vog.plainmark.openInPlainmark",
+          "command": "tutivog.plainmark.openInPlainmark",
           "when": "(resourceExtname == .md || resourceExtname == .markdown) && activeCustomEditorId == ''",
           "group": "navigation"
         }
@@ -138,36 +138,36 @@
     },
     "keybindings": [
       {
-        "command": "tut1vog.plainmark.noop_undo",
+        "command": "tutivog.plainmark.noop_undo",
         "key": "ctrl+z",
         "mac": "cmd+z",
-        "when": "activeCustomEditorId == 'tut1vog.plainmark'"
+        "when": "activeCustomEditorId == 'tutivog.plainmark'"
       },
       {
-        "command": "tut1vog.plainmark.noop_redo",
+        "command": "tutivog.plainmark.noop_redo",
         "key": "ctrl+y",
         "mac": "cmd+shift+z",
-        "when": "activeCustomEditorId == 'tut1vog.plainmark'"
+        "when": "activeCustomEditorId == 'tutivog.plainmark'"
       },
       {
-        "command": "tut1vog.plainmark.noop_redo",
+        "command": "tutivog.plainmark.noop_redo",
         "key": "ctrl+shift+z",
-        "when": "activeCustomEditorId == 'tut1vog.plainmark' && !isMac"
+        "when": "activeCustomEditorId == 'tutivog.plainmark' && !isMac"
       },
       {
-        "command": "tut1vog.plainmark.insertFootnote",
+        "command": "tutivog.plainmark.insertFootnote",
         "key": "ctrl+shift+6",
         "mac": "cmd+shift+6",
-        "when": "activeCustomEditorId == 'tut1vog.plainmark'"
+        "when": "activeCustomEditorId == 'tutivog.plainmark'"
       },
       {
-        "command": "tut1vog.plainmark.openInTextEditor",
+        "command": "tutivog.plainmark.openInTextEditor",
         "key": "ctrl+shift+m",
         "mac": "cmd+shift+m",
-        "when": "tut1vog.plainmark.editorIsActive"
+        "when": "tutivog.plainmark.editorIsActive"
       },
       {
-        "command": "tut1vog.plainmark.openInPlainmark",
+        "command": "tutivog.plainmark.openInPlainmark",
         "key": "ctrl+shift+m",
         "mac": "cmd+shift+m",
         "when": "(resourceExtname == .md || resourceExtname == .markdown) && activeCustomEditorId == ''"

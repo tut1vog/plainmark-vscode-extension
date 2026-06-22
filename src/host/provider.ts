@@ -36,7 +36,7 @@ const init_log = create_logger('init');
 const widget_log = create_logger('widget');
 
 export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider {
-  static readonly viewType = 'tut1vog.plainmark';
+  static readonly viewType = 'tutivog.plainmark';
 
   private static active_panels = new Set<vscode.WebviewPanel>();
   private static last_active_panel: vscode.WebviewPanel | null = null;
@@ -89,7 +89,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
   private static set_editor_active_context(active: boolean): void {
     void vscode.commands.executeCommand(
       'setContext',
-      'tut1vog.plainmark.editorIsActive',
+      'tutivog.plainmark.editorIsActive',
       active,
     );
   }
@@ -117,21 +117,21 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     // if a user reports undo corruption, these logs prove whether the muzzle
     // intercepted the workbench path or it slipped through (e.g. the macOS
     // double-dispatch in vscode#241801).
-    const noop_undo = vscode.commands.registerCommand('tut1vog.plainmark.noop_undo', () => {
+    const noop_undo = vscode.commands.registerCommand('tutivog.plainmark.noop_undo', () => {
       sync_log.debug('noop_undo fired');
     });
-    const noop_redo = vscode.commands.registerCommand('tut1vog.plainmark.noop_redo', () => {
+    const noop_redo = vscode.commands.registerCommand('tutivog.plainmark.noop_redo', () => {
       sync_log.debug('noop_redo fired');
     });
     const insert_table = vscode.commands.registerCommand(
-      'tut1vog.plainmark.insertTable',
+      'tutivog.plainmark.insertTable',
       () => {
         const panel = PlainmarkEditorProvider.get_active_panel();
         void panel?.webview.postMessage({ type: 'insert_table' } satisfies HostToWebviewMessage);
       },
     );
     const insert_footnote = vscode.commands.registerCommand(
-      'tut1vog.plainmark.insertFootnote',
+      'tutivog.plainmark.insertFootnote',
       () => {
         const panel = PlainmarkEditorProvider.get_active_panel();
         void panel?.webview.postMessage({ type: 'insert_footnote' } satisfies HostToWebviewMessage);
@@ -145,7 +145,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     // destination first (so the document keeps a live view, no dirty-state
     // save prompt) then close the source tab via the Tab API.
     const open_in_text_editor = vscode.commands.registerCommand(
-      'tut1vog.plainmark.openInTextEditor',
+      'tutivog.plainmark.openInTextEditor',
       async (uri?: vscode.Uri) => {
         const panel = PlainmarkEditorProvider.get_active_panel();
         const target_uri =
@@ -184,7 +184,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       },
     );
     const open_in_plainmark = vscode.commands.registerCommand(
-      'tut1vog.plainmark.openInPlainmark',
+      'tutivog.plainmark.openInPlainmark',
       async (uri?: vscode.Uri) => {
         const text_editor = vscode.window.activeTextEditor;
         const editor_target = uri ?? text_editor?.document.uri;
@@ -226,7 +226,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       },
     );
     const select_theme = vscode.commands.registerCommand(
-      'tut1vog.plainmark.selectTheme',
+      'tutivog.plainmark.selectTheme',
       async () => {
         const config = vscode.workspace.getConfiguration('plainmark');
         const current = config.get<string>('theme', 'default');

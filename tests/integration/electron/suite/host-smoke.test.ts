@@ -39,7 +39,7 @@ async function with_temp_file<T>(fn: (uri: vscode.Uri) => Promise<T>): Promise<T
 }
 
 async function open_in_plainmark(uri: vscode.Uri): Promise<vscode.TextDocument> {
-  await vscode.commands.executeCommand('vscode.openWith', uri, 'tut1vog.plainmark');
+  await vscode.commands.executeCommand('vscode.openWith', uri, 'tutivog.plainmark');
   // The webview boots asynchronously; allow a short settle so the custom
   // editor's resolveCustomTextEditor has time to run before assertions.
   await new Promise((r) => setTimeout(r, 500));

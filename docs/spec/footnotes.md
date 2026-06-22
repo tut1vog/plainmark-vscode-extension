@@ -74,7 +74,7 @@ autocomplete and no rendered back-reference (`↩`) affordance.
 - **FN-I-9** — After `insert_footnote`, the caret MUST land at the end of the inserted definition stub (just past `[^N]: `) so the user can type the body immediately.
   _Example:_ run the command → caret sits after `[^2]: ` ready for the note text.
 
-- **FN-I-10** — Insertion MUST be reachable as the `tut1vog.plainmark.insertFootnote` command (declared in `package.json` `contributes.commands`), bound to `Ctrl+Shift+6` / `Cmd+Shift+6`; the host posts an `insert_footnote` message the webview dispatches to `insert_footnote(view)`. Footnotes intentionally provide NO `[^…` autocomplete affordance (the insert command is the editor affordance).
+- **FN-I-10** — Insertion MUST be reachable as the `tutivog.plainmark.insertFootnote` command (declared in `package.json` `contributes.commands`), bound to `Ctrl+Shift+6` / `Cmd+Shift+6`; the host posts an `insert_footnote` message the webview dispatches to `insert_footnote(view)`. Footnotes intentionally provide NO `[^…` autocomplete affordance (the insert command is the editor affordance).
   _Example:_ press `Cmd+Shift+6` → a new footnote reference + stub is inserted; typing `[^` shows no label completions.
 
 ## SP — Source-preservation

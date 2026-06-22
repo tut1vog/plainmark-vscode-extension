@@ -7,8 +7,8 @@ import {
   type RawSymbol,
 } from './outline_model.js';
 
-const OUTLINE_VIEW_ID = 'tut1vog.plainmark.outline';
-const SCROLL_TO_HEADING_COMMAND = 'tut1vog.plainmark.scrollToHeading';
+const OUTLINE_VIEW_ID = 'tutivog.plainmark.outline';
+const SCROLL_TO_HEADING_COMMAND = 'tutivog.plainmark.scrollToHeading';
 
 const TEXT_CHANGE_DEBOUNCE_MS = 200;
 
