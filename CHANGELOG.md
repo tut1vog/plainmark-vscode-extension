@@ -4,6 +4,15 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-06-22
+
+### Fixed
+
+- **Backslash escapes in table cells** — an escape such as `\$`, `\*`, or `\#`
+  in a table cell now renders as the literal character (`$`, `*`, `#`) instead
+  of showing the backslash. Table cell content is treated as Markdown, matching
+  the rest of the editor, and editing the table preserves the escape.
+
 ## [1.0.1] - 2026-06-22
 
 ### Added
