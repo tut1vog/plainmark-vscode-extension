@@ -3,7 +3,7 @@
   "displayName": "Plainmark",
   "description": "Free WYSIWYG Markdown editor with Obsidian-style live preview for VS Code Desktop and vscode.dev — rich-text editing for tables, math, diagrams, and callouts.",
   "version": "0.0.1",
-  "publisher": "tut1vog",
+  "publisher": "tutivog",
   "license": "MIT",
   "repository": {
     "type": "git",

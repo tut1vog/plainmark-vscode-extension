@@ -2,7 +2,7 @@
 // workbench's extension host; the `vscode` import is the live web API.
 //
 // Three assertions:
-//   1. `vscode.extensions.getExtension('tut1vog.plainmark').activate()`
+//   1. `vscode.extensions.getExtension('tutivog.plainmark').activate()`
 //      resolves without throwing and `isActive` becomes true.
 //   2. The console.error spy installed before activation captures zero
 //      calls — would have caught T19.13's cold-boot CSS-var race.
@@ -37,7 +37,7 @@ console.error = (...args: unknown[]) => {
 
 suite('Plainmark web smoke (T28.8) SHELL-A-5', () => {
   test('extension activates without throwing', async () => {
-    const ext = vscode.extensions.getExtension('tut1vog.plainmark');
+    const ext = vscode.extensions.getExtension('tutivog.plainmark');
     ok(ext, 'extension not registered');
     await ext.activate();
     strict_equal(ext.isActive, true, 'extension did not become active');
