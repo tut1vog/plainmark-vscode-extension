@@ -51,6 +51,7 @@ function current_theme_name(): string {
   const fixed = typeof window !== 'undefined' ? window.__plainmark_theme : undefined;
   if (fixed === 'github-dark') return 'dark';
   if (fixed === 'github-light') return 'light';
+  if (fixed === 'claudify') return 'light';
   if (typeof document === 'undefined') return 'light';
   const cls = document.body.classList;
   return cls.contains('vscode-dark') || cls.contains('vscode-high-contrast')

@@ -27,13 +27,14 @@ Accepted path forms: workspace-relative (`./.vscode/plainmark.css`), absolute, o
 
 ## Built-in themes
 
-Plainmark ships two fixed-palette themes alongside the adaptive default. Run **Plainmark: Select Theme** from the command palette, or set `plainmark.theme`:
+Plainmark ships three fixed-palette themes alongside the adaptive default. Run **Plainmark: Select Theme** from the command palette, or set `plainmark.theme`:
 
 | Theme | Setting value | Appearance |
 | --- | --- | --- |
 | Default | `default` | Adapts to the active VS Code color theme |
 | GitHub Light | `github-light` | GitHub's light palette (Primer Light default), regardless of the VS Code color theme |
 | GitHub Dark | `github-dark` | GitHub's dark palette (Primer Dark default), regardless of the VS Code color theme |
+| Claudify | `claudify` | Anthropic-inspired warm cream page with a terracotta accent and serif headings, regardless of the VS Code color theme |
 
 The picker writes `plainmark.theme` to your **user settings**, so one pick applies across all folders; set it in a workspace's `.vscode/settings.json` to override per-workspace. A theme is a bundle of `--plainmark-*` values injected between the built-in defaults and your `plainmark.styles` files — your CSS still overrides the theme, variable by variable.
 

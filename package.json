@@ -181,12 +181,14 @@
           "enum": [
             "default",
             "github-light",
-            "github-dark"
+            "github-dark",
+            "claudify"
           ],
           "enumDescriptions": [
             "Adapts to the active VS Code color theme",
             "GitHub light palette, regardless of the VS Code color theme",
-            "GitHub dark palette, regardless of the VS Code color theme"
+            "GitHub dark palette, regardless of the VS Code color theme",
+            "Anthropic-inspired warm cream and terracotta palette, regardless of the VS Code color theme"
           ],
           "scope": "window",
           "default": "default",

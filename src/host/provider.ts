@@ -234,6 +234,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
           { label: 'Default', detail: 'Adapts to the VS Code color theme', value: 'default' },
           { label: 'GitHub Light', value: 'github-light' },
           { label: 'GitHub Dark', value: 'github-dark' },
+          {
+            label: 'Claudify',
+            detail: 'Anthropic-inspired warm cream and terracotta palette',
+            value: 'claudify',
+          },
         ];
         for (const item of items) {
           if (item.value === current) item.description = 'current';

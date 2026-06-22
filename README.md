@@ -63,7 +63,7 @@ In-table editing shortcuts (insert/move/delete rows and columns, alignment) are 
 
 | Setting | Description |
 | --- | --- |
-| `plainmark.theme` | `default` (follows your VS Code theme), `github-light`, or `github-dark`. |
+| `plainmark.theme` | `default` (follows your VS Code theme), `github-light`, `github-dark`, or `claudify` (Anthropic-inspired warm cream palette). |
 | `plainmark.styles` | Your own CSS files to style the preview. See the [theming guide](./docs/theming-guide.md). |
 | `plainmark.tableKeybindings` | Customize the in-table structural-editing shortcuts. |
 | `plainmark.imagePasteLocation` | Folder for pasted images (default `.`, next to the document); supports `${documentWorkspaceFolder}` and `${documentBaseName}`. |

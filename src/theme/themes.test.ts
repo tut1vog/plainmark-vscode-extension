@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CLAUDIFY_CSS } from './claudify.js';
 import { GITHUB_DARK_CSS } from './github_dark.js';
 import { GITHUB_LIGHT_CSS } from './github_light.js';
 import { normalize_theme_id, theme_css_for } from './themes.js';
@@ -19,9 +20,10 @@ const SYNTAX_TOKENS = [
 ] as const;
 
 describe('normalize_theme_id', () => {
-  it('passes through the two github theme ids', () => {
+  it('passes through the fixed-palette theme ids', () => {
     expect(normalize_theme_id('github-light')).toBe('github-light');
     expect(normalize_theme_id('github-dark')).toBe('github-dark');
+    expect(normalize_theme_id('claudify')).toBe('claudify');
   });
 
   it('normalizes unknown or missing values to default', () => {
@@ -33,9 +35,10 @@ describe('normalize_theme_id', () => {
 });
 
 describe('theme_css_for', () => {
-  it('maps github-light / github-dark to their CSS blocks', () => {
+  it('maps each fixed theme id to its CSS block', () => {
     expect(theme_css_for('github-light')).toBe(GITHUB_LIGHT_CSS);
     expect(theme_css_for('github-dark')).toBe(GITHUB_DARK_CSS);
+    expect(theme_css_for('claudify')).toBe(CLAUDIFY_CSS);
   });
 
   it('returns an empty block for the adaptive default', () => {
@@ -54,6 +57,7 @@ describe('theme_css_for', () => {
 describe.each([
   ['GITHUB_LIGHT_CSS', GITHUB_LIGHT_CSS],
   ['GITHUB_DARK_CSS', GITHUB_DARK_CSS],
+  ['CLAUDIFY_CSS', CLAUDIFY_CSS],
 ])('%s integrity THEME-D-6', (_name, css) => {
   it('is a string, not a backtick-broken comparison expression', () => {
     expect(typeof css).toBe('string');
@@ -97,5 +101,23 @@ describe('theme palette divergence', () => {
     expect(GITHUB_DARK_CSS).toContain('--plainmark-editor-background: #0d1117');
     expect(GITHUB_LIGHT_CSS).toContain('--plainmark-editor-foreground: #1f2328');
     expect(GITHUB_DARK_CSS).toContain('--plainmark-editor-foreground: #f0f6fc');
+  });
+});
+
+describe('claudify palette', () => {
+  it('paints the warm cream page with slate ink', () => {
+    expect(CLAUDIFY_CSS).toContain('--plainmark-editor-background: #f0eee6');
+    expect(CLAUDIFY_CSS).toContain('--plainmark-editor-foreground: #141413');
+  });
+
+  it('drives interactive surfaces with the terracotta accent', () => {
+    expect(CLAUDIFY_CSS).toContain('--plainmark-link-color: #b5420c');
+    expect(CLAUDIFY_CSS).toContain('--plainmark-cursor-color: #cc785c');
+    expect(CLAUDIFY_CSS).toContain('--plainmark-footnote-marker-color: #b5420c');
+  });
+
+  it('sets a serif heading stack over a system sans body', () => {
+    expect(CLAUDIFY_CSS).toMatch(/--plainmark-heading-font-family:[^;]*serif;/);
+    expect(CLAUDIFY_CSS).toContain('--plainmark-font-text: system-ui');
   });
 });
