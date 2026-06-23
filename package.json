@@ -17,11 +17,13 @@
   "keywords": [
     "markdown",
     "wysiwyg",
-    "live preview",
-    "rich text",
-    "editor",
     "obsidian",
-    "web"
+    "live preview",
+    "latex",
+    "mermaid",
+    "math",
+    "notes",
+    "rich text"
   ],
   "galleryBanner": {
     "color": "#1f2428",
@@ -35,7 +37,8 @@
   "packageManager": "pnpm@11.0.9",
   "type": "module",
   "categories": [
-    "Formatters",
+    "Visualization",
+    "Programming Languages",
     "Other"
   ],
   "main": "./dist/extension.cjs",
