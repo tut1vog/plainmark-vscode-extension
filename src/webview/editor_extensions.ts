@@ -25,7 +25,7 @@ import {
   code_block_extension,
   plainmark_highlight_style,
 } from './decorations/code_block.js';
-import { codeblock_tab_insert } from './decorations/codeblock_tab.js';
+import { codeblock_tab_dedent, codeblock_tab_indent } from './decorations/codeblock_tab.js';
 import { escapes_extension } from './decorations/escapes.js';
 import {
   footnote_decorations_plugin,
@@ -70,8 +70,8 @@ import { table_undo_rebase } from './widgets/table_undo_rebase.js';
 // extensions inside the cell subview as in the main editor.
 const editor_extensions_core: Extension[] = [
   history(),
-  // 4-space indent unit (Obsidian-aligned), used by indentWithTab and the code-block caret indent. LIST-I-11 / CBLK-I-13.
-  indentUnit.of('    '),
+  // 2-space indent unit keeps a Tab-indented prose line below the 4-space code-block threshold; fenced code overrides with 4. LIST-I-11 / CBLK-I-13.
+  indentUnit.of('  '),
   // Required for deterministic caret rendering adjacent to block-replace widgets — native selection is browser-dependent inside such widgets per Marijn at discuss.codemirror.net/t/3239.
   drawSelection(),
   // Replaces drawSelection's selection rectangles with per-visual-row ones
@@ -193,7 +193,7 @@ const editor_extensions_core: Extension[] = [
   Prec.highest(
     keymap.of([
       { key: 'Tab', run: accept_latex_completion_on_tab },
-      { key: 'Tab', run: codeblock_tab_insert },
+      { key: 'Tab', run: codeblock_tab_indent, shift: codeblock_tab_dedent },
       { key: 'Enter', run: blockquote_empty_line_outdent },
       { key: 'Enter', run: block_delimiter_autoclose },
       { key: 'Backspace', run: blockquote_plain_backspace },
