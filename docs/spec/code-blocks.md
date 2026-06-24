@@ -111,7 +111,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
   _Example:_ ` ``|\n``` ` → type ``` ` ``` → ` ```|\n``` ` (no second closer). ` ``|\n~~~ ` → type ``` ` ``` → still fires (different fence char).
 
 - **CBLK-I-13** — Inside a `FencedCode` node, pressing Tab with a single empty selection MUST insert one indent unit (the `indentUnit` facet value) at the caret — not at the line start — and advance the caret past it; this is the sole code-block exception to CBLK-I-9. With a non-empty or multi-range selection, or anywhere outside a fenced code block, Tab MUST fall through to the editor-wide whole-line indent (`indentWithTab` → `indentMore`) and Shift-Tab to `indentLess`. Indented (non-fenced) code blocks are unaffected.
-  _Example:_ caret at `let x|=1` inside a code fence → Tab → `let x  |=1` (indent unit at the caret, not the line start).
+  _Example:_ caret at `let x|=1` inside a code fence → Tab → `let x    |=1` (indent unit at the caret, not the line start).
 
 ## SP · Source preservation
 

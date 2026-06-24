@@ -89,7 +89,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **LIST-I-10** — The empty-bullet Backspace MUST be bound at `Prec.highest` so it beats `markdownKeymap`'s `deleteMarkupBackward` (which outdents a nested item instead of removing it). On a non-empty item where it declines, `deleteMarkupBackward` provides the markdown-aware outdent/marker-delete fallback.
   _Example:_ `  - |` + Backspace → marker removed (not merely outdented to `- `).
 
-- **LIST-I-11** `[accepted]` — Tab/Shift-Tab indent is the generic `indentWithTab` command, NOT a list-grammar-aware indent: there is no list-specific Tab handler. Indenting/outdenting a sub-list relies on `indentWithTab` plus the markdown indent units the language registers.
+- **LIST-I-11** `[accepted]` — Tab/Shift-Tab indent is the generic `indentWithTab` command, NOT a list-grammar-aware indent: there is no list-specific Tab handler. Indenting/outdenting a sub-list relies on `indentWithTab` plus the editor's indent unit, set to four spaces (`indentUnit` = `'    '`, Obsidian-aligned); the same unit feeds the code-block caret indent (CBLK-I-13).
   _Example:_ `- a|` + Tab → generic editor indent at the caret line.
 
 - **LIST-I-12** `[accepted]` — No list-toggle command (e.g. `Mod-Shift-L` to wrap a selection in `- `) and no keyboard checkbox toggle ship; the checkbox is mouse-only and other list operations use the editor's default key handling.

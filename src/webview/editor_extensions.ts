@@ -1,6 +1,6 @@
 import { autocompletion } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab, redo } from '@codemirror/commands';
-import { syntaxHighlighting } from '@codemirror/language';
+import { indentUnit, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { markdown } from '@codemirror/lang-markdown';
 import { GFM } from '@lezer/markdown';
@@ -70,6 +70,8 @@ import { table_undo_rebase } from './widgets/table_undo_rebase.js';
 // extensions inside the cell subview as in the main editor.
 const editor_extensions_core: Extension[] = [
   history(),
+  // 4-space indent unit (Obsidian-aligned), used by indentWithTab and the code-block caret indent. LIST-I-11 / CBLK-I-13.
+  indentUnit.of('    '),
   // Required for deterministic caret rendering adjacent to block-replace widgets — native selection is browser-dependent inside such widgets per Marijn at discuss.codemirror.net/t/3239.
   drawSelection(),
   // Replaces drawSelection's selection rectangles with per-visual-row ones

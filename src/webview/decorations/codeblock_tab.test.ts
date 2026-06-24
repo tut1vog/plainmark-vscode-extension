@@ -1,4 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
+import { indentUnit } from '@codemirror/language';
 import { EditorState, type TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
@@ -15,7 +16,7 @@ interface FakeView {
 function make_view(initial_doc: string, anchor: number, head?: number): FakeView {
   let state = EditorState.create({
     doc: initial_doc,
-    extensions: [markdown({ extensions: [GFM] })],
+    extensions: [markdown({ extensions: [GFM] }), indentUnit.of('    ')],
     selection: { anchor, head: head ?? anchor },
   });
   const applied: TransactionSpec[] = [];
@@ -42,8 +43,8 @@ describe('codeblock_tab_insert — Tab caret-indent in fenced code CBLK-I-13', (
     const { view, applied, doc, head } = make_view('```js\nfoo\n```', 7);
     expect(codeblock_tab_insert(view)).toBe(true);
     expect(applied).toHaveLength(1);
-    expect(doc()).toBe('```js\nf  oo\n```');
-    expect(head()).toBe(9);
+    expect(doc()).toBe('```js\nf    oo\n```');
+    expect(head()).toBe(11);
   });
 
   it('(b) declines in a plain prose paragraph so Tab falls through to whole-line indent', () => {
