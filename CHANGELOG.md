@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Click a rendered equation to select its LaTeX** — single-clicking a
+  rendered inline (`$…$`) or block (`$$…$$`) equation now reveals its source
+  with the inner LaTeX already selected (the `$`/`$$` delimiters excluded), so
+  copying a formula takes one click instead of click-and-drag.
+
 ### Changed
 
 - **Tab indentation in code blocks** — inside a fenced code block, Tab now
