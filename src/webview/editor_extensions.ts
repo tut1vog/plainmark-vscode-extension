@@ -56,6 +56,7 @@ import { math_extension as math_grammar_extension } from './grammar/math.js';
 import { image_extension } from './widgets/image.js';
 import { accept_latex_completion_on_tab, latex_completions } from './widgets/latex_autocomplete.js';
 import { math_extension } from './widgets/math.js';
+import { math_click_select } from './widgets/math_click_select.js';
 import { math_preview_extension } from './widgets/math_preview.js';
 import { mermaid_extension } from './widgets/mermaid.js';
 import { table_completions } from './widgets/table_autocomplete.js';
@@ -211,6 +212,9 @@ const editor_extensions_core: Extension[] = [
   // Triple-click line selection ends at line.to (no trailing newline), keeping
   // the caret at the line's end instead of CM6's default next-line-start.
   triple_click_select_line,
+  // A plain single-click on a rendered math widget selects its inner LaTeX (sans
+  // `$`/`$$`) so it is ready to copy; same mouseSelectionStyle hook as above.
+  math_click_select,
   markdown({
     codeLanguages: languages,
     extensions: [GFM, math_grammar_extension, footnote_grammar_extension, frontmatter_grammar_extension],

@@ -6,7 +6,7 @@ import {
   StateEffect,
   StateField,
 } from '@codemirror/state';
-import { ranges_overlap } from '../ranges.js';
+import { type OffsetRange, ranges_overlap } from '../ranges.js';
 import {
   Decoration,
   type DecorationSet,
@@ -282,14 +282,32 @@ export interface MathInfo {
   to: number;
 }
 
+// The document range of the inner TeX of a block `$$…$$`: the leading `$$\n` and
+// trailing `\n$$` markers stripped, so the range is exactly what gets typeset.
+export function block_math_content_range(
+  state: EditorState,
+  from: number,
+  to: number,
+): OffsetRange {
+  const raw = state.doc.sliceString(from, to);
+  const lead = raw.match(/^\$\$\s*\n?/)?.[0].length ?? 0;
+  const trail = raw.match(/\n?\$\$\s*$/)?.[0].length ?? 0;
+  const content_from = from + lead;
+  return { from: content_from, to: Math.max(content_from, to - trail) };
+}
+
 export function find_block_math_source(
   state: EditorState,
   from: number,
   to: number,
 ): string {
-  // Strip the leading `$$\n` and trailing `\n$$` markers; the inner text is the TeX source.
-  const raw = state.doc.sliceString(from, to);
-  return raw.replace(/^\$\$\s*\n?/, '').replace(/\n?\$\$\s*$/, '');
+  const r = block_math_content_range(state, from, to);
+  return state.doc.sliceString(r.from, r.to);
+}
+
+// Inline math range covers both dollar marks; the inner TeX is one `$` in from each end.
+export function inline_math_content_range(from: number, to: number): OffsetRange {
+  return { from: from + 1, to: to - 1 };
 }
 
 export function find_inline_math_source(
@@ -297,8 +315,8 @@ export function find_inline_math_source(
   from: number,
   to: number,
 ): string {
-  // Inline math range covers both dollar marks; strip a single `$` from each end.
-  return state.doc.sliceString(from + 1, to - 1);
+  const r = inline_math_content_range(from, to);
+  return state.doc.sliceString(r.from, r.to);
 }
 
 function build_decorations(state: EditorState): {
