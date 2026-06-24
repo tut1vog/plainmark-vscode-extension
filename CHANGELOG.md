@@ -4,6 +4,16 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Tab indentation in code blocks** — inside a fenced code block, Tab now
+  inserts a four-space indent at the cursor (and indents each selected line),
+  Shift-Tab removes four spaces, and Backspace deletes a single space, so a
+  code block behaves like a code editor. Outside code blocks, Tab still
+  indents the whole line by two spaces.
+
 ## [1.0.3] - 2026-06-23
 
 ### Changed
