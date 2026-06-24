@@ -98,7 +98,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-I-8** — Backspace on the empty content line of a three-line fully-closed empty block (opener / blank / closer) MUST delete the whole block — opener and closer together — rather than orphaning the closing fence. The match requires the previous line to parse as an opening fence and the next line to be a closing fence of the same char and ≥ length.
   _Example:_ ` ```ts\n|\n``` ` → Backspace → empty document (the whole block is removed in one edit).
 
-- **CBLK-I-9** — Editing inside a code block's body MUST behave as ordinary text editing: typing, deletion, and caret motion operate directly on the source bytes with no construct-specific keymap beyond the Enter/Backspace block affordances above. There is no copy button, no language picker, and no per-block soft-wrap toggle.
+- **CBLK-I-9** — Editing inside a code block's body MUST behave as ordinary text editing: typing, deletion, and caret motion operate directly on the source bytes with no construct-specific keymap beyond the Enter/Backspace block affordances above and the Tab caret-indent affordance (CBLK-I-13). There is no copy button, no language picker, and no per-block soft-wrap toggle.
   _Example:_ `f|oo` inside a body line → type `x` → `fx|oo`, byte inserted literally.
 
 - **CBLK-I-10** `[accepted]` — A copy button on code blocks is NOT shipped in v1. Adding one (widget + clipboard handler + caret-trap defense + focus management) is deferred to a post-MVP task.
@@ -109,6 +109,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 - **CBLK-I-12** — The CBLK-I-11 auto-pair MUST be suppressed when the immediate next line is already a matching closing fence (same fence char, run length ≥ the opener's); the keystroke then inserts the lone fence char with no closer, so adding a fence above existing code does not orphan a duplicate. Only the immediate next line is consulted — a closer further down does not suppress (the accepted heuristic boundary; the wider case is the papercut Obsidian itself ships).
   _Example:_ ` ``|\n``` ` → type ``` ` ``` → ` ```|\n``` ` (no second closer). ` ``|\n~~~ ` → type ``` ` ``` → still fires (different fence char).
+
+- **CBLK-I-13** — Inside a `FencedCode` node, pressing Tab with a single empty selection MUST insert one indent unit (the `indentUnit` facet value) at the caret — not at the line start — and advance the caret past it; this is the sole code-block exception to CBLK-I-9. With a non-empty or multi-range selection, or anywhere outside a fenced code block, Tab MUST fall through to the editor-wide whole-line indent (`indentWithTab` → `indentMore`) and Shift-Tab to `indentLess`. Indented (non-fenced) code blocks are unaffected.
+  _Example:_ caret at `let x|=1` inside a code fence → Tab → `let x  |=1` (indent unit at the caret, not the line start).
 
 ## SP · Source preservation
 

@@ -25,6 +25,7 @@ import {
   code_block_extension,
   plainmark_highlight_style,
 } from './decorations/code_block.js';
+import { codeblock_tab_insert } from './decorations/codeblock_tab.js';
 import { escapes_extension } from './decorations/escapes.js';
 import {
   footnote_decorations_plugin,
@@ -190,6 +191,7 @@ const editor_extensions_core: Extension[] = [
   Prec.highest(
     keymap.of([
       { key: 'Tab', run: accept_latex_completion_on_tab },
+      { key: 'Tab', run: codeblock_tab_insert },
       { key: 'Enter', run: blockquote_empty_line_outdent },
       { key: 'Enter', run: block_delimiter_autoclose },
       { key: 'Backspace', run: blockquote_plain_backspace },
