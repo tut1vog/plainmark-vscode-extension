@@ -98,7 +98,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-I-8** — Backspace on the empty content line of a three-line fully-closed empty block (opener / blank / closer) MUST delete the whole block — opener and closer together — rather than orphaning the closing fence. The match requires the previous line to parse as an opening fence and the next line to be a closing fence of the same char and ≥ length.
   _Example:_ ` ```ts\n|\n``` ` → Backspace → empty document (the whole block is removed in one edit).
 
-- **CBLK-I-9** — Editing inside a code block's body MUST behave as ordinary text editing: typing, deletion, and caret motion operate directly on the source bytes with no construct-specific keymap beyond the Enter/Backspace block affordances above and the Tab caret-indent affordance (CBLK-I-13). There is no copy button, no language picker, and no per-block soft-wrap toggle.
+- **CBLK-I-9** — Editing inside a code block's body MUST behave as ordinary text editing: typing, deletion, and caret motion operate directly on the source bytes with no construct-specific keymap beyond the Enter/Backspace block affordances above and the Tab/Backspace code-indent affordances (CBLK-I-13, CBLK-I-14). There is no copy button, no language picker, and no per-block soft-wrap toggle.
   _Example:_ `f|oo` inside a body line → type `x` → `fx|oo`, byte inserted literally.
 
 - **CBLK-I-10** `[accepted]` — A copy button on code blocks is NOT shipped in v1. Adding one (widget + clipboard handler + caret-trap defense + focus management) is deferred to a post-MVP task.
@@ -112,6 +112,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 - **CBLK-I-13** — Inside a `FencedCode` node, Tab MUST indent by four spaces and Shift-Tab MUST strip up to four leading spaces, independent of the editor's 2-space `indentUnit` (LIST-I-11). With an empty selection Tab inserts four spaces at the caret — not the line start — and advances the caret past them; with a selection Tab prepends four spaces to each selected line and Shift-Tab removes up to four leading spaces from each. This is the sole code-block exception to CBLK-I-9. Outside a fenced code block, or for a multi-range selection, Tab/Shift-Tab fall through to the editor-wide whole-line indent (`indentWithTab` → `indentMore`/`indentLess`). Indented (non-fenced) code blocks are unaffected.
   _Example:_ caret at `let x|=1` inside a code fence → Tab → `let x    |=1` (four spaces at the caret, not the line start).
+
+- **CBLK-I-14** — Inside a `FencedCode` node, Backspace with a collapsed caret MUST delete exactly one character (`deleteCharBackwardStrict`), never a whole indent unit. CM6's default `deleteCharBackward` deletes back to the previous `indentUnit` tab stop when the caret is in leading whitespace, which after the four-space code indent (CBLK-I-13) strips two spaces per press; the strict delete keeps code backspacing predictable. The empty-block delete (CBLK-I-8) still takes precedence on a truly empty block body; elsewhere Backspace keeps the editor default.
+  _Example:_ four-space indent inside a code fence, caret after the spaces → Backspace → three spaces (one removed, not a 2-space indent unit).
 
 ## SP · Source preservation
 

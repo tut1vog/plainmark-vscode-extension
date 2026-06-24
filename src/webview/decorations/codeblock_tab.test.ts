@@ -4,7 +4,7 @@ import { EditorState, type TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
-import { codeblock_tab_dedent, codeblock_tab_indent } from './codeblock_tab.js';
+import { codeblock_backspace, codeblock_tab_dedent, codeblock_tab_indent } from './codeblock_tab.js';
 
 interface FakeView {
   view: EditorView;
@@ -77,6 +77,28 @@ describe('codeblock_tab — 4-space Tab/Shift-Tab in fenced code CBLK-I-13', () 
   it('(f) Tab declines inside an indented (non-fenced) code block', () => {
     const { view, applied } = make_view('    foo', 5);
     expect(codeblock_tab_indent(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+});
+
+describe('codeblock_backspace — strict single-char Backspace in fenced code CBLK-I-14', () => {
+  it('(a) removes exactly one space in fenced-code leading whitespace', () => {
+    // ```js\n    |code\n``` — caret after the four-space indent
+    const { view, doc, head } = make_view('```js\n    code\n```', 10);
+    expect(codeblock_backspace(view)).toBe(true);
+    expect(doc()).toBe('```js\n   code\n```');
+    expect(head()).toBe(9);
+  });
+
+  it('(b) declines in a plain prose paragraph (default Backspace handles it)', () => {
+    const { view, applied } = make_view('hello', 3);
+    expect(codeblock_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(c) declines on a non-empty selection', () => {
+    const { view, applied } = make_view('```js\n    code\n```', 6, 10);
+    expect(codeblock_backspace(view)).toBe(false);
     expect(applied).toHaveLength(0);
   });
 });

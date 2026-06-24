@@ -25,7 +25,11 @@ import {
   code_block_extension,
   plainmark_highlight_style,
 } from './decorations/code_block.js';
-import { codeblock_tab_dedent, codeblock_tab_indent } from './decorations/codeblock_tab.js';
+import {
+  codeblock_backspace,
+  codeblock_tab_dedent,
+  codeblock_tab_indent,
+} from './decorations/codeblock_tab.js';
 import { escapes_extension } from './decorations/escapes.js';
 import {
   footnote_decorations_plugin,
@@ -200,6 +204,7 @@ const editor_extensions_core: Extension[] = [
       { key: 'Backspace', run: list_empty_bullet_backspace },
       { key: 'Backspace', run: list_dangling_indent_backspace },
       { key: 'Backspace', run: block_empty_backspace },
+      { key: 'Backspace', run: codeblock_backspace },
       { key: 'Backspace', run: marker_aware_backspace },
       { key: 'Backspace', run: lazy_continuation_backspace },
     ]),

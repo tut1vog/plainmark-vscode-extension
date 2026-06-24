@@ -1,3 +1,4 @@
+import { deleteCharBackwardStrict } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
 import { Transaction, type ChangeSpec, type EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
@@ -76,4 +77,12 @@ export const codeblock_tab_dedent: Command = (view) => {
     });
   }
   return true;
+};
+
+// In fenced code, force a strict single-char Backspace — CM6's default strips a whole indent unit in leading whitespace. CBLK-I-14.
+export const codeblock_backspace: Command = (view) => {
+  const { main } = view.state.selection;
+  if (!main.empty) return false;
+  if (!in_fenced_code(view.state, main.head)) return false;
+  return deleteCharBackwardStrict(view);
 };
