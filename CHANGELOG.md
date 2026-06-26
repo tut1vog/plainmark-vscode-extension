@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Double-click selects only the word** — double-clicking emphasized text (bold, italic — including underscore `_italic_` — and strikethrough), inline code, a link label, or an autolink now selects just the word and leaves the surrounding formatting markers (`**`, `*`, `_`, `~~`, backticks, brackets) out of the selection. Dragging across the text still pulls the markers in, so a drag-select continues to copy the full Markdown source.
+
 ## [1.1.0] - 2026-06-24
 
 ### Added
