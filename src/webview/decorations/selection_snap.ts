@@ -36,7 +36,7 @@ function snap_rules(
   const left_before_content = range.from < content_start;
   const right_after_content = range.to > content_end;
 
-  // Rule C — exact content-area cover (e.g., double-click `bold` inside
+  // Rule C — exact content-area cover (e.g., a drag selecting exactly `bold` inside
   // `**bold**`). Snap to the whole construct so a copy yields the
   // markdown source. Strict-inside selections (`ld` inside `bold`)
   // deliberately do NOT snap — the user's range is narrower than the

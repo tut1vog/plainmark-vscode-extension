@@ -85,18 +85,18 @@ On mouseup, snapping a selection that sits in a construct's content area outward
 to the construct's node bounds, so that a copy yields the markdown source rather
 than a fragment with hidden markers stripped. Computed by `compute_marker_snap`
 and dispatched in the SAME transaction as the pointer-latch
-clear. Section code `S`.
+clear. A double-click is excluded (MRS-S-10): only drag gestures snap. Section code `S`.
 
 - **MRS-S-1** — Snap MUST apply to the emphasis family, inline code, inline links, and autolinks (`StrongEmphasis`, `Emphasis`, `Strikethrough`, `InlineCode`, `Link`, `Autolink`). For the symmetric constructs (emphasis family, inline code, autolink) the content area lies between the node's first and last child marks. For an inline `Link` the content area is the LABEL (between the first `[` and `]`) while the snap target is the full node `[node.from, node.to)` including `(url)`; the link node MUST be well-formed (≥4 `LinkMark`s, opening `[` at `node.from`, closing `)` at `node.to`) or it does not qualify.
   _Example:_ a non-empty selection inside `**bold**`, `<http://x>`, or the label of `[lbl](http://x)` qualifies; a degenerate node with missing marks does not.
 - **MRS-S-2** — Rule C: a non-empty selection whose endpoints exactly cover the content area (`range.from == content_start && range.to == content_end`) MUST snap to the node's outer bounds `[node.from, node.to)`, unless the selection already equals those bounds (in which case it MUST NOT snap).
-  _Example:_ double-click `bold` inside `**bold**` selects the content → snaps to cover `**bold**`.
+  _Example:_ drag-select exactly `bold` inside `**bold**` → snaps to cover `**bold**`.
 - **MRS-S-3** — Rule A: a selection whose left edge is at content start and whose right edge extends past the closing marker MUST snap its left edge outward to `node.from`, keeping the right edge. Rule B is the mirror for the closing side.
   _Example:_ left edge at `**|bold**`'s content start, dragged right past the `**` → left snaps to include the opening `**`.
 - **MRS-S-4** — A strict-inside selection (narrower than the content area on at least one side without sitting at the opposite boundary in a Rule-A/B configuration) MUST NOT snap; the user's narrower range is preserved.
   _Example:_ selecting `ld` inside `**bold**` → no snap (markers still reveal via MRS-R-4).
 - **MRS-S-5** — Snap MUST preserve the user's drag direction: a left-to-right drag (`anchor <= head`) yields `anchor=from, head=to`; a right-to-left drag yields the mirror.
-  _Example:_ right-to-left double-click of `it` in `*it*` → snapped `anchor=node.to, head=node.from`.
+  _Example:_ right-to-left drag of `it` in `*it*` → snapped `anchor=node.to, head=node.from`.
 - **MRS-S-6** — In a multi-range selection, snap MUST be computed per range independently, snapping only the qualifying ranges and leaving the rest, and MUST return no change (null) when no range qualifies.
   _Example:_ two cursors, one inside `**a**` and one in plain text → only the first snaps.
 - **MRS-S-7** — Snap MUST preserve the selection's main-range index.
@@ -105,6 +105,8 @@ clear. Section code `S`.
   _Example:_ selecting part of a bare `http://example.com` → no snap.
 - **MRS-S-9** `[inherits:INV-SP-1]` — Snap is a selection-only transform and MUST dispatch no `changes`; document bytes are never modified.
   _Example:_ snapping from `bold` to `**bold**` moves the selection only; source unchanged.
+- **MRS-S-10** `[smoke]` — A double-click (`event.detail === 2`) MUST NOT snap, even when its word selection exactly covers a construct's content area (the Rule-C geometry of MRS-S-2): the selection is left on the word, so a double-click selects the rendered text WITHOUT its surrounding markers. Drag gestures (`detail !== 2`) still snap via Rules A–C. The markers still reveal (MRS-R-4) because the selection lies inside the node — shown but unselected — so a double-click-then-copy yields the bare word, not the marked-up source.
+  _Example:_ double-click `bold` inside `**bold**` → selection stays `bold`; the `**` reveal but are not selected, so a copy yields `bold`, not `**bold**`.
 
 ## L — Triple-click line selection
 

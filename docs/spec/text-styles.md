@@ -76,14 +76,14 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **EMPH-I-6** — Typing `*`, `~`, or `$` over a non-empty selection MUST wrap the selection with that character on both sides (one transaction) and keep the wrapped text selected, so a repeated press nests the markers; an empty selection MUST fall through to a plain insert. (Handled by `wrap_selection_input`, an `EditorView.inputHandler`; the full wrap delimiter set — including the `[ ] ( ) { }` bracket pairs — is defined by MRS-W-1. `` ` `` belongs to inline code; `$` to math. There is no dedicated emphasis keybinding such as Mod-B.)
   _Example:_ select `x` → press `*` → `*x*` (still selected) → press `*` → `**x**` (bold).
 
-- **EMPH-I-7** — On mouseup, a non-empty selection inside the content area of an emphasis-family node MUST snap to the node's outer bounds so the syntax markers join the selection (combined with EMPH-I-3 the snapped boundary reveals). Three explicit rules in `compute_marker_snap`: Rule C — content-area exact cover (`range.from == content_start && range.to == content_end`) snaps to `[node.from, node.to)` unless already equal; Rule A — left edge at content start and right past the closing marker snaps the left edge to `node.from`; Rule B — symmetric for the closing marker. Strict-inside selections (narrower than the content) deliberately do NOT snap.
-  _Example:_ double-click `bold` inside `**bold**` → selection snaps to cover `**bold**` so a copy yields the markdown source.
+- **EMPH-I-7** — On mouseup, a non-empty selection inside the content area of an emphasis-family node MUST snap to the node's outer bounds so the syntax markers join the selection (combined with EMPH-I-3 the snapped boundary reveals). Three explicit rules in `compute_marker_snap`: Rule C — content-area exact cover (`range.from == content_start && range.to == content_end`) snaps to `[node.from, node.to)` unless already equal; Rule A — left edge at content start and right past the closing marker snaps the left edge to `node.from`; Rule B — symmetric for the closing marker. Strict-inside selections (narrower than the content) deliberately do NOT snap. A double-click is excluded from snap (MRS-S-10), so only drag gestures fold the markers in.
+  _Example:_ drag-select exactly `bold` inside `**bold**` → selection snaps to cover `**bold**` so a copy yields the markdown source.
 
 - **EMPH-I-8** — Marker snap MUST preserve the user's drag direction: a left-to-right drag (`anchor <= head`) snaps to `anchor=from, head=to`; a right-to-left drag mirrors. Snap MUST be skipped for empty ranges and for ranges where no rule matches (the original range is kept).
-  _Example:_ right-to-left double-click of `it` in `*it*` → snaps to `anchor=node.to, head=node.from`, so shift+ArrowLeft keeps extending leftward.
+  _Example:_ right-to-left drag of `it` in `*it*` → snaps to `anchor=node.to, head=node.from`, so shift+ArrowLeft keeps extending leftward.
 
 - **EMPH-I-9** — Marker snap (EMPH-I-7) covers the emphasis family and inline code; the same mechanism also extends to inline links and autolinks (MRS-S-1, where for a link the content area is the label and the snap target is the whole `[label](url)` node). Only bare URLs, which carry no markers, are excluded.
-  _Example:_ double-click the label of `[label](url)` → snaps to cover `[label](url)`.
+  _Example:_ drag-select the label of `[label](url)` → snaps to cover `[label](url)`.
 
 ## SP · Source preservation
 
@@ -97,7 +97,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
   _Example:_ wrapping `x` to `*x*` inserts exactly one `*` at each edge; surrounding bytes are untouched.
 
 - **EMPH-SP-4** `[inherits:INV-SP-1]` — Marker snap (EMPH-I-7) MUST change only the selection, never the document; it dispatches no `changes`.
-  _Example:_ snapping a double-click from `bold` to `**bold**` moves the selection only; the bytes are unchanged.
+  _Example:_ snapping a drag from `bold` to `**bold**` moves the selection only; the bytes are unchanged.
 
 ## E · Edge cases
 

@@ -3,10 +3,11 @@
 // clears the pointer_down latch.
 //
 // Three rules:
-//   C — exact content-area cover (e.g., double-click `bold`) → snap to whole node
+//   C — exact content-area cover (drag exactly onto `bold`) → snap to whole node
 //   A — left edge at content start AND right extends past closing marker → extend left
 //   B — symmetric for the right side
-// Strict-inside selections (`ld` inside `bold`) do NOT snap.
+// Strict-inside selections (`ld` inside `bold`) do NOT snap, and a double-click
+// (detail===2) is excluded from snap entirely (MRS-S-10).
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorSelection } from '@codemirror/state';
@@ -31,6 +32,15 @@ function press_drag_release(view: EditorView, anchor: number, head: number): voi
     effects: set_pointer_down.of(true),
   });
   document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+}
+
+// A double-click's terminating `mouseup` carries `detail === 2`; snap is suppressed for it (MRS-S-10).
+function double_click_release(view: EditorView, anchor: number, head: number): void {
+  view.dispatch({
+    selection: EditorSelection.single(anchor, head),
+    effects: set_pointer_down.of(true),
+  });
+  document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, detail: 2 }));
 }
 
 describe('selection-snap on document mouseup (T19.24)', () => {
@@ -176,6 +186,27 @@ describe('selection-snap on document mouseup (T19.24)', () => {
     view = mount_editor(container, 'xx **bold** yy\nzz\n');
     await next_frame();
     press_drag_release(view, 5, 9);
+    await next_frame();
+    const hidden = container.querySelectorAll('.plainmark-inline-marker-hidden');
+    expect(hidden.length).toBe(0);
+  });
+
+  it('MRS-S-10 — a double-click (detail 2) does NOT snap; the word stays selected', async () => {
+    view = mount_editor(container, 'xx **bold** yy\nzz\n');
+    await next_frame();
+    // content area = [5, 9]; a double-click of `bold` lands exactly there, but
+    // unlike the drag case (Rule C) the selection must be left untouched.
+    double_click_release(view, 5, 9);
+    await next_frame();
+    expect(view.state.selection.main.from).toBe(5);
+    expect(view.state.selection.main.to).toBe(9);
+    expect(view.state.field(pointer_down_field)).toBe(false);
+  });
+
+  it('MRS-S-10 — markers still reveal after a non-snapping double-click', async () => {
+    view = mount_editor(container, 'xx **bold** yy\nzz\n');
+    await next_frame();
+    double_click_release(view, 5, 9);
     await next_frame();
     const hidden = container.querySelectorAll('.plainmark-inline-marker-hidden');
     expect(hidden.length).toBe(0);

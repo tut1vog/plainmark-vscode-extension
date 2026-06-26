@@ -90,16 +90,17 @@ const mousedown_listener_plugin = ViewPlugin.fromClass(
 // still bare).
 const document_mouseup_plugin = ViewPlugin.fromClass(
   class implements PluginValue {
-    private readonly handle_up: () => void;
+    private readonly handle_up: (event: MouseEvent) => void;
     private readonly handle_move: (event: MouseEvent) => void;
     constructor(private readonly view: EditorView) {
-      const release = (): void => {
+      const release = (event: MouseEvent): void => {
         if (!this.view.state.field(pointer_down_field, false)) return;
         const release_effects = [
           set_pointer_down.of(false),
           set_frozen_reveal_selection.of(null),
         ];
-        const snap = compute_marker_snap(this.view.state);
+        // Skip snap for a double-click (detail===2) so its word selection keeps the markers OUT (MRS-S-10); a drag still folds them in.
+        const snap = event.detail === 2 ? null : compute_marker_snap(this.view.state);
         if (snap) {
           this.view.dispatch({ selection: snap, effects: release_effects });
         } else {
@@ -109,7 +110,7 @@ const document_mouseup_plugin = ViewPlugin.fromClass(
       this.handle_up = release;
       // A release outside the webview iframe is delivered to the outer window, never here, so it is unobservable while the cursor stays out; a button-less move on return proves the press ended and recovers the otherwise-stuck latch.
       this.handle_move = (event: MouseEvent): void => {
-        if (event.buttons === 0) release();
+        if (event.buttons === 0) release(event);
       };
       document.addEventListener('mouseup', this.handle_up);
       this.view.contentDOM.addEventListener('mousemove', this.handle_move);
