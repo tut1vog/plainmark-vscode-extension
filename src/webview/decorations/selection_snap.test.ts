@@ -2,7 +2,7 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
-import { compute_marker_snap } from './selection_snap.js';
+import { compute_double_click_trim, compute_marker_snap } from './selection_snap.js';
 
 function make_state(doc: string, anchor: number, head: number = anchor): EditorState {
   return EditorState.create({
@@ -344,5 +344,46 @@ describe('compute_marker_snap EMPH-I-7 EMPH-I-8 EMPH-I-9 EMPH-SP-4 MRS-S-1 MRS-S
       expect(snap).not.toBeNull();
       expect(snap!.mainIndex).toBe(1);
     });
+  });
+});
+
+describe('compute_double_click_trim MRS-S-11', () => {
+  it('trims the swept-in underscores of `_it_` to the content area', () => {
+    // `_it_` node [3,7]; underscores at 3 and 6; content `it` = [4,6].
+    const sel = compute_double_click_trim(make_state('xx _it_ yy\n', 3, 7));
+    expect(sel).not.toBeNull();
+    expect(sel!.main.from).toBe(4);
+    expect(sel!.main.to).toBe(6);
+  });
+
+  it('trims the double underscores of `__st__`', () => {
+    // `__st__` node [3,9]; content `st` = [5,7].
+    const sel = compute_double_click_trim(make_state('xx __st__ yy\n', 3, 9));
+    expect(sel).not.toBeNull();
+    expect(sel!.main.from).toBe(5);
+    expect(sel!.main.to).toBe(7);
+  });
+
+  it('trims only the swept marker for multi-word `_big text_`', () => {
+    // Double-click `big` selects `_big` [0,4]; content [1,9]; trim → `big` [1,4].
+    const sel = compute_double_click_trim(make_state('_big text_\n', 0, 4));
+    expect(sel).not.toBeNull();
+    expect(sel!.main.from).toBe(1);
+    expect(sel!.main.to).toBe(4);
+  });
+
+  it('preserves anchor>head direction when trimming', () => {
+    const sel = compute_double_click_trim(make_state('xx _it_ yy\n', 7, 3));
+    expect(sel).not.toBeNull();
+    expect(sel!.main.anchor).toBe(6);
+    expect(sel!.main.head).toBe(4);
+  });
+
+  it('returns null when the selection is already the content (asterisk `*it*`)', () => {
+    expect(compute_double_click_trim(make_state('xx *it* yy\n', 4, 6))).toBeNull();
+  });
+
+  it('returns null for a selection outside any construct', () => {
+    expect(compute_double_click_trim(make_state('plain text\n', 0, 5))).toBeNull();
   });
 });

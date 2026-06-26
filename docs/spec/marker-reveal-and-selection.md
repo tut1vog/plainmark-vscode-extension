@@ -85,7 +85,7 @@ On mouseup, snapping a selection that sits in a construct's content area outward
 to the construct's node bounds, so that a copy yields the markdown source rather
 than a fragment with hidden markers stripped. Computed by `compute_marker_snap`
 and dispatched in the SAME transaction as the pointer-latch
-clear. A double-click is excluded (MRS-S-10): only drag gestures snap. Section code `S`.
+clear. A double-click never folds markers in (MRS-S-10, MRS-S-11); only drag gestures snap. Section code `S`.
 
 - **MRS-S-1** — Snap MUST apply to the emphasis family, inline code, inline links, and autolinks (`StrongEmphasis`, `Emphasis`, `Strikethrough`, `InlineCode`, `Link`, `Autolink`). For the symmetric constructs (emphasis family, inline code, autolink) the content area lies between the node's first and last child marks. For an inline `Link` the content area is the LABEL (between the first `[` and `]`) while the snap target is the full node `[node.from, node.to)` including `(url)`; the link node MUST be well-formed (≥4 `LinkMark`s, opening `[` at `node.from`, closing `)` at `node.to`) or it does not qualify.
   _Example:_ a non-empty selection inside `**bold**`, `<http://x>`, or the label of `[lbl](http://x)` qualifies; a degenerate node with missing marks does not.
@@ -105,8 +105,10 @@ clear. A double-click is excluded (MRS-S-10): only drag gestures snap. Section c
   _Example:_ selecting part of a bare `http://example.com` → no snap.
 - **MRS-S-9** `[inherits:INV-SP-1]` — Snap is a selection-only transform and MUST dispatch no `changes`; document bytes are never modified.
   _Example:_ snapping from `bold` to `**bold**` moves the selection only; source unchanged.
-- **MRS-S-10** `[smoke]` — A double-click (`event.detail === 2`) MUST NOT snap, even when its word selection exactly covers a construct's content area (the Rule-C geometry of MRS-S-2): the selection is left on the word, so a double-click selects the rendered text WITHOUT its surrounding markers. Drag gestures (`detail !== 2`) still snap via Rules A–C. The markers still reveal (MRS-R-4) because the selection lies inside the node — shown but unselected — so a double-click-then-copy yields the bare word, not the marked-up source.
-  _Example:_ double-click `bold` inside `**bold**` → selection stays `bold`; the `**` reveal but are not selected, so a copy yields `bold`, not `**bold**`.
+- **MRS-S-10** `[smoke]` — A double-click (`event.detail === 2`) MUST NOT snap, even when its word selection exactly covers a construct's content area (the Rule-C geometry of MRS-S-2): unlike a drag, its selection is never expanded outward to fold the surrounding markers in. Drag gestures (`detail !== 2`) still snap via Rules A–C.
+  _Example:_ double-click `bold` inside `**bold**` → selection stays `bold`; the `**` are not folded in.
+- **MRS-S-11** `[smoke]` — When a double-click's word selection itself includes a construct's marker characters, the selection MUST be trimmed inward to the content area so the markers are excluded. This bites on the underscore markers `_`/`__`, which the word categorizer counts as word characters — so a raw double-click on `_em_` selects the whole `_em_` — while asterisk/tilde/backtick/bracket markers are word boundaries that are never swept in (their trim is a no-op). Word granularity within the content is preserved. Combined with MRS-S-10, a double-click selects the rendered word WITHOUT markers for every snap construct; the markers still reveal (MRS-R-4) — shown but unselected — so a double-click-then-copy yields the bare word, not the marked-up source.
+  _Example:_ double-click `italic` in `_italic_` → trims to `italic` (underscores dropped); double-click `text` in `_big text_` → trims to `text` (trailing `_` dropped, the other word kept).
 
 ## L — Triple-click line selection
 

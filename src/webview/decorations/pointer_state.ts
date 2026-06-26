@@ -5,7 +5,7 @@ import {
   StateField,
 } from '@codemirror/state';
 import { EditorView, ViewPlugin, type PluginValue } from '@codemirror/view';
-import { compute_marker_snap } from './selection_snap.js';
+import { compute_double_click_trim, compute_marker_snap } from './selection_snap.js';
 
 // Latched true between mousedown on the editor and the next document-level
 // mouseup. Read by text_styles.ts / links.ts to suppress marker reveal during
@@ -99,10 +99,13 @@ const document_mouseup_plugin = ViewPlugin.fromClass(
           set_pointer_down.of(false),
           set_frozen_reveal_selection.of(null),
         ];
-        // Skip snap for a double-click (detail===2) so its word selection keeps the markers OUT (MRS-S-10); a drag still folds them in.
-        const snap = event.detail === 2 ? null : compute_marker_snap(this.view.state);
-        if (snap) {
-          this.view.dispatch({ selection: snap, effects: release_effects });
+        // A drag folds the markers in (snap); a double-click (detail===2) keeps them OUT — it never snaps and trims any markers its word selection swept in, e.g. underscore `_em_` (MRS-S-10, MRS-S-11).
+        const adjusted =
+          event.detail === 2
+            ? compute_double_click_trim(this.view.state)
+            : compute_marker_snap(this.view.state);
+        if (adjusted) {
+          this.view.dispatch({ selection: adjusted, effects: release_effects });
         } else {
           this.view.dispatch({ effects: release_effects });
         }

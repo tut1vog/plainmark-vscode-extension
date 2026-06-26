@@ -61,7 +61,9 @@ function snap_rules(
   return null;
 }
 
-function match_symmetric_rule(node: SyntaxNode, range: SelectionRange): SnapTarget | null {
+function symmetric_content(
+  node: SyntaxNode,
+): { content_start: number; content_end: number } | null {
   const mark_name = SNAP_NODE_NAMES.get(node.name);
   if (!mark_name) return null;
   const first = node.firstChild;
@@ -78,7 +80,13 @@ function match_symmetric_rule(node: SyntaxNode, range: SelectionRange): SnapTarg
   ) {
     return null;
   }
-  return snap_rules(first.to, last.from, node.from, node.to, range);
+  return { content_start: first.to, content_end: last.from };
+}
+
+function match_symmetric_rule(node: SyntaxNode, range: SelectionRange): SnapTarget | null {
+  const content = symmetric_content(node);
+  if (!content) return null;
+  return snap_rules(content.content_start, content.content_end, node.from, node.to, range);
 }
 
 // `[label](url)` — content area is the LABEL (between the first `[` and `]`),
@@ -154,4 +162,59 @@ export function compute_marker_snap(state: EditorState): EditorSelection | null 
   }
   if (!any_changed) return null;
   return EditorSelection.create(snapped, state.selection.mainIndex);
+}
+
+function trim_rules(
+  content_start: number,
+  content_end: number,
+  range: SelectionRange,
+): SnapTarget | null {
+  const from = Math.max(range.from, content_start);
+  const to = Math.min(range.to, content_end);
+  if (from === range.from && to === range.to) return null;
+  if (from >= to) return null;
+  return { from, to };
+}
+
+function walk_for_trim(start: SyntaxNode | null, range: SelectionRange): SnapTarget | null {
+  let node: SyntaxNode | null = start;
+  while (node) {
+    const content = symmetric_content(node);
+    if (content) {
+      const target = trim_rules(content.content_start, content.content_end, range);
+      if (target) return target;
+    }
+    node = node.parent;
+  }
+  return null;
+}
+
+function find_trim_target(state: EditorState, range: SelectionRange): SnapTarget | null {
+  if (range.empty) return null;
+  const tree = syntaxTree(state);
+  return (
+    walk_for_trim(tree.resolveInner(range.from, 1), range) ??
+    walk_for_trim(tree.resolveInner(range.to, -1), range)
+  );
+}
+
+// `_`/`__` are word characters, so a double-click on `_em_` sweeps the underscores into the word selection — trim each range back to the content area (other markers are word boundaries, so this no-ops for them). The mirror of compute_marker_snap for the double-click gesture.
+export function compute_double_click_trim(state: EditorState): EditorSelection | null {
+  const trimmed: SelectionRange[] = [];
+  let any_changed = false;
+  for (const range of state.selection.ranges) {
+    const target = find_trim_target(state, range);
+    if (!target) {
+      trimmed.push(range);
+      continue;
+    }
+    any_changed = true;
+    trimmed.push(
+      range.anchor <= range.head
+        ? EditorSelection.range(target.from, target.to)
+        : EditorSelection.range(target.to, target.from),
+    );
+  }
+  if (!any_changed) return null;
+  return EditorSelection.create(trimmed, state.selection.mainIndex);
 }

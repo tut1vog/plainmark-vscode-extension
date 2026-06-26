@@ -211,4 +211,25 @@ describe('selection-snap on document mouseup (T19.24)', () => {
     const hidden = container.querySelectorAll('.plainmark-inline-marker-hidden');
     expect(hidden.length).toBe(0);
   });
+
+  it('MRS-S-11 — double-click on `_it_` trims the swept-in underscores', async () => {
+    view = mount_editor(container, 'xx _it_ yy\nzz\n');
+    await next_frame();
+    // `_` is a word char, so a real double-click selects the whole `_it_` node
+    // [3,7]; the trim drops the underscores back to the content `it` [4,6].
+    double_click_release(view, 3, 7);
+    await next_frame();
+    expect(view.state.selection.main.from).toBe(4);
+    expect(view.state.selection.main.to).toBe(6);
+  });
+
+  it('MRS-S-11 — multi-word `_big text_` keeps word granularity, drops only the swept marker', async () => {
+    view = mount_editor(container, '_big text_\nzz\n');
+    await next_frame();
+    // Double-click `big` selects `_big` [0,4] — left `_` swept, stops at the space.
+    double_click_release(view, 0, 4);
+    await next_frame();
+    expect(view.state.selection.main.from).toBe(1);
+    expect(view.state.selection.main.to).toBe(4);
+  });
 });
