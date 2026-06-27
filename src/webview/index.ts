@@ -155,6 +155,11 @@ window.addEventListener('message', (event: MessageEvent) => {
     insert_footnote(view);
     return;
   }
+  if (msg.type === 'focus_editor') {
+    // Tab reactivation lands focus on the iframe, not CM6 — refocus so the retained caret renders again (same reason as the initial_cursor focus above).
+    view.focus();
+    return;
+  }
   if (msg.type === 'paste_image_reply') {
     image_paste_controller.deliver_reply(msg as HostPasteImageReplyMessage);
     return;

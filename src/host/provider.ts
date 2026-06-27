@@ -443,11 +443,19 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     PlainmarkEditorProvider.panel_documents.set(webviewPanel, document);
     if (webviewPanel.active) PlainmarkEditorProvider.last_active_panel = webviewPanel;
     PlainmarkEditorProvider.refresh_editor_active_context();
+    let was_active = webviewPanel.active;
     const sub_view_state = webviewPanel.onDidChangeViewState((e) => {
       if (e.webviewPanel.active) {
         PlainmarkEditorProvider.last_active_panel = e.webviewPanel;
       }
       PlainmarkEditorProvider.refresh_editor_active_context();
+      // Refocus CM6 only on the inactive→active edge (avoid focus-steal): VS Code focuses the iframe, not the inner contenteditable, so the retained caret won't render.
+      if (e.webviewPanel.active && !was_active) {
+        void webviewPanel.webview.postMessage({
+          type: 'focus_editor',
+        } satisfies HostToWebviewMessage);
+      }
+      was_active = e.webviewPanel.active;
     });
 
     webviewPanel.onDidDispose(() => {
