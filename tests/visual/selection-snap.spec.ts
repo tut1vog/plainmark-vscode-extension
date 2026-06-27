@@ -14,6 +14,7 @@ import { EditorSelection } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import {
   pointer_down_field,
+  set_frozen_reveal_selection,
   set_pointer_down,
 } from '../../src/webview/decorations/pointer_state.js';
 import { mount_editor } from './util.js';
@@ -231,5 +232,60 @@ describe('selection-snap on document mouseup (T19.24)', () => {
     await next_frame();
     expect(view.state.selection.main.from).toBe(1);
     expect(view.state.selection.main.to).toBe(4);
+  });
+});
+
+describe('selection-snap reveal gate (MRS-S-12)', () => {
+  let container: HTMLElement;
+  let view: EditorView | undefined;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+  afterEach(() => {
+    view?.destroy();
+    container.remove();
+  });
+
+  // Seed the frozen pre-press selection at `pre_caret` (as the capture-phase
+  // mousedown does), then land the drag on [anchor, head], then fire the
+  // document mouseup that runs the reveal-gated snap.
+  function press_drag_release_frozen(
+    v: EditorView,
+    pre_caret: number,
+    anchor: number,
+    head: number,
+  ): void {
+    v.dispatch({ selection: EditorSelection.single(pre_caret) });
+    v.dispatch({
+      effects: [
+        set_pointer_down.of(true),
+        set_frozen_reveal_selection.of(v.state.selection),
+      ],
+    });
+    v.dispatch({ selection: EditorSelection.single(anchor, head) });
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+  }
+
+  it('does NOT snap when the construct was already revealed at press time', async () => {
+    view = mount_editor(container, 'xx **bold** yy\nzz\n');
+    await next_frame();
+    // Pre-press caret 6 sits inside **bold** ([3,11]) → revealed; drag covers content [5,9].
+    press_drag_release_frozen(view, 6, 5, 9);
+    await next_frame();
+    expect(view.state.selection.main.from).toBe(5);
+    expect(view.state.selection.main.to).toBe(9);
+    expect(view.state.field(pointer_down_field)).toBe(false);
+  });
+
+  it('still snaps when the press began off-construct (markers hidden)', async () => {
+    view = mount_editor(container, 'xx **bold** yy\nzz\n');
+    await next_frame();
+    // Pre-press caret 0 is away from **bold** → hidden; the same drag snaps.
+    press_drag_release_frozen(view, 0, 5, 9);
+    await next_frame();
+    expect(view.state.selection.main.from).toBe(3);
+    expect(view.state.selection.main.to).toBe(11);
   });
 });

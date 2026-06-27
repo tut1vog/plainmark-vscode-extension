@@ -6,11 +6,13 @@ import {
 } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 
-// Typora-style auto-include-markers-in-selection for inline constructs.
-// On mouseup, if a non-empty selection lies inside a construct's content area,
-// snap to the node's outer bounds so the syntax markers join the selection —
-// combined with the reveal-on-non-strict-cover rule, the markers reveal at
-// the snapped boundary. Bare URLs have no markers, so they never snap.
+// Typora/Obsidian-style auto-include-markers-in-selection for inline constructs.
+// On mouseup, if a non-empty selection lies inside the content area of a
+// construct whose markers were HIDDEN when the drag began, snap to the node's
+// outer bounds so the hidden syntax markers join the selection (they then reveal
+// at the snapped boundary). A construct already revealed at press time is left
+// alone — the user can see and place its markers, so the exact selection stands
+// (MRS-S-12). Bare URLs have no markers, so they never snap.
 const SNAP_NODE_NAMES: ReadonlyMap<string, string> = new Map([
   ['StrongEmphasis', 'EmphasisMark'],
   ['Emphasis', 'EmphasisMark'],
@@ -114,17 +116,31 @@ function match_rule(node: SyntaxNode, range: SelectionRange): SnapTarget | null 
   return match_symmetric_rule(node, range) ?? match_link_rule(node, range);
 }
 
-function walk_for_rule(start: SyntaxNode | null, range: SelectionRange): SnapTarget | null {
+function walk_for_rule(
+  start: SyntaxNode | null,
+  range: SelectionRange,
+  was_revealed_at_press?: (from: number, to: number) => boolean,
+): SnapTarget | null {
   let node: SyntaxNode | null = start;
   while (node) {
     const target = match_rule(node, range);
-    if (target) return target;
+    if (target) {
+      // MRS-S-12: respect the exact selection for a construct already revealed
+      // when the drag began — only press-time-hidden markers snap in. A revealed
+      // inner match implies its outer is revealed too, so stopping here is safe.
+      if (was_revealed_at_press?.(node.from, node.to)) return null;
+      return target;
+    }
     node = node.parent;
   }
   return null;
 }
 
-function find_snap_target(state: EditorState, range: SelectionRange): SnapTarget | null {
+function find_snap_target(
+  state: EditorState,
+  range: SelectionRange,
+  was_revealed_at_press?: (from: number, to: number) => boolean,
+): SnapTarget | null {
   if (range.empty) return null;
   const tree = syntaxTree(state);
   // Walk from both endpoints — Rule A needs an inside-construct anchor at
@@ -133,19 +149,25 @@ function find_snap_target(state: EditorState, range: SelectionRange): SnapTarget
   // the emphasis on the way up). Rule C's endpoints both sit inside, so
   // either walk finds it; the from-walk runs first by convention.
   return (
-    walk_for_rule(tree.resolveInner(range.from, 1), range) ??
-    walk_for_rule(tree.resolveInner(range.to, -1), range)
+    walk_for_rule(tree.resolveInner(range.from, 1), range, was_revealed_at_press) ??
+    walk_for_rule(tree.resolveInner(range.to, -1), range, was_revealed_at_press)
   );
 }
 
 // Returns a new EditorSelection with snapped ranges, or null if no range
-// qualified (caller skips the selection field of the dispatch).
-export function compute_marker_snap(state: EditorState): EditorSelection | null {
+// qualified (caller skips the selection field of the dispatch). The optional
+// `was_revealed_at_press` predicate, given a node's bounds, reports whether that
+// construct was revealed when the drag began; when omitted, every qualifying
+// range snaps unconditionally.
+export function compute_marker_snap(
+  state: EditorState,
+  was_revealed_at_press?: (from: number, to: number) => boolean,
+): EditorSelection | null {
   const ranges = state.selection.ranges;
   const snapped: SelectionRange[] = [];
   let any_changed = false;
   for (const range of ranges) {
-    const target = find_snap_target(state, range);
+    const target = find_snap_target(state, range, was_revealed_at_press);
     if (!target) {
       snapped.push(range);
       continue;

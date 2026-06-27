@@ -6,6 +6,7 @@ import {
 } from '@codemirror/state';
 import { EditorView, ViewPlugin, type PluginValue } from '@codemirror/view';
 import { compute_double_click_trim, compute_marker_snap } from './selection_snap.js';
+import { should_reveal_for_selection } from './selection_reveal.js';
 
 // Latched true between mousedown on the editor and the next document-level
 // mouseup. Read by text_styles.ts / links.ts to suppress marker reveal during
@@ -99,11 +100,18 @@ const document_mouseup_plugin = ViewPlugin.fromClass(
           set_pointer_down.of(false),
           set_frozen_reveal_selection.of(null),
         ];
-        // A drag folds the markers in (snap); a double-click (detail===2) keeps them OUT — it never snaps and trims any markers its word selection swept in, e.g. underscore `_em_` (MRS-S-10, MRS-S-11).
+        // A drag folds the markers in (snap), but only for a construct hidden
+        // when the press began — `should_reveal_for_selection` reads the frozen
+        // pre-press selection while the latch is still down, so an already-revealed
+        // construct is left alone (MRS-S-12). A double-click (detail===2) keeps
+        // markers OUT — it never snaps and trims any its word selection swept in,
+        // e.g. underscore `_em_` (MRS-S-10, MRS-S-11).
         const adjusted =
           event.detail === 2
             ? compute_double_click_trim(this.view.state)
-            : compute_marker_snap(this.view.state);
+            : compute_marker_snap(this.view.state, (from, to) =>
+                should_reveal_for_selection(this.view.state, from, to),
+              );
         if (adjusted) {
           this.view.dispatch({ selection: adjusted, effects: release_effects });
         } else {

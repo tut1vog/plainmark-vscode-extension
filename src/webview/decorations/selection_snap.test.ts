@@ -347,6 +347,59 @@ describe('compute_marker_snap EMPH-I-7 EMPH-I-8 EMPH-I-9 EMPH-SP-4 MRS-S-1 MRS-S
   });
 });
 
+describe('compute_marker_snap reveal gate (MRS-S-12)', () => {
+  // `**bold**`: node [3,11], content [5,9].
+  const doc = 'xx **bold** yy\n';
+
+  it('does NOT snap when the matched node was revealed at press time', () => {
+    expect(compute_marker_snap(make_state(doc, 5, 9), () => true)).toBeNull();
+  });
+
+  it('snaps when the matched node was hidden at press time', () => {
+    const snap = compute_marker_snap(make_state(doc, 5, 9), () => false);
+    expect(snap).not.toBeNull();
+    expect(snap!.main.from).toBe(3);
+    expect(snap!.main.to).toBe(11);
+  });
+
+  it('queries the gate with the matched node bounds, not the snap target', () => {
+    const seen: Array<[number, number]> = [];
+    compute_marker_snap(make_state(doc, 5, 9), (from, to) => {
+      seen.push([from, to]);
+      return false;
+    });
+    expect(seen).toContainEqual([3, 11]);
+  });
+
+  it('without a gate, the always-snap behavior is preserved', () => {
+    const snap = compute_marker_snap(make_state(doc, 5, 9));
+    expect(snap).not.toBeNull();
+    expect(snap!.main.from).toBe(3);
+    expect(snap!.main.to).toBe(11);
+  });
+
+  it('gates per range — a revealed construct is left while a hidden one still snaps', () => {
+    // `**a** **b**` — first StrongEmphasis [0,5] content [2,3]; second [6,11] content [8,9].
+    const state = EditorState.create({
+      doc: '**a** **b**\nzz\n',
+      extensions: [
+        markdown({ extensions: [GFM] }),
+        EditorState.allowMultipleSelections.of(true),
+      ],
+      selection: EditorSelection.create(
+        [EditorSelection.range(2, 3), EditorSelection.range(8, 9)],
+        0,
+      ),
+    });
+    // Reveal only the first node (the one starting at 0).
+    const snap = compute_marker_snap(state, (from) => from === 0);
+    expect(snap).not.toBeNull();
+    expect(snap!.ranges.length).toBe(2);
+    expect({ from: snap!.ranges[0].from, to: snap!.ranges[0].to }).toEqual({ from: 2, to: 3 });
+    expect({ from: snap!.ranges[1].from, to: snap!.ranges[1].to }).toEqual({ from: 6, to: 11 });
+  });
+});
+
 describe('compute_double_click_trim MRS-S-11', () => {
   it('trims the swept-in underscores of `_it_` to the content area', () => {
     // `_it_` node [3,7]; underscores at 3 and 6; content `it` = [4,6].
