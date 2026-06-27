@@ -10,6 +10,10 @@ to [Semantic Versioning](https://semver.org/).
 
 - **Find in the editor** — press `Ctrl/Cmd+F` to open a search bar and find text anywhere in the document, with next/previous (`F3` / `Ctrl/Cmd+G`), highlight-all, and replace. Search runs over the whole file, so it matches text on lines scrolled out of view too.
 
+### Fixed
+
+- **Caret restored when you switch back to a Plainmark tab** — moving to another tab and back now keeps your cursor where you left it, blinking and ready to type, instead of leaving the editor with no visible caret until you click into it.
+
 ## [1.1.1] - 2026-06-27
 
 ### Fixed

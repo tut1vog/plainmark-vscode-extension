@@ -164,3 +164,6 @@ first fire of the single in-flight apply.
 
 - **SYNC-P-12** `[smoke]` — A `plainmark.styles` configuration change for the bound document MUST reload the webview HTML (rebooting the webview process); CM6 state is then rebuilt via the `ready` handshake and a fresh `sync`.
   _Example:_ change `plainmark.styles` → webview reboots → `ready` → host re-sends the document.
+
+- **SYNC-P-13** `[smoke]` — On the bound panel's view-state transition from inactive to active (a tab switch back to a retained Plainmark editor), the host MUST post a `focus_editor` message and the webview MUST call `view.focus()`. VS Code returns focus to the webview iframe but NOT to the inner CM6 contenteditable, and CM6 renders the caret (`.cm-cursor`) only while the content holds focus (`.cm-focused`), so the retained caret (SYNC-P-11) is otherwise present in state but invisible until the user clicks in. The host MUST post ONLY on the inactive→active edge — never while the panel is already active — so reactivation never steals focus from another workbench surface.
+  _Example:_ place the caret mid-document → switch to another tab → switch back → the caret reappears blinking where it was, ready to type with no click.
