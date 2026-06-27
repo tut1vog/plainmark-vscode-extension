@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-06-27
+
+### Fixed
+
+- **Selecting already-visible markers keeps your exact selection** — when a construct's Markdown markers are already revealed (for example you've clicked into bold, italic, a link, or inline code), selecting text no longer expands to swallow the surrounding markers (`**`, `*`, `_`, `~~`, backticks, brackets). The markers still fold into the selection when they were hidden as the selection began, so click-and-drag over rendered text continues to copy the full Markdown source.
+
 ## [1.2.0] - 2026-06-27
 
 ### Added
