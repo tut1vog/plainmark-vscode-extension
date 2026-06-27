@@ -123,6 +123,9 @@ mounted by the webview bootstrap. Order and `Prec` are load-bearing. Section cod
 - **SHELL-X-15** `[smoke]` — The webview MUST stabilize CM6's height-oracle line-height so a tall line can never become its sample: a `ViewPlugin` (`oracle_line_height_pin`, appended to `editor_extensions`, main view only — NOT `editor_extensions_core`) MUST override `docView.measureTextSize` to return CM6's own synthetic-line (body-height) fallback, pinning `oracle.lineHeight`/`charWidth`/`textHeight` to the body measurement (cached, invalidated on `geometryChanged`). CM6 otherwise samples the FIRST short (≤20-char), all-text, printable-ASCII rendered line as the document-wide `oracle.lineHeight`; a revealed heading or callout title is exactly such a line and is tall, so as the viewport crosses between tall and prose regions the sample flips, a >0.3px change makes `HeightOracle.refresh` rebuild the entire height map from the new average, the estimated total swings ~2000px, the viewport relocates bistably, and the measure loop bails mid-correction ("Measure loop restarted more than 5 times") — the visible snap. The override MUST install lazily (plugin values are created before `docView` exists) and MUST degrade to a safe no-op if the internal method is renamed in a future CM6. Resolves the snap still open in Obsidian #112103.
   _Example:_ cold-load a long document with a Mermaid block and scroll the diagram into view → the viewport stays put with no "Measure loop restarted" console warning, instead of snapping back to before the diagram.
 
+- **SHELL-X-16** `[smoke]` — In-document find MUST be composed into `editor_extensions` (main view only — NOT `editor_extensions_core`, so table cell subviews share no panel): `@codemirror/search`'s `search({ top: true })`, a find-only slice of `searchKeymap` (the `Mod-d` / `Mod-Alt-g` / `Mod-Shift-l` multi-cursor / go-to-line bindings removed) at `Prec.high`, and a panel theme. CM6 search scans the `EditorState` document model, so a match on an off-screen (virtualized) line, a `display:none` marker, or inside a replaced widget (table / math) is still found — a rendered-DOM text search would miss it. `Prec.high` is load-bearing: `Mod-f` resolves to `Ctrl-f` on Windows/Linux, so the find keymap MUST pre-empt `defaultKeymap`'s `Ctrl-f` (`cursorCharRight`) and `Escape` (`simplifySelection`). The panel and match colors MUST route through `--vscode-*` vars (CM6's panel baseTheme is light-only). A `cm-searchMatch` highlight MAY be occluded where a replace-widget covers the matched bytes; the match is still selected and scrolled to. The host-side Ctrl/Cmd+F muzzle is `SHELL-C-12`.
+  _Example:_ Ctrl/Cmd+F opens a search bar at the top of the editor; typing a word highlights every occurrence document-wide and Enter / F3 walk them, including matches on lines scrolled out of view.
+
 ## M — shell-level message routing
 
 The host↔webview message *routing* the shell registers. The sync payload
@@ -166,7 +169,7 @@ declared in `package.json` `contributes.commands` AND registered via
   _Example:_ opening a `.md` file offers Plainmark via "Reopen Editor With…", not as the forced default.
 
 - **SHELL-C-2** — The provider MUST register the custom editor with `register(context)` returning a single composite `Disposable` aggregating the editor registration and every contributed command, so deactivation disposes them together.
-  _Example:_ `vscode.Disposable.from(editor, noop_undo, noop_redo, insert_table, insert_footnote, open_in_text_editor, open_in_plainmark)`.
+  _Example:_ `vscode.Disposable.from(editor, noop_undo, noop_redo, noop_find, insert_table, insert_footnote, open_in_text_editor, open_in_plainmark)`.
 
 - **SHELL-C-3** `[smoke]` — `tutivog.plainmark.insertTable` MUST be registered and, when invoked, MUST post `{ type: 'insert_table' }` to the active Plainmark panel's webview.
   _Example:_ Command Palette → "Plainmark: Insert table" → active panel receives `insert_table`.
@@ -194,6 +197,9 @@ declared in `package.json` `contributes.commands` AND registered via
 
 - **SHELL-C-11** `[smoke]` — The `openInPlainmark` `editor/title` contribution MUST use Plainmark's own light/dark SVG icon pair, NOT a built-in preview codicon, so the button is visually distinct from VS Code's built-in markdown preview buttons sharing the same title bar; both SVGs MUST ship in the packaged VSIX.
   _Example:_ a `.md` text editor's title bar shows the built-in preview codicons and Plainmark's "P↓" mark side by side, visually distinct; `vsce ls` includes both icon SVGs.
+
+- **SHELL-C-12** `[smoke]` — `tutivog.plainmark.noop_find` MUST be registered as an inert command and bound (via `keybindings`, `key: ctrl+f` / `mac: cmd+f`, `when: activeCustomEditorId == 'tutivog.plainmark'`) so the workbench takes no action on Ctrl/Cmd+F while Plainmark is active — the webview's CM6 search (`SHELL-X-16`) owns find. Mirrors the undo/redo muzzle (`SHELL-C-5`).
+  _Example:_ Ctrl/Cmd+F in a Plainmark tab fires `noop_find` (a log-only no-op) and the workbench find does not open; the CM6 search bar opens instead.
 
 ## A — activation & dual host target
 

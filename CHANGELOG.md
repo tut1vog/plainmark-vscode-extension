@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Find in the editor** — press `Ctrl/Cmd+F` to open a search bar and find text anywhere in the document, with next/previous (`F3` / `Ctrl/Cmd+G`), highlight-all, and replace. Search runs over the whole file, so it matches text on lines scrolled out of view too.
+
 ## [1.1.1] - 2026-06-27
 
 ### Fixed

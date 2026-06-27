@@ -24,7 +24,7 @@ async function open_with_query(view: EditorView, query: string): Promise<void> {
   await next_frame();
 }
 
-describe('FIND: CM6 search panel', () => {
+describe('SHELL-X-16: CM6 in-document find (search panel)', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
