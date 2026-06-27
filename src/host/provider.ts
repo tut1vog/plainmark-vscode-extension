@@ -123,6 +123,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     const noop_redo = vscode.commands.registerCommand('tutivog.plainmark.noop_redo', () => {
       sync_log.debug('noop_redo fired');
     });
+    // Muzzle Ctrl/Cmd+F so the workbench doesn't act on it while CM6's in-webview
+    // search owns find; same pattern as the Undo/Redo muzzle above.
+    const noop_find = vscode.commands.registerCommand('tutivog.plainmark.noop_find', () => {
+      sync_log.debug('noop_find fired');
+    });
     const insert_table = vscode.commands.registerCommand(
       'tutivog.plainmark.insertTable',
       () => {
@@ -259,6 +264,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       editor,
       noop_undo,
       noop_redo,
+      noop_find,
       insert_table,
       insert_footnote,
       open_in_text_editor,
