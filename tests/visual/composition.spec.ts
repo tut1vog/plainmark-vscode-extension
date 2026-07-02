@@ -19,6 +19,10 @@ const fixtures = ['short', 'inline', 'math-sampler', 'large-doc', 'tables', 'pha
 // small enough to render in full.
 const PARTIAL_FIXTURES = new Set<string>(['large-doc']);
 const MATH_FIXTURES = new Set<string>(['math-sampler', 'large-doc', 'tables']);
+// Fixtures whose goldens encode the settled broken-image placeholder — the
+// `error` event for the unresolvable image base fires late on CI runners, so
+// the snapshot must wait for the swap instead of racing it.
+const BROKEN_IMAGE_FIXTURES = new Set<string>(['inline']);
 
 const VIEWPORT_WIDTH = 1024;
 // Pinned viewport height for the virtualized `large-doc` snapshot — fixed so
@@ -107,6 +111,17 @@ describe('composition snapshots', () => {
           .toBe(0);
         // Typeset math is taller than its pending placeholder — re-fit so the
         // grown tail does not slip back into a `.cm-gap`.
+        if (!partial) await fit_viewport_to_document(view);
+      }
+
+      if (BROKEN_IMAGE_FIXTURES.has(name)) {
+        await expect
+          .poll(
+            () => container.querySelectorAll('img[src^="https://example.test/"]').length,
+            { timeout: 60000 },
+          )
+          .toBe(0);
+        // The placeholder swap changes line heights — re-fit before snapshot.
         if (!partial) await fit_viewport_to_document(view);
       }
 
