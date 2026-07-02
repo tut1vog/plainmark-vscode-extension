@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.2.2] - 2026-07-02
+
+### Fixed
+
+- **Math source stays exactly as typed while you edit a `$$` block** — pressing Enter inside a display-math block (for example after a `\\` line break) temporarily breaks it into plain text, and that raw view used to re-render the source as Markdown, hiding escape characters so `\\` displayed as a single `\` — as if the document had lost a backslash. The text between `$$` markers now always shows byte-for-byte while the block is broken apart, so the source never looks mangled.
+
 ## [1.2.1] - 2026-06-27
 
 ### Fixed
