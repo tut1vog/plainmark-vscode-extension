@@ -1,4 +1,4 @@
-// Mocha bootstrap for the @vscode/test-web suite (T28.8). Loaded by the
+// Mocha bootstrap for the @vscode/test-web suite. Loaded by the
 // browser workbench at
 // `/static/devextensions/dist/integration/web/suite/index.cjs`.
 //

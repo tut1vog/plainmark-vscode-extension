@@ -1,4 +1,4 @@
-// Spec-corpus crash test (T28.2). Two invariants per entry:
+// Spec-corpus crash test. Two invariants per entry:
 //   1. `parser.parse(markdown)` does not throw.
 //   2. Reparsing the same source with `TreeFragment`s derived from the first
 //      parse produces a tree structurally identical to a fresh full parse —

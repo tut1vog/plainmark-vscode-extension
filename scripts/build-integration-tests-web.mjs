@@ -1,4 +1,4 @@
-// Compile the @vscode/test-web integration suite (T28.8) into a browser-
+// Compile the @vscode/test-web integration suite into a browser-
 // loadable bundle. `tests/integration/web/run-tests.mjs` points
 // extensionTestsPath at `dist/integration/web/suite/index.cjs`; the workbench
 // loads it from `/static/devextensions/dist/integration/web/suite/index.cjs`.

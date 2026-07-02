@@ -1,4 +1,4 @@
-// @vscode/test-web activation smoke (T28.8). Runs inside the browser
+// @vscode/test-web activation smoke. Runs inside the browser
 // workbench's extension host; the `vscode` import is the live web API.
 //
 // Three assertions:
@@ -35,7 +35,7 @@ console.error = (...args: unknown[]) => {
   original_error.apply(console, args);
 };
 
-suite('Plainmark web smoke (T28.8) SHELL-A-5', () => {
+suite('Plainmark web smoke SHELL-A-5', () => {
   test('extension activates without throwing', async () => {
     const ext = vscode.extensions.getExtension('tutivog.plainmark');
     ok(ext, 'extension not registered');

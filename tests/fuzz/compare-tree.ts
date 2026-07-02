@@ -1,7 +1,7 @@
 // Cursor-parallel tree comparator — clones lezer-markdown's
 // test/compare-tree.ts verbatim (MIT). Throws on the first node type or
 // position mismatch, or on tree-shape mismatch. Used by the spec-corpus
-// crash test (T28.2) to verify incremental and full parses produce
+// crash test to verify incremental and full parses produce
 // identical trees.
 
 import type { Tree } from '@lezer/common';

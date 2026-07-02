@@ -1,4 +1,4 @@
-// Source-preservation fuzz (T28.3).
+// Source-preservation fuzz.
 //
 // Drives the full production editor (`editor_extensions`) against 500
 // randomly generated documents × 20 random edits per document, then asserts
@@ -118,14 +118,14 @@ describe('INV-SP-1 INV-SP-2: source-preservation fuzz: edits leave bytes outside
 
         if (head_before !== head_after) {
           throw new Error(
-            `T28.3 source-preservation breach (head): seed=0x${SEED.toString(16)} doc=${d} ` +
+            `source-preservation breach (head): seed=0x${SEED.toString(16)} doc=${d} ` +
               `doc_seed=0x${doc_seed.toString(16)} edit=${e} target=${target.name}[${target.from},${target.to}) ` +
               `applied={from:${from},to:${to},insert:${JSON.stringify(insert)}}`,
           );
         }
         if (tail_before !== tail_after) {
           throw new Error(
-            `T28.3 source-preservation breach (tail): seed=0x${SEED.toString(16)} doc=${d} ` +
+            `source-preservation breach (tail): seed=0x${SEED.toString(16)} doc=${d} ` +
               `doc_seed=0x${doc_seed.toString(16)} edit=${e} target=${target.name}[${target.from},${target.to}) ` +
               `applied={from:${from},to:${to},insert:${JSON.stringify(insert)}} ` +
               `delta=${delta}`,

@@ -2,7 +2,7 @@ name: CI
 
 # Day-one matrix is Linux × Desktop+Web, latest stable VS Code only.
 # macOS / Windows / VS Code version matrix are reactive adds, not day-one
-# investment. Wired in T28.9.
+# investment.
 
 on:
   push:
@@ -56,9 +56,9 @@ jobs:
       - run: pnpm run test:source-preservation
 
   fuzz:
-    name: Fuzz suite (T28.2 – T28.4)
+    name: Fuzz suite
     runs-on: ubuntu-latest
-    # Blocking — promoted from soft-fail at T28.10 close-out. The
+    # Blocking — promoted from soft-fail. The
     # initial run is clean (no new regressions; allowlisted upstream
     # divergences are pinned in fixtures/metamorphic-known-divergences.json).
     steps:
@@ -109,7 +109,7 @@ jobs:
       - run: xvfb-run -a node tests/integration/electron/run-tests.mjs
 
   integration-web:
-    name: Integration — VS Code Web (T28.8)
+    name: Integration — VS Code Web
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

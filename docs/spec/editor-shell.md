@@ -219,13 +219,13 @@ Extension activation entry points and the dual Node / Web bundles. Section code
   _Example:_ each `activate(context)` calls `context.subscriptions.push(PlainmarkEditorProvider.register(context))`.
 
 - **SHELL-A-5** `[smoke]` — Activation MUST NOT throw and MUST emit zero `console.error` during cold boot on the Web host; opening a `.md` document with `vscode.openWith` MUST NOT throw.
-  _Example:_ T28.8 web-smoke: extension activates, the `console.error` spy stays zero, `vscode.openWith('.md')` resolves.
+  _Example:_ the web-smoke suite: extension activates, the `console.error` spy stays zero, `vscode.openWith('.md')` resolves.
 
 - **SHELL-A-6** `[build]` — `activationEvents` MUST be empty; activation is driven implicitly by the `customEditors` contribution (resolving a Plainmark editor activates the extension).
   _Example:_ `package.json` `"activationEvents": []`; opening a Plainmark editor triggers `activate`.
 
 - **SHELL-A-7** `[build]` — The Web host bundle MUST be emitted with a `.cjs` extension even though `package.json` `type` is `module`, because the web-worker extension host loads any non-`.cjs` path as ESM and then throws "ESM modules are not supported".
-  _Example:_ the web bundle uses a `.cjs` extension (as does the integration web suite), per T28.8.
+  _Example:_ the web bundle uses a `.cjs` extension (as does the integration web suite).
 
 - **SHELL-A-8** `[smoke]` — On the Node host, after `openWith`, the document MUST be clean (`isDirty == false`); an `applyEdit` MUST mark it dirty and `getText()` MUST reflect the edit; and the Ctrl+Z/Ctrl+Y keybindings MUST be intercepted by inert noop commands while Plainmark is the active custom editor. Where a direct `executeCommand('undo')` lands is workbench-owned and focus-dependent — out of extension control, so not part of this clause.
   _Example:_ the host-smoke suite asserts open→edit plus the muzzle wiring (noop_undo inert, Ctrl+Z contribution present) on the Electron host.

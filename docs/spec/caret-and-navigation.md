@@ -74,7 +74,7 @@ widgets. Section code `N`.
 ## M — Mechanical caret/selection invariants
 
 The numeric oracles the atomic-range machinery exists to protect, pinned by the
-T28.11 caret-invariant fuzz and the T28.5 monkey fuzz.
+caret-invariant fuzz and the monkey fuzz.
 These MUST hold after any keystroke regardless of which decorations or widgets
 are in play. Section code `M`.
 

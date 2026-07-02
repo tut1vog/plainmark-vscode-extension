@@ -1,4 +1,4 @@
-// Console-error sentinel for the vitest-browser project (T28.1).
+// Console-error sentinel for the vitest-browser project.
 //
 // Patches `console.error` / `console.warn` and listens for `window.error` /
 // `unhandledrejection` so any unexpected error-class output fails the test

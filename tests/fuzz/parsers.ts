@@ -1,4 +1,4 @@
-// Lezer-markdown parser configurations for the fuzz suite (T28.2).
+// Lezer-markdown parser configurations for the fuzz suite.
 //
 // `gfm_parser` is the CommonMark + GFM parser — enough for the spec corpus
 // drivers in `spec-corpus.test.ts` (the CommonMark and cmark-gfm corpora are

@@ -1,6 +1,6 @@
-// Position-agnostic structural tree comparator for metamorphic tests (T28.4).
+// Position-agnostic structural tree comparator for metamorphic tests.
 //
-// `compareTree` (T28.2) requires identical byte positions; the metamorphic
+// `compareTree` requires identical byte positions; the metamorphic
 // properties (CRLF↔LF, trailing whitespace, extra blank lines) shift byte
 // positions but should leave the node-type structure intact. This walker
 // matches node-type sequences in pre-order, ignoring positions entirely.

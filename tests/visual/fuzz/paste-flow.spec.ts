@@ -1,11 +1,11 @@
-// Paste-flow tests (T28.6).
+// Paste-flow tests.
 //
 // For each fixture in `tests/fuzz/fixtures/paste-corpus/index.json`, mount
 // the production editor with a seed document, dispatch a synthetic
 // `ClipboardEvent('paste')` carrying a real (native) `DataTransfer`, and
 // assert:
 //   1. The dispatch does not throw.
-//   2. The sentinel-clean console invariant from T28.1 holds.
+//   2. The sentinel-clean console invariant holds.
 //   3. Bytes outside the caret position pre-paste are byte-identical to
 //      bytes before the caret / after the inserted span post-paste —
 //      the INV-SP-1 invariant.
@@ -93,7 +93,7 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
 
       if (threw) {
         throw new Error(
-          `T28.6 paste flow: dispatch threw for fixture "${fixture.name}": ` +
+          `paste flow: dispatch threw for fixture "${fixture.name}": ` +
             `${threw instanceof Error ? threw.stack ?? threw.message : String(threw)}`,
         );
       }
@@ -104,7 +104,7 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
 
       if (after_text.slice(0, CARET_OFFSET) !== before_head) {
         throw new Error(
-          `T28.6 paste flow: head bytes diverged for fixture "${fixture.name}"\n` +
+          `paste flow: head bytes diverged for fixture "${fixture.name}"\n` +
             `expected head: ${JSON.stringify(before_head)}\n` +
             `   actual head: ${JSON.stringify(after_text.slice(0, CARET_OFFSET))}`,
         );
@@ -113,7 +113,7 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
       const tail_after = after_text.slice(CARET_OFFSET + Math.max(0, inserted_length));
       if (tail_after !== before_tail) {
         throw new Error(
-          `T28.6 paste flow: tail bytes diverged for fixture "${fixture.name}"\n` +
+          `paste flow: tail bytes diverged for fixture "${fixture.name}"\n` +
             `expected tail: ${JSON.stringify(before_tail)}\n` +
             `   actual tail: ${JSON.stringify(tail_after)}\n` +
             `inserted: ${JSON.stringify(after_text.slice(CARET_OFFSET, new_caret))}`,
@@ -123,7 +123,7 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
       const captured = unexpected_console_snapshot();
       if (captured.length > 0) {
         throw new Error(
-          `T28.6 paste flow: console error/warn for fixture "${fixture.name}":\n  ` +
+          `paste flow: console error/warn for fixture "${fixture.name}":\n  ` +
             captured.map((c) => `[${c.channel}] ${c.text}`).join('\n  '),
         );
       }

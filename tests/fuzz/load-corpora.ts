@@ -1,4 +1,4 @@
-// Spec-corpus loaders for the fuzz suite (T28.2).
+// Spec-corpus loaders for the fuzz suite.
 //
 // CommonMark: vendored from https://spec.commonmark.org/0.31.2/spec.json
 // (652 entries, JSON `{markdown, html, example, start_line, end_line, section}[]`).

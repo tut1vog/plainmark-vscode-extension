@@ -1,4 +1,4 @@
-// Entrypoint for the @vscode/test-web activation smoke (T28.8). Boots a
+// Entrypoint for the @vscode/test-web activation smoke. Boots a
 // Playwright Chromium pointed at a vscode.dev-style workbench server with
 // this extension loaded, hands off to `dist/integration/web/suite/index.cjs`
 // (built by `scripts/build-integration-tests-web.mjs`). The Mocha suite

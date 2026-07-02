@@ -1,4 +1,4 @@
-// Grammar-guided markdown generator for the fuzz suite (T28.3 / T28.5).
+// Grammar-guided markdown generator for the fuzz suite.
 //
 // Hand-rolled because no published JS/TS markdown-input generator exists; the
 // closest prior art is lezer-markdown's random-change test (covers character

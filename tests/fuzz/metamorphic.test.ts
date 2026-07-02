@@ -1,5 +1,5 @@
-// Metamorphic parser properties over the CommonMark + GFM spec corpus
-// (T28.4). Each property is a transformation that should leave the
+// Metamorphic parser properties over the CommonMark + GFM spec corpus.
+// Each property is a transformation that should leave the
 // node-type structure of the parse tree unchanged. None of these
 // properties are exhaustively asserted by the CommonMark or cmark-gfm
 // test harnesses themselves; they are explicit-in-spec guarantees that
@@ -46,7 +46,7 @@ function parse(src: string): Tree {
 // across line endings). The allowlist is loaded from
 // `fixtures/metamorphic-known-divergences.json` so the test fails when a
 // new divergence appears (regression) or when a previously-listed entry no
-// longer diverges (cleanup signal). Initial census: T28.4 first run,
+// longer diverges (cleanup signal). Initial census: first run,
 // 2026-05-28.
 import known_divergences from './fixtures/metamorphic-known-divergences.json';
 

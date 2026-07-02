@@ -157,7 +157,7 @@ Preserving a block construct's marker on Backspace when the line has content. Th
 override (`marker_aware_backspace`, registered at `Prec.highest`) pre-empts
 `@codemirror/lang-markdown`'s `deleteMarkupBackward`, which would otherwise delete
 the whole `> ` / list marker together with a just-typed space, silently demoting
-the construct (the T28.11 content-loss bug). Section code `B`.
+the construct (a content-loss bug caught by the caret-invariant fuzz). Section code `B`.
 
 > _Scope (T32.8): inside a `Blockquote` node (blockquotes AND callouts), Backspace is plain single-character deletion governed by `BQ-I-4` (`blockquote_plain_backspace`, also `Prec.highest`, ahead of this override) — the markup-demote never fires there. The `MRS-B-*` clauses below therefore now govern LISTS; their `>`/callout examples are retained as illustrations of the marker-aware mechanism but the live blockquote/callout outcome is BQ-I-4's plain per-character delete (which yields the same result for the extra-whitespace and lazy-continuation cases, and a plain space-then-`>` delete where the old clauses yielded to the demote)._
 

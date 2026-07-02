@@ -1,5 +1,5 @@
-// Caret / selection invariant oracles layered on the T28.5 monkey alphabet
-// (T28.11). Three oracle layers asserted after every action:
+// Caret / selection invariant oracles layered on the monkey-fuzzer action alphabet.
+// Three oracle layers asserted after every action:
 //
 //   A. Mechanical — `selection.main` is in [0, doc.length] with from ≤ to,
 //      and both anchor / head are in bounds. Catches the worst-case state
@@ -18,7 +18,7 @@
 //            1189) when they are, deleting a whole indent unit;
 //            intentional CM6 UX inherited from code-editor context,
 //            switching to `deleteCharBackwardStrict` is a separate UX
-//            decision out of T28.11 scope;
+//            decision out of scope for this suite;
 //        (iii) the pre-action line is NOT a structurally-empty marker
 //            line (`> `, `- `, `* `, `+ `, `1. `, `1) ` — possibly with
 //            extra whitespace). Plainmark's `blockquote_empty_line_-
@@ -65,7 +65,7 @@
 //      yields the widget's position — a phantom range around the main
 //      caret, not a real reveal violation.
 //
-// Action alphabet, PRNG, and iteration budget mirror T28.5 monkey.spec.ts so
+// Action alphabet, PRNG, and iteration budget mirror monkey.spec.ts so
 // findings here are comparable. A different SEED selects a non-overlapping
 // sub-walk so we don't replay the exact same trace under two oracle sets.
 //
@@ -196,7 +196,7 @@ function check_oracle_c_reveal(view: EditorView): string | null {
   return null;
 }
 
-describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 NAV-M-3 NAV-M-4 NAV-M-5 NAV-M-6', () => {
+describe('caret/selection invariants under monkey fuzz NAV-M-1 NAV-M-2 NAV-M-3 NAV-M-4 NAV-M-5 NAV-M-6', () => {
   let container: HTMLElement;
   let view: EditorView;
 
@@ -260,7 +260,7 @@ describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 
         //       That's intentional CM6 UX inherited from code-editor context,
         //       not a Plainmark bug; whether Plainmark should override to
         //       `deleteCharBackwardStrict` for a more prose-flavored Backspace
-        //       is a separate UX decision out of T28.11 scope;
+        //       is a separate UX decision out of scope for this suite;
         //   (5) no Table node observed this sequence (latched) — the table
         //       pipeline's rAF/setTimeout hops and whole-table re-emit can
         //       interleave with the round trip regardless of where focus
@@ -288,7 +288,7 @@ describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 
           await userEvent.keyboard(typed);
         } catch (err) {
           throw new Error(
-            `T28.11: action threw — seed=0x${SEED.toString(16)} ` +
+            `caret-invariants: action threw — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name}): ` +
               `${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n` +
               `seq_initial=${JSON.stringify(initial)}\n` +
@@ -299,7 +299,7 @@ describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 
         const a_err = check_oracle_a_mechanical(view);
         if (a_err) {
           throw new Error(
-            `T28.11 Oracle A (mechanical): ${a_err} — seed=0x${SEED.toString(16)} ` +
+            `Oracle A (mechanical): ${a_err} — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name})\n` +
               `seq_initial=${JSON.stringify(initial)}\n` +
               `trace: ${trace.join(' → ')}`,
@@ -309,7 +309,7 @@ describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 
         const c_err = check_oracle_c_reveal(view);
         if (c_err) {
           throw new Error(
-            `T28.11 Oracle C (reveal): ${c_err} — seed=0x${SEED.toString(16)} ` +
+            `Oracle C (reveal): ${c_err} — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name})\n` +
               `caret=${view.state.selection.main.head} doc.length=${view.state.doc.length}\n` +
               `seq_initial=${JSON.stringify(initial)}\n` +
@@ -331,7 +331,7 @@ describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 
             await userEvent.keyboard('{Backspace}');
           } catch (err) {
             throw new Error(
-              `T28.11 Oracle B (round-trip): backspace threw after clean type — ` +
+              `Oracle B (round-trip): backspace threw after clean type — ` +
                 `seed=0x${SEED.toString(16)} seq=${s} action=${a} (${action.name}): ` +
                 `${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n` +
                 `seq_initial=${JSON.stringify(initial)}\n` +
@@ -342,7 +342,7 @@ describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 
           const post_sel = serialize_selection(view);
           if (post_doc !== pre_doc || post_sel !== pre_sel) {
             throw new Error(
-              `T28.11 Oracle B (round-trip): clean type+backspace ≠ identity — ` +
+              `Oracle B (round-trip): clean type+backspace ≠ identity — ` +
                 `seed=0x${SEED.toString(16)} seq=${s} seq_seed=0x${seq_seed.toString(16)} ` +
                 `action=${a} (${action.name})\n` +
                 `pre_doc.len=${pre_doc.length} post_doc.len=${post_doc.length}\n` +
@@ -358,7 +358,7 @@ describe('caret/selection invariants under monkey fuzz (T28.11) NAV-M-1 NAV-M-2 
         const captured = unexpected_console_snapshot();
         if (captured.length > 0) {
           throw new Error(
-            `T28.11: console error/warn fired — seed=0x${SEED.toString(16)} ` +
+            `caret-invariants: console error/warn fired — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name})\n` +
               `console:\n  ${captured.map((c) => `[${c.channel}] ${c.text}`).join('\n  ')}\n` +
               `seq_initial=${JSON.stringify(initial)}\n` +

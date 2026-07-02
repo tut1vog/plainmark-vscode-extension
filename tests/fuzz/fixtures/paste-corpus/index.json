@@ -1,5 +1,5 @@
 {
-  "note": "Synthetic paste fixtures representative of common real-world clipboard payloads. Direct capture from Google Docs / Notion / Word / GitHub is the T28.10 follow-up — agent runtime has no GUI browser, so this initial corpus is hand-authored covering the same shape spectrum the research doc enumerates (rich-formatted spans, table HTML, code blocks, lists, mixed inline). Each entry must include text/plain; text/html is optional. Source-preservation invariant: bytes outside the cursor position pre-paste must be byte-identical to bytes before / after the inserted span post-paste.",
+  "note": "Synthetic paste fixtures representative of common real-world clipboard payloads. Direct capture from Google Docs / Notion / Word / GitHub is a follow-up — agent runtime has no GUI browser, so this initial corpus is hand-authored covering the same shape spectrum the research doc enumerates (rich-formatted spans, table HTML, code blocks, lists, mixed inline). Each entry must include text/plain; text/html is optional. Source-preservation invariant: bytes outside the cursor position pre-paste must be byte-identical to bytes before / after the inserted span post-paste.",
   "entries": [
     {
       "name": "plain-text-only",

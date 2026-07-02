@@ -1,4 +1,4 @@
-// Minimal `DataTransfer` mock for paste-flow tests (T28.6). Clones the
+// Minimal `DataTransfer` mock for paste-flow tests. Clones the
 // shape used by Lexical's
 // `packages/lexical/src/__tests__/utils/index.tsx::DataTransferMock` (MIT) —
 // a `Map<string, string>` backing `setData` / `getData` / `types`. Lexical's

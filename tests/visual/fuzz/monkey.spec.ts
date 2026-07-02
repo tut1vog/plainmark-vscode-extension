@@ -1,11 +1,11 @@
-// Monkey action fuzzer (T28.5).
+// Monkey action fuzzer.
 //
 // Drives a live `EditorView` running the full production `editor_extensions`
 // with a seeded random sequence of user-input actions through
 // `@vitest/browser`'s `userEvent` API — type, backspace, enter, arrows,
 // select-all, undo, redo. Invariants checked at every step:
 //   1. No exception thrown around the action.
-//   2. No error-class console output (enforced globally by the T28.1 sentinel).
+//   2. No error-class console output (enforced globally by the console sentinel).
 //   3. CM6 state stays self-consistent (`view.state.doc.length` ===
 //      `view.state.doc.toString().length`, i.e. no buffer/selection divergence
 //      that would surface as a thrown stack later).
@@ -116,7 +116,7 @@ describe('monkey fuzz: random user-input sequence stays consistent NAV-M-6', () 
           await userEvent.keyboard(typed);
         } catch (err) {
           throw new Error(
-            `T28.5 monkey: action threw — seed=0x${SEED.toString(16)} ` +
+            `monkey: action threw — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name}): ` +
               `${err instanceof Error ? err.stack ?? err.message : String(err)}\n` +
               `trace: ${trace.join(' → ')}`,
@@ -126,7 +126,7 @@ describe('monkey fuzz: random user-input sequence stays consistent NAV-M-6', () 
         const doc_string = view.state.doc.toString();
         if (doc_string.length !== view.state.doc.length) {
           throw new Error(
-            `T28.5 monkey: doc-length/doc-string mismatch — seed=0x${SEED.toString(16)} ` +
+            `monkey: doc-length/doc-string mismatch — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name}) ` +
               `len=${view.state.doc.length} stringLen=${doc_string.length}\n` +
               `trace: ${trace.join(' → ')}`,
@@ -136,7 +136,7 @@ describe('monkey fuzz: random user-input sequence stays consistent NAV-M-6', () 
         const captured = unexpected_console_snapshot();
         if (captured.length > 0) {
           throw new Error(
-            `T28.5 monkey: console error/warn fired — seed=0x${SEED.toString(16)} ` +
+            `monkey: console error/warn fired — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name})\n` +
               `console:\n  ${captured.map((c) => `[${c.channel}] ${c.text}`).join('\n  ')}\n` +
               `seq_initial=${JSON.stringify(initial)}\n` +
