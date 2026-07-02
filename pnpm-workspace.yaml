@@ -4,3 +4,7 @@ allowBuilds:
   simple-git-hooks: true
 patchedDependencies:
   '@lezer/markdown': patches/@lezer__markdown.patch
+# mocha pins serialize-javascript ^6.x, which is vulnerable (GHSA: RCE via
+# RegExp.flags); force the patched 7.x line until mocha moves upstream.
+overrides:
+  serialize-javascript: ^7.0.5
