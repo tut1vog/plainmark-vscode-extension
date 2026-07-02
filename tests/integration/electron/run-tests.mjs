@@ -4,8 +4,8 @@
 // hands off to `./suite/index.cjs` (compiled by esbuild into
 // `dist/integration/electron/suite/index.cjs`). The Mocha suite there
 // drives the three host-side assertions: openWith → isDirty=false;
-// external applyEdit → isDirty=true + getText() matches; workbench undo →
-// getText() matches pre-edit.
+// external applyEdit → isDirty=true + getText() matches; INV-UNDO-2
+// muzzle wiring intact (noop_undo inert, Ctrl+Z keybinding present).
 
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';

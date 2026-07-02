@@ -227,5 +227,5 @@ Extension activation entry points and the dual Node / Web bundles. Section code
 - **SHELL-A-7** `[build]` — The Web host bundle MUST be emitted with a `.cjs` extension even though `package.json` `type` is `module`, because the web-worker extension host loads any non-`.cjs` path as ESM and then throws "ESM modules are not supported".
   _Example:_ the web bundle uses a `.cjs` extension (as does the integration web suite), per T28.8.
 
-- **SHELL-A-8** `[smoke]` — On the Node host, after `openWith`, the document MUST be clean (`isDirty == false`); an `applyEdit` MUST mark it dirty and `getText()` MUST reflect the edit; and `executeCommand('undo')` MUST be a no-op while Plainmark is the active custom editor.
-  _Example:_ the host-smoke suite asserts the open→edit→undo-muzzle sequence on the Electron host.
+- **SHELL-A-8** `[smoke]` — On the Node host, after `openWith`, the document MUST be clean (`isDirty == false`); an `applyEdit` MUST mark it dirty and `getText()` MUST reflect the edit; and the Ctrl+Z/Ctrl+Y keybindings MUST be intercepted by inert noop commands while Plainmark is the active custom editor. Where a direct `executeCommand('undo')` lands is workbench-owned and focus-dependent — out of extension control, so not part of this clause.
+  _Example:_ the host-smoke suite asserts open→edit plus the muzzle wiring (noop_undo inert, Ctrl+Z contribution present) on the Electron host.

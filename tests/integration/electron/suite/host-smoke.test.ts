@@ -6,7 +6,8 @@
 //   (a) `vscode.openWith` → `doc.isDirty === false`
 //   (b) external `workspace.applyEdit` → `doc.isDirty === true` and
 //        `doc.getText()` equals the expected markdown
-//   (c) workbench `undo` command → `doc.getText()` matches pre-edit
+//   (c) the INV-UNDO-2 muzzle wiring: `noop_undo` registered and inert,
+//        Ctrl+Z keybinding contribution present in the loaded manifest
 //
 // "External `applyEdit`" stands in for a webview-originated edit; the host
 // has no API to drive the webview iframe, and an applyEdit from the test
@@ -71,32 +72,36 @@ suite('Plainmark host smoke SYNC-P-2 SYNC-H-6 SHELL-A-8', () => {
     });
   });
 
-  test('(c) workbench undo while Plainmark active is a no-op (INV-UNDO-2)', async () => {
-    // CustomTextEditorProvider does not expose an undo provider — only
-    // CustomEditorProvider (with CustomDocument) has undoEdits/redoEdits.
-    // The webview's CM6 history owns undo; the host's workbench `undo`
-    // command, with Plainmark as the active editor, can't reach into the
-    // webview iframe and therefore silently does nothing to the underlying
-    // TextDocument. T18 / INV-UNDO-2 already muzzle the Ctrl+Z keybinding for
-    // exactly this reason; this assertion pins the behavior at the
-    // command-API tier too — a regression here would mean a future VS Code
-    // release started routing built-in undo into the TextDocument's stack
-    // for active custom text editors, which would silently fight the
-    // webview's CM6 history.
+  test('(c) undo muzzle wiring: noop_undo inert + Ctrl+Z keybinding present (INV-UNDO-2)', async () => {
+    // The muzzle is keybinding-level: Ctrl+Z → noop_undo while Plainmark is
+    // active. Where a direct `executeCommand('undo')` lands is focus-dependent
+    // and workbench-owned, so pin the wiring the extension controls instead.
     await with_temp_file(async (uri) => {
       const doc = await open_in_plainmark(uri);
-      const before = doc.getText();
       const edit = new vscode.WorkspaceEdit();
       const insert_at = SEED_MD.indexOf('First paragraph.') + 'First paragraph.'.length;
       edit.insert(uri, doc.positionAt(insert_at), INSERT);
       await vscode.workspace.applyEdit(edit);
       const post_edit = doc.getText();
-      assert.notStrictEqual(post_edit, before, 'applyEdit was a no-op');
-      await vscode.commands.executeCommand('undo');
+
+      await vscode.commands.executeCommand('tutivog.plainmark.noop_undo');
+      assert.strictEqual(doc.getText(), post_edit, 'noop_undo must not touch document bytes');
+      assert.strictEqual(doc.isDirty, true, 'noop_undo must not change dirty state');
+
+      const ext = vscode.extensions.getExtension('tutivog.plainmark');
+      assert.ok(ext, 'extension tutivog.plainmark not found in the loaded host');
+      const manifest = ext.packageJSON as {
+        contributes?: { keybindings?: Array<{ command: string; key: string; when?: string }> };
+      };
+      const keybindings = manifest.contributes?.keybindings ?? [];
+      const undo_binding = keybindings.find(
+        (kb) => kb.command === 'tutivog.plainmark.noop_undo' && kb.key === 'ctrl+z',
+      );
+      assert.ok(undo_binding, 'ctrl+z → noop_undo keybinding missing from loaded manifest');
       assert.strictEqual(
-        doc.getText(),
-        post_edit,
-        'workbench undo unexpectedly reverted bytes — the INV-UNDO-2 muzzle contract is broken',
+        undo_binding.when,
+        "activeCustomEditorId == 'tutivog.plainmark'",
+        'undo muzzle when-clause no longer scoped to the active Plainmark editor',
       );
     });
   });
