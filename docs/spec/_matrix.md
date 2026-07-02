@@ -606,6 +606,7 @@
 | MATH-E-11 | tier-a | conforming | `math.test.ts` |
 | MATH-E-12 | accepted | accepted | — |
 | MATH-E-13 | accepted | accepted | — |
+| MATH-E-14 | tier-a | conforming | `dissolved_math.test.ts` |
 | MATH-I-1 | tier-a | conforming | `math.test.ts` |
 | MATH-I-2 | tier-a | conforming | `math.test.ts` |
 | MATH-I-3 | tier-a | conforming | `math.test.ts` |

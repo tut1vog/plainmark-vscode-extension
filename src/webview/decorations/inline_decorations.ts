@@ -1,6 +1,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { type EditorState, type Range, RangeSet } from '@codemirror/state';
 import { ranges_overlap } from '../ranges.js';
+import { closed_math_fence_regions } from './dissolved_math.js';
 import {
   type Decoration,
   type DecorationSet,
@@ -54,6 +55,9 @@ export function build_inline_decorations(
   const reveal_ranges = compute_reveal_ranges(state);
   const decorations: Range<Decoration>[] = [];
   const tree = syntaxTree(state);
+  // Math source dissolved into paragraphs (MATH-E-12) must display
+  // byte-accurate — no marker hiding or inline styling inside a `$$` pair.
+  const suppress_ranges = closed_math_fence_regions(state);
 
   for (const { from, to } of visible_ranges) {
     tree.iterate({
@@ -62,6 +66,7 @@ export function build_inline_decorations(
       enter(node) {
         const handlers = registry.get(node.name);
         if (!handlers) return;
+        if (suppress_ranges.some((r) => ranges_overlap(node, r))) return;
         const revealed = reveal_ranges.some((r) => ranges_overlap(node, r));
         for (const handler of handlers) {
           for (const deco of handler.handle(node, state, revealed)) {
