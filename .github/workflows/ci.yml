@@ -11,6 +11,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 # Newer pushes to the same branch cancel in-flight runs.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
