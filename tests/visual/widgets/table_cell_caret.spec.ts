@@ -25,7 +25,7 @@ function get_cell(
 
 const SAMPLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n';
 
-describe('T10.6.6b — widget.coordsAt: caret rendering inside cells', () => {
+describe('widget.coordsAt: caret rendering inside cells', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -116,7 +116,7 @@ describe('T10.6.6b — widget.coordsAt: caret rendering inside cells', () => {
   });
 });
 
-describe('T10.6.6b — double-caret CSS mitigation', () => {
+describe('double-caret CSS mitigation', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

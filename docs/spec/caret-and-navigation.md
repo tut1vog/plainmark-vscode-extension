@@ -25,7 +25,7 @@ both owned here:
   caret-atomic by its block-replace semantics; CM6 will not place the caret
   inside a block widget, so no explicit atomic range is needed.
 
-The blockquote and callout `>` prefixes are NOT atomic: per-line reveal (T30)
+The blockquote and callout `>` prefixes are NOT atomic: per-line reveal
 shows the active line's `>` as ordinary editable text and the caret navigates
 it like any character (`BQ-R-2` / `BQ-I-11`). The retired caret-anchor-widget
 mechanism is covered in the §R note.
@@ -50,7 +50,7 @@ Notation in examples: `|` = caret, `→` = action/result, `\n` = literal newline
 Render-only treatment of collapsed/hidden source: it MUST NOT mutate bytes.
 Section code `R`.
 
-> _NAV-R-1, NAV-R-2, NAV-R-3 (the caret-anchor-widget clauses) were retired at T30. Per-line reveal (`BQ-R-2` / `BQ-I-11`) shows the active line's hidden prefix as real glyphs, so the caret measures against real text and no synthetic caret-anchor widget is emitted; its sole consumer was deleted. IDs not reused._
+> _NAV-R-1, NAV-R-2, NAV-R-3 (the caret-anchor-widget clauses) were retired by the per-line-reveal rework. Per-line reveal (`BQ-R-2` / `BQ-I-11`) shows the active line's hidden prefix as real glyphs, so the caret measures against real text and no synthetic caret-anchor widget is emitted; its sole consumer was deleted. IDs not reused._
 
 - **NAV-R-4** `[inherits:INV-SP-1]` — Marker-hiding and block-collapse decorations are render-only; introducing, moving, or removing them MUST NOT modify document bytes.
   _Example:_ moving the caret onto and off a blockquote line swaps the `>` between hidden and revealed but the `> ` bytes are unchanged.
@@ -62,7 +62,7 @@ widgets. Section code `N`.
 
 - **NAV-N-1** — A collapsed construct's hidden source range MUST be navigationally atomic — either registered as an `EditorView.atomicRanges` range (the list marker prefix) or collapsed behind a `block: true` replace widget (the table) — so horizontal arrow navigation crosses it in a single step, landing the caret immediately before or after the range rather than at any interior offset.
   _Example:_ ArrowRight approaching a collapsed table → the caret jumps from just before the table to just after it, never onto a hidden `|` or `-`. (Table specialization: `TBL-I-1` for mouse activation, `TBL-I-22`–`TBL-I-25` for keyboard entry from adjacent lines.)
-- **NAV-N-2** — The hidden marker prefix of a list item MUST be registered as an `EditorView.atomicRanges` range so ArrowLeft / ArrowRight treats the whole prefix as one stop instead of stepping through each hidden marker byte. Blockquote and callout `>` prefixes are NOT atomic post-T30 (per-line reveal makes the active line's `>` ordinary editable text — see the header note).
+- **NAV-N-2** — The hidden marker prefix of a list item MUST be registered as an `EditorView.atomicRanges` range so ArrowLeft / ArrowRight treats the whole prefix as one stop instead of stepping through each hidden marker byte. Blockquote and callout `>` prefixes are NOT atomic under per-line reveal (the active line's `>` is ordinary editable text — see the header note).
   _Example:_ `1.  hello` with the list marker hidden → ArrowLeft from `h` lands before the rendered content as one step, not between `1` and `.`.
 - **NAV-N-3** `[smoke]` — Vertical navigation (ArrowDown / ArrowUp) over a block-level replaced widget MUST land the caret on the line below / above the widget, never inside the widget's collapsed source.
   _Example:_ ArrowDown from the line above a `$$…$$` math block → caret lands on the line below the block.

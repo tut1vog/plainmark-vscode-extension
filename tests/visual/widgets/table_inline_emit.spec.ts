@@ -227,7 +227,7 @@ describe('TBL-R-5: emit_table_cell — <br> handling (BR1)', () => {
   });
 });
 
-describe('TBL-R-5 TBL-E-10: emit_table_cell — raw HTML wrapped in .plainmark-html-inline + .plainmark-syntax-tag (T17.14)', () => {
+describe('TBL-R-5 TBL-E-10: emit_table_cell — raw HTML wrapped in .plainmark-html-inline + .plainmark-syntax-tag', () => {
   it('wraps <sub>x</sub> in chrome + syntax-tag spans — no <sub> element', () => {
     const frag = emit('| a<sub>x</sub>b |\n|---|\n| body |\n', (t) => t.includes('<sub>'));
     const h = host(frag);

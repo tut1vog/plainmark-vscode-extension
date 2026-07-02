@@ -1,4 +1,4 @@
-// T19.23 regression — cell-activation click reveals on press because the cell
+// Regression — cell-activation click reveals on press because the cell
 // subview is created in rAF after the activating mousedown has already
 // bubbled past, so the cell's pointer_state never sees the press. Without
 // seeding the cell's latch from the main view's current pointer_down state,
@@ -48,7 +48,7 @@ function active_subview_view(): EditorView {
 const TABLE_WITH_BOLD =
   '| a | b | c |\n|---|---|---|\n| **bold** | x | y |\n';
 
-describe('T19.23 — cell-activation pointer-down seeding', () => {
+describe('cell-activation pointer-down seeding', () => {
   let container: HTMLElement;
   let view: EditorView;
 

@@ -16,8 +16,8 @@ chrome replaces the plain multi-bar blockquote chrome for that node's range.
 The underlying blockquote chrome — per-line `>` marker reveal/hide (BQ-R-2 /
 BQ-R-3) and the single-keypress empty-line Enter/Backspace exit (BQ-I-2 /
 BQ-I-4) — is **inherited** from the `BQ` clauses and not re-specified here. (The
-T21 marker-insert redirect, marker-only caret-anchor widgets, and the BQ-I-9
-lazy-continuation trap filter were retired at T30 — see `blockquotes.md`.) This
+marker-insert redirect, marker-only caret-anchor widgets, and the BQ-I-9
+lazy-continuation trap filter were retired by the per-line-reveal rework — see `blockquotes.md`.) This
 document specifies only the callout-specific layer: marker detection, the header
 widget (icon + title), per-type styling, the type-autocomplete affordance, and
 the static fold marker.
@@ -50,7 +50,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CALL-R-8** `[smoke]` — When a fold marker (`-`/`+`) is present, the widget MUST append a static `plainmark-callout-fold-marker` glyph (`▸` for `-`, `▾` for `+`) with `aria-hidden="true"` and `title="Collapsibility coming in a later release"`. The glyph MUST have no click handler and MUST NOT collapse the body.
   _Example:_ `> [!TIP]- Hidden` → header shows tip icon + "Hidden" + a `▸` glyph; the body still renders fully.
 
-- **CALL-R-9** — Body lines MUST render as ordinary blockquote content under the callout's line chrome; only the first line carries the header widget. A marker-only body line (`> ` with no content) follows the inherited per-line reveal (BQ-R-2 / BQ-E-11): its `>` hides when the caret is elsewhere and reveals when the caret is on it. No caret-anchor widget is emitted (retired at T30).
+- **CALL-R-9** — Body lines MUST render as ordinary blockquote content under the callout's line chrome; only the first line carries the header widget. A marker-only body line (`> ` with no content) follows the inherited per-line reveal (BQ-R-2 / BQ-E-11): its `>` hides when the caret is elsewhere and reveals when the caret is on it. No caret-anchor widget is emitted (retired by the per-line-reveal rework).
   _Example:_ `> [!NOTE]\n> **bold**\n> ` → header on line 1; line 2 bold; line 3 empty shows depth chrome, and `> ` when the caret is on it.
 
 - **CALL-R-10** `[smoke]` — Callout content MUST hug the accent bar by the same gap a depth-1 blockquote uses, so callout and blockquote text share the same content x. The hanging-indent magnitude MUST be the per-line value of BQ-R-12 — `gtCount × gt-advance + wsCount × space-advance` from a lexical scan of that line's leading `>`/whitespace run — applied as a PER-LINE INLINE STYLE (`padding-left:<w>px;text-indent:-<w>px`) on EACH header and body line decoration. The equal negative `text-indent` nets the content ORIGIN to the editor content-left for selection alignment (same net-to-zero hanging indent as BQ-R-12, inheriting SHELL-X-9); the visible inset comes from the hidden `>` marker slot / title-widget offset, and the accent bar (CALL-R-5) overlaps it rather than displacing the content. Because each line's `padding-left` equals the advance to that line's first visible glyph, a wrapped body line's continuation rows hang under its first row's visible text even when the body line carries intentional leading content spaces. The theme's `--plainmark-callout-margin-x + --plainmark-callout-text-gap` `padding-left`/`text-indent` is the pre-measure first-frame fallback only (covers the frame before the probe runs); the inline measured indent outranks it. The negative `text-indent` is inherited, and Chromium applies it inside the inline-flex title, collapsing its icon/label gap (BQ-R-12; Firefox bug 1682380). It MUST be reset to `0` on the line's DIRECT children (`.cm-line > *`), NOT via a broad descendant reset (which would also strip the body text's first-line shift and break wrapped-row alignment).
@@ -73,7 +73,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CALL-I-5** — The completion MUST NOT trigger outside a blockquote line, before the `[`, or once any character follows the `[`.
   _Example:_ `[|` (no `>`) → no completions; `> [foo|` → no completions; `> |[` (caret before `[`) → no completions.
 
-> _CALL-I-6 (the typing-before-`>` demotion compromise) was retired at T30 together with the BQ-I-6 marker-insert redirect. With per-line reveal the header line's `> [!TYPE]` is ordinary editable text — the caret edits it like any character (Obsidian behavior) — so the offset-0 demotion compromise no longer applies. ID not reused._
+> _CALL-I-6 (the typing-before-`>` demotion compromise) was retired by the per-line-reveal rework together with the BQ-I-6 marker-insert redirect. With per-line reveal the header line's `> [!TYPE]` is ordinary editable text — the caret edits it like any character (Obsidian behavior) — so the offset-0 demotion compromise no longer applies. ID not reused._
 
 - **CALL-I-7** `[accepted]` — Exit/continuation MUST be inherited from the blockquote keymap (BQ-I-1 / BQ-I-2 / BQ-I-4); no callout-specific exit keymap ships. The empty-`> `-line single-keypress exit fires on callout body lines too. No `Mod-Shift-B`-style callout-wrap shortcut and no interactive type-change menu ship in the MVP (deferred).
   _Example:_ `> [!NOTE]\n> |` → Enter (on empty body line) → `> [!NOTE]\n\n|` (single keypress exit).

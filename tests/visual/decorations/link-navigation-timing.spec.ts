@@ -1,4 +1,4 @@
-// T19.23 — link navigation defers from mousedown to click (post-mouseup), so
+// Link navigation defers from mousedown to click (post-mouseup), so
 // the pointer-state reveal gate completes its cycle before the page changes.
 // Only Cmd/Ctrl-click navigates; a plain click always defers to caret placement.
 
@@ -16,7 +16,7 @@ function find_link_span(container: HTMLElement, href: string): HTMLElement {
   return el;
 }
 
-describe('link navigation timing (T19.23)', () => {
+describe('link navigation timing', () => {
   let container: HTMLElement;
   let view: EditorView;
   let dispatched: string[];

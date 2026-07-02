@@ -117,7 +117,7 @@ const PREFIX = 'intro\n';
 const PREFIXED_TABLE = PREFIX + SAMPLE_TABLE;
 const PREFIX_TABLE_FROM = PREFIX.length;
 
-describe('T10.6.6e — rebase-on-undo ViewPlugin', () => {
+describe('rebase-on-undo ViewPlugin', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

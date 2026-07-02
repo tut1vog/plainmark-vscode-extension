@@ -1,4 +1,4 @@
-// T19.23 regression — after a mousedown + mouseup cycle that lands the caret
+// Regression — after a mousedown + mouseup cycle that lands the caret
 // inside a text-style construct, the markers must actually become visible.
 //
 // MRS-P-1/P-2 freeze model: the capture-phase mousedown listener snapshots the
@@ -20,7 +20,7 @@ function next_frame(): Promise<void> {
   return new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
-describe('marker reveal after mousedown/mouseup cycle (T19.23 regression)', () => {
+describe('marker reveal after mousedown/mouseup cycle (regression)', () => {
   let container: HTMLElement;
   let view: EditorView;
 

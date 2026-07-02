@@ -59,7 +59,7 @@ function arrow_up(view: EditorView): boolean {
   );
 }
 
-describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2)', () => {
+describe('table entry keymap — ArrowDown/ArrowUp from main view (Fix 2)', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -97,7 +97,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
   // `line.from - 1 < table.to` — the entry keymap simply cannot fire. With a
   // single '\n' separator, 'bye' is parsed inside the Table; the keymap fires
   // and `locate_table_extraction` reports row_count = 4 (header + 2 body +
-  // T10.6.3 implementation update: ArrowUp branch now uses the LAST element of
+  // Implementation update: ArrowUp branch now uses the LAST element of
   // `info.cells` (row-then-col ordered) rather than `(row_count-1, col_count-1)`,
   // so it's robust to lezer's row_count over-counting when the next paragraph
   // is absorbed into the Table node. `find_table_just_above` also tolerates
@@ -206,7 +206,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
     expect(view.state.doc.lineAt(head).number).toBeGreaterThan(1);
   });
 
-  it('TBL-I-23: ArrowLeft from start of line below table activates the LAST cell (T10.10.1 Bug A)', async () => {
+  it('TBL-I-23: ArrowLeft from start of line below table activates the LAST cell (Bug A)', async () => {
     // CM6's default ArrowLeft from line-start moves caret one byte back —
     // landing mid-line on the last pipe row, inside the block-replace's
     // visual extent. The result is the same widget-right-bottom giant caret
@@ -249,7 +249,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
     expect(idx!.col).toBe(max_col);
   });
 
-  it('TBL-I-24: Backspace at start of line below table activates the LAST cell — no byte deletion (T10.10.2 Bug C)', async () => {
+  it('TBL-I-24: Backspace at start of line below table activates the LAST cell — no byte deletion (Bug C)', async () => {
     // CM6's default Backspace from line-start deletes the preceding \n,
     // joining the current line to the previous one. The previous "line" is
     // the table's last pipe row — joining the math/text line onto a pipe
@@ -292,7 +292,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
     expect(idx.col).toBe(max_col);
   });
 
-  it('TBL-I-24: Backspace mid-line still deletes one char (T10.10.2 — guard)', async () => {
+  it('TBL-I-24: Backspace mid-line still deletes one char (guard)', async () => {
     view = mount_editor(container, STARTER + 'tail');
     view.dispatch({ selection: { anchor: STARTER.length + 2 } });
     view.focus();
@@ -315,7 +315,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
     expect(active_subview_container()).toBeNull();
   });
 
-  it('TBL-I-22: ArrowRight at end of line above table activates the first cell (T10.10.2 Bug D)', async () => {
+  it('TBL-I-22: ArrowRight at end of line above table activates the first cell (Bug D)', async () => {
     // Leading empty line is the degenerate case: line.from === line.to === 0,
     // so caret at position 0 satisfies `sel.head === line.to`. Without this
     // binding, CM6's default moves caret one byte forward to position 1
@@ -367,7 +367,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
     expect(idx.col).toBe(0);
   });
 
-  it('TBL-I-22: ArrowRight when caret is NOT at line end is a no-op (T10.10.2 — guard)', async () => {
+  it('TBL-I-22: ArrowRight when caret is NOT at line end is a no-op (guard)', async () => {
     view = mount_editor(container, 'hello\n' + STARTER);
     view.dispatch({ selection: { anchor: 2 } });
     view.focus();
@@ -389,7 +389,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
     expect(view.state.selection.main.head).toBe(3);
   });
 
-  it('TBL-I-23: ArrowLeft when caret is NOT at line start is a no-op (T10.10.1 — guard)', async () => {
+  it('TBL-I-23: ArrowLeft when caret is NOT at line start is a no-op (guard)', async () => {
     view = mount_editor(container, STARTER + 'tail');
     // Caret mid-'tail' — default CM6 ArrowLeft must still fire.
     view.dispatch({ selection: { anchor: STARTER.length + 2 } });
@@ -412,7 +412,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (T10.6.3 Fix 2
     expect(view.state.selection.main.head).toBe(STARTER.length + 1);
   });
 
-  it('TBL-I-23: ArrowUp from line below an absorbed-paragraph line is a no-op (T10.10 Bug 1)', async () => {
+  it('TBL-I-23: ArrowUp from line below an absorbed-paragraph line is a no-op (Bug 1)', async () => {
     // STARTER + '$a=b$\n' — only ONE \n between the table and the math line,
     // so lezer's GFM grammar absorbs `$a=b$` as a TableRow with zero
     // TableDelimiter children. Pre-fix, find_table_just_above used the RAW

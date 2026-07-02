@@ -1,6 +1,6 @@
 # Inline constructs
 
-Every inline non-math construct in scope for T7, T8, T8a (math omitted).
+Every inline non-math construct in scope (math omitted).
 
 ## Emphasis
 

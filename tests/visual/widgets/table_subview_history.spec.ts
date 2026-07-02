@@ -53,7 +53,7 @@ async function activate_cell(
 
 const SAMPLE_TABLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n';
 
-describe('T10.6.6d — subview history is empty (addToHistory.of(false) extender)', () => {
+describe('subview history is empty (addToHistory.of(false) extender)', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -88,7 +88,7 @@ describe('T10.6.6d — subview history is empty (addToHistory.of(false) extender
       await next_frame();
     }
 
-    // With the T10.6.6d transactionExtender stamping addToHistory.of(false)
+    // With the transactionExtender stamping addToHistory.of(false)
     // on every non-sync subview transaction, the subview's local history
     // never grows. (Main view's history grew by 3 — that's where undo lives.)
     expect(undoDepth(sub_view.state)).toBe(0);

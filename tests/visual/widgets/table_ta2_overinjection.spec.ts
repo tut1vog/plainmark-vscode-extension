@@ -50,7 +50,7 @@ async function activate(container: HTMLElement, row: number, col: number): Promi
   }
 }
 
-describe('T10.6.6i — TA2 over-injection on cell edit', () => {
+describe('TA2 over-injection on cell edit', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

@@ -1,4 +1,4 @@
-// Regression (T19.19): a drag-selection within a line that begins with an
+// Regression: a drag-selection within a line that begins with an
 // inline text style (bold / italic / strikethrough / inline code) must never
 // paint more than one selection rectangle.
 //
@@ -8,7 +8,7 @@
 // drawSelection's wrappedLine via posAtCoords under EditorView.lineWrapping and
 // a spurious whole-line rectangle blinks through the drag. Fixed by hiding the
 // markers with a display:none Decoration.mark (empty getClientRects). Same
-// defect class as T19.15-T19.17; see heading-selection.spec.ts.
+// defect class as the heading drag-selection flicker; see heading-selection.spec.ts.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
@@ -18,7 +18,7 @@ function next_frame(): Promise<void> {
   return new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
-describe('inline-marker drag-selection draws no spurious rectangle (T19.19)', () => {
+describe('inline-marker drag-selection draws no spurious rectangle', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

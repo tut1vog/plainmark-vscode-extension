@@ -142,7 +142,7 @@ Default (no tag): coverage is expected from an automated test; conformance is
 `[inherits:<ID>]` target. A clause with none of these is **`uncovered`** (a real
 gap). `tier-b` and `smoke` co-exist deliberately: a clause whose automated
 browser test has previously passed while the bug remained visible under F5 (the
-T21.1 class) carries both.
+marker-insert-redirect class of bug) carries both.
 
 **Conformance axis** per clause: `divergent` / `unknown` if so tagged, inherited
 if `[inherits:<ID>]`, else **`conforming`**.

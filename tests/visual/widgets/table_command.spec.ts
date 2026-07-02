@@ -48,11 +48,11 @@ describe('insert_table_at_caret — ED command webview path', () => {
     container.remove();
   });
 
-  it('TBL-I-17: prepends a leading \\n when caret is at offset 0 (T10.6.2 Fix 5) + Fix B1 trailing newline at an empty doc', async () => {
+  it('TBL-I-17: prepends a leading \\n when caret is at offset 0 (Fix 5) + Fix B1 trailing newline at an empty doc', async () => {
     view = mount_editor(container, '');
     insert_table_at_caret(view);
     await next_frame();
-    // T10.6.2 Fix 5: caret === 0 always prepends a leading '\n' so the table
+    // Fix 5: caret === 0 always prepends a leading '\n' so the table
     // doesn't sit at offset 0 with no caret-targetable line above. Fix B1: end-
     // of-doc still appends '\n' so ArrowDown has a target line below.
     expect(view.state.doc.toString()).toBe('\n' + STARTER + '\n');
@@ -75,7 +75,7 @@ describe('insert_table_at_caret — ED command webview path', () => {
   });
 
   it('TBL-I-17: omits the leading newline when caret is at line-start of a non-first line', async () => {
-    // T10.6.2 Fix 5 means caret === 0 always gets a leading '\n'. To exercise
+    // Fix 5 means caret === 0 always gets a leading '\n'. To exercise
     // the at-line-start-but-not-offset-0 branch (no leading newline), put the
     // caret at the start of line 2.
     view = mount_editor(container, 'first line\nsecond line');
@@ -206,7 +206,7 @@ describe('insert_table message — webview bus wiring', () => {
       new MessageEvent('message', { data: { type: 'insert_table' } }),
     );
     await next_frame();
-    // T10.6.2 Fix 5: caret === 0 prepends '\n'. Fix B1: empty-doc appends '\n'.
+    // Fix 5: caret === 0 prepends '\n'. Fix B1: empty-doc appends '\n'.
     expect(view.state.doc.toString()).toBe('\n' + STARTER + '\n');
   });
 });

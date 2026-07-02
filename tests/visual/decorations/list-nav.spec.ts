@@ -1,6 +1,6 @@
-// Regression (T19.4d): vertical cursor motion and click-targeting across a
+// Regression: vertical cursor motion and click-targeting across a
 // nested bullet list must stay in sync with CM6's height map. The bug pattern
-// (T19.4b D13.9 first form): a `margin-top` rule on `.plainmark-list-item +
+// (D13.9 first form): a `margin-top` rule on `.plainmark-list-item +
 // .plainmark-list-item` introduces inter-`.cm-line` gaps that
 // `getBoundingClientRect` does not see, so the height map and real DOM drift
 // apart by `N * spacing` over an N-item list. At 7+ items the cumulative
@@ -49,7 +49,7 @@ function walk_up(view: EditorView, presses: number): number[] {
   return lines;
 }
 
-describe('nested-list cursor navigation (T19.4d)', () => {
+describe('nested-list cursor navigation', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

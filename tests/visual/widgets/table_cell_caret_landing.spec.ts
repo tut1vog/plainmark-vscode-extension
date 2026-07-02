@@ -55,7 +55,7 @@ async function click_cell_at(td: HTMLTableCellElement, coords: { x: number; y: n
 
 const SAMPLE_TABLE = '| a | b | c |\n|---|---|---|\n| hello | world | test |\n| 4 | 5 | 6 |\n';
 
-describe('T10.6.6h — cell caret landing on activation', () => {
+describe('cell caret landing on activation', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -115,7 +115,7 @@ describe('T10.6.6h — cell caret landing on activation', () => {
 
     const sub = active_subview_view();
     expect(sub.state.doc.toString()).toBe('b');
-    // Default caret landing post-T10.6.6h: end of cell.
+    // Default caret landing since the caret-landing fix: end of cell.
     expect(sub.state.selection.main.head).toBe(sub.state.doc.length);
   });
 });

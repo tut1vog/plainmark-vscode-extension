@@ -1,4 +1,4 @@
-// Regression (T19.15): a drag-selection within a heading must never paint more
+// Regression: a drag-selection within a heading must never paint more
 // than one selection rectangle.
 //
 // A heading line begins with its ATX marker (`# `) hidden. When the marker was
@@ -20,7 +20,7 @@ function next_frame(): Promise<void> {
   return new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
-describe('heading drag-selection draws a single rectangle (T19.15)', () => {
+describe('heading drag-selection draws a single rectangle', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

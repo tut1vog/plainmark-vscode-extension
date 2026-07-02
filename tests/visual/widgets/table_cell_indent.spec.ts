@@ -37,7 +37,7 @@ async function activate_cell(
   return snap.sub_view;
 }
 
-const SAMPLE = '| col one | b |\n|---|---|\n| T10 r1 | x |\n';
+const SAMPLE = '| col one | b |\n|---|---|\n| cell r1 | x |\n';
 
 // A cell subview is its own EditorView nested inside the main editor's
 // `.cm-content`. The main editor's prose-column theme rule must not reach the

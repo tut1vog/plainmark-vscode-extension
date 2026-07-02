@@ -40,7 +40,7 @@ function position_in_block_replace(view: EditorView, pos: number): { from: numbe
   return hit;
 }
 
-describe('T10.6.6a — Bug B: typing on the line after a freshly-inserted table', () => {
+describe('Bug B: typing on the line after a freshly-inserted table', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

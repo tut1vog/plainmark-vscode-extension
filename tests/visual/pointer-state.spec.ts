@@ -1,4 +1,4 @@
-// T19.23 — pointer_down latch wiring (mousedown on editor → document mouseup).
+// pointer_down latch wiring (mousedown on editor → document mouseup).
 // Verifies the DOM event handlers and the document-level mouseup cleanup that
 // the reveal gate in text_styles.ts / links.ts depends on.
 
@@ -10,7 +10,7 @@ import {
   pointer_state_extension,
 } from '../../src/webview/decorations/pointer_state.js';
 
-describe('pointer_state DOM wiring (T19.23)', () => {
+describe('pointer_state DOM wiring', () => {
   let container: HTMLElement;
   let view: EditorView;
 

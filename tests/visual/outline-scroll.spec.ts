@@ -1,4 +1,4 @@
-// T4 — outline click navigation (OUT-I-2): a `scroll_to_heading` {line, character}
+// Outline click navigation (OUT-I-2): a `scroll_to_heading` {line, character}
 // must move the caret to that position, scroll it to the top of the viewport, and
 // focus the editor. Positions outside the document clamp into range.
 

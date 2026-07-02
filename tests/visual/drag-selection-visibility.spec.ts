@@ -57,7 +57,7 @@ function selection_rect_visible(container: HTMLElement, line_el: Element): boole
   return false;
 }
 
-describe('drag-selection visibility on chromed lines (T17.14 hotfix)', () => {
+describe('drag-selection visibility on chromed lines (hotfix)', () => {
   let h: SetupHandle;
   beforeEach(() => {
     h = make_setup();
@@ -80,7 +80,7 @@ describe('drag-selection visibility on chromed lines (T17.14 hotfix)', () => {
     expect(z).toBeGreaterThanOrEqual(0);
   });
 
-  it('elevated selection layer keeps pointer-events: none so clicks on a selection still reach .cm-content (T19.4d)', async () => {
+  it('elevated selection layer keeps pointer-events: none so clicks on a selection still reach .cm-content', async () => {
     // Once the layer is elevated to z-index: 0, the painted selection
     // rectangle would intercept mouse events before .cm-content unless
     // pointer-events: none is set. CM6's base theme sets pointer-events: none
@@ -162,7 +162,7 @@ describe('drag-selection visibility on chromed lines (T17.14 hotfix)', () => {
     expect(selection_rect_visible(h.container, fm_line!)).toBe(true);
   });
 
-  it('html block body — selection visible (F5 regression — T17.14 trigger)', async () => {
+  it('html block body — selection visible (F5 regression — hotfix trigger)', async () => {
     const doc = '<div>\n  The quick brown fox.\n</div>\n';
     h.view = mount_editor(h.container, doc);
     await next_frame();
@@ -182,7 +182,7 @@ describe('drag-selection visibility on chromed lines (T17.14 hotfix)', () => {
   });
 });
 
-describe('selection rectangle width — must not overshoot the prose column (T19.14)', () => {
+describe('selection rectangle width — must not overshoot the prose column', () => {
   let h: SetupHandle;
   beforeEach(() => {
     h = make_setup();

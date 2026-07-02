@@ -141,7 +141,7 @@ describe('CALL-I-1 CALL-R-3: callout decorations — per-line reveal on caret on
     expect(title_widget_in(h.container)).not.toBeNull();
   });
 
-  it('keeps widget rendered on initial mount (default caret at offset 0 for top-of-doc callout) — T17.5a.1 regression', async () => {
+  it('keeps widget rendered on initial mount (default caret at offset 0 for top-of-doc callout) — regression', async () => {
     const doc = '> [!NOTE]\n> body';
     h.view = mount_editor(h.container, doc);
     // No move_cursor call — CM6's default selection lands at offset 0.
@@ -150,9 +150,9 @@ describe('CALL-I-1 CALL-R-3: callout decorations — per-line reveal on caret on
   });
 
   it('drops the widget when the caret is anywhere on the header line, including offset 0 (per-line reveal)', async () => {
-    // Per-line reveal (T30.3): caret on the header line — even at offset 0,
+    // Per-line reveal: caret on the header line — even at offset 0,
     // before the `>` — reveals the raw header for editing (CALL-I-1). The
-    // pre-T30 node-level model kept the widget here; that expectation is retired.
+    // earlier node-level reveal model kept the widget here; that expectation is retired.
     const doc = '> [!NOTE]\n> body';
     h.view = mount_editor(h.container, doc);
     move_cursor(h.view, 0);
@@ -171,7 +171,7 @@ describe('CALL-I-1 CALL-R-3: callout decorations — per-line reveal on caret on
   });
 });
 
-describe('BQ-E-10: callout decorations — T16.2a suppression', () => {
+describe('BQ-E-10: callout decorations — callout chrome suppression', () => {
   let h: SetupHandle;
   beforeEach(() => {
     h = make_setup();
@@ -196,7 +196,7 @@ describe('BQ-E-10: callout decorations — T16.2a suppression', () => {
     expect(h.container.querySelector('.plainmark-blockquote[data-blockquote-depth]')).toBeNull();
   });
 
-  it('plain blockquotes still get T16.2a multi-bar chrome (regression)', async () => {
+  it('plain blockquotes still get multi-bar chrome (regression)', async () => {
     const doc = '> just a quote\n> line 2';
     h.view = mount_editor(h.container, doc);
     move_cursor(h.view, doc.length);
@@ -294,7 +294,7 @@ describe('callout decorations — fold marker', () => {
   });
 });
 
-describe('BQ-I-2: callout decorations — T16.2b empty-quote-exit (regression)', () => {
+describe('BQ-I-2: callout decorations — empty-quote-exit (regression)', () => {
   let h: SetupHandle;
   beforeEach(() => {
     h = make_setup();
@@ -316,7 +316,7 @@ describe('BQ-I-2: callout decorations — T16.2b empty-quote-exit (regression)',
     );
     await next_frame();
     const after = h.view.state.doc.toString();
-    // The empty `> ` marker is stripped in one transaction (T16.2b contract).
+    // The empty `> ` marker is stripped in one transaction (single-transaction contract).
     expect(after.endsWith('> ')).toBe(false);
   });
 });

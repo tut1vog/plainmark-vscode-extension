@@ -1,4 +1,4 @@
-// Regression (T9.9): vertical cursor motion must step one visual line at a
+// Regression: vertical cursor motion must step one visual line at a
 // time past a block widget. A CSS `margin` on a block-widget container is
 // excluded from getBoundingClientRect().height, which desyncs CM6's height
 // map and collapses ArrowUp to the line above the widget regardless of how
@@ -53,7 +53,7 @@ function walk(view: EditorView, step: (v: EditorView) => boolean, presses: numbe
   return lines;
 }
 
-describe('block-widget vertical navigation (T9.9)', () => {
+describe('block-widget vertical navigation', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

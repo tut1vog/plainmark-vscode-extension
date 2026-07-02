@@ -10,7 +10,7 @@ Normative behavior for paragraphs and line breaks. A paragraph is the **baseline
 construct**: it is the absence of any other construct, so there is no
 dedicated paragraph handler. Paragraph semantics are plain CommonMark with **no**
 special remapping. The Typora-style paragraph model (Enter → `\n\n`, blank-line
-gap rendering) attempted in T19.8–T19.12 was fully reverted; the clauses below
+gap rendering) once attempted was fully reverted; the clauses below
 describe the current post-revert behavior.
 
 Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README §2).
@@ -20,13 +20,13 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **PARA-R-1** — A paragraph MUST render as its inline content with no marker chrome, no line decoration class, and no widget: a paragraph is the absence of any other construct, so no decoration is emitted for it.
   _Example:_ `hello world` renders as `hello world` with no added wrapper, marker, or background.
 
-- **PARA-R-2** — Paragraph text MUST soft-wrap at the prose-column width via `EditorView.lineWrapping`; a long logical line MUST NOT introduce horizontal scrolling and MUST NOT alter source bytes (T17.11).
+- **PARA-R-2** — Paragraph text MUST soft-wrap at the prose-column width via `EditorView.lineWrapping`; a long logical line MUST NOT introduce horizontal scrolling and MUST NOT alter source bytes.
   _Example:_ a single-line paragraph wider than the column wraps onto multiple visual rows; the source remains one line.
 
 - **PARA-R-3** — A blank line MUST act as a paragraph separator: consecutive non-blank lines render as one paragraph, and a blank line between them renders two distinct paragraphs (plain CommonMark).
   _Example:_ `a\nb` → one paragraph (`a b` after wrap); `a\n\nb` → two paragraphs.
 
-- **PARA-R-4** `[smoke]` — Vertical spacing between a paragraph and an adjacent block construct MUST flow from the unified spacing surface (T17.9): `.cm-line` carries no vertical margin (CM6 height-map rule), and adjacent opt-in constructs collapse doubled padding via `plainmark-collapse-adjacent`.
+- **PARA-R-4** `[smoke]` — Vertical spacing between a paragraph and an adjacent block construct MUST flow from the unified spacing surface: `.cm-line` carries no vertical margin (CM6 height-map rule), and adjacent opt-in constructs collapse doubled padding via `plainmark-collapse-adjacent`.
   _Example:_ a paragraph directly above a blockquote shows a single inter-block gap, not a doubled one.
 
 - **PARA-R-5** `[smoke]` — Paragraph body typography MUST derive from the CSS-variable surface: font size `--plainmark-font-size` (16px), line height `--plainmark-body-line-height` (1.5), and the prose sans-serif `--plainmark-font-text` stack.
@@ -37,7 +37,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## I · Interaction
 
-- **PARA-I-1** — Enter in a paragraph MUST insert a single `\n` (CM6 default newline). It MUST NOT insert `\n\n` or inject any blank line — the Typora-style `\n\n` remap was reverted (T19.8–T19.12).
+- **PARA-I-1** — Enter in a paragraph MUST insert a single `\n` (CM6 default newline). It MUST NOT insert `\n\n` or inject any blank line — the Typora-style `\n\n` remap was reverted.
   _Example:_ `foo|bar` → Enter → `foo\n|bar` (one newline, no blank line).
 
 - **PARA-I-2** — Typing printable characters in a paragraph MUST insert plain text at the caret with no marker insertion, redirect, or chrome (no construct keymap claims the keystroke).

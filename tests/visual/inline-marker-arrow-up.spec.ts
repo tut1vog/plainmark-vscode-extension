@@ -1,14 +1,14 @@
-// Regression (T19.21 / T19.26 attempt 3): ArrowUp from a blank line below a
+// Regression (hidden-marker hide-CSS history): ArrowUp from a blank line below a
 // stack of lines that each start with a hidden inline marker must move the
 // caret one logical line up, not skip across several.
 //
-// History: under display:none (pre-T19.26), CM6's moveVertically called
+// History: under the earlier display:none hide, CM6's moveVertically called
 // posAtCoords(.., scanY=±1) whose scanY branch skipped lines where
 // view.docView.coordsAt(block.from, ..) returned null — display:none MarkTiles
 // always returned null because textRange.getClientRects() was empty per spec.
-// T19.21 worked around this with a vertical_navigation_keymap override.
+// A vertical_navigation_keymap override worked around this at first.
 //
-// T19.26 attempt 3: hide CSS changed to display:inline-block + width:0 +
+// The fix: hide CSS changed to display:inline-block + width:0 +
 // overflow:hidden. The marker still has a valid (0-width) layout box → its
 // text node's getClientRects returns non-empty → coordsAt returns non-null →
 // the scanY skip never fires. The keymap override was removed when this spec
@@ -25,7 +25,7 @@ function next_frame(): Promise<void> {
   return new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
-describe('ArrowUp from below stacked hidden-marker lines (T19.21)', () => {
+describe('ArrowUp from below stacked hidden-marker lines', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

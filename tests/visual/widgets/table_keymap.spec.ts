@@ -195,7 +195,7 @@ describe('table keymap — navigation', () => {
     expect(view.state.selection.main.head).toBe(Math.max(0, table_from - 1));
   });
 
-  it('TBL-I-7 TBL-I-21: ArrowRight from bottom-right cell exits to start of line after the table (T10.10 Bug 2)', async () => {
+  it('TBL-I-7 TBL-I-21: ArrowRight from bottom-right cell exits to start of line after the table (Bug 2)', async () => {
     // info.to is right AFTER the last `|` of the last pipe row — same byte-line
     // as the last visually-replaced line, so the position is mid-line inside
     // the block-replace's visual extent. Pre-fix, exit_to_main_view(info.to)
@@ -221,7 +221,7 @@ describe('table keymap — navigation', () => {
     expect(head).toBe(line.from);
   });
 
-  it('TBL-I-21: ArrowRight from bottom-right cell synchronously tears down the subview (T10.10.1 Bug B delay fix)', async () => {
+  it('TBL-I-21: ArrowRight from bottom-right cell synchronously tears down the subview (Bug B delay fix)', async () => {
     // Pre-fix, focusout's setTimeout(0) deferred teardown to the next
     // macrotask, leaving the subview DOM in the document after focus shifted
     // to the main view. User perceived a delay before the next-line caret
@@ -239,7 +239,7 @@ describe('table keymap — navigation', () => {
     expect(active_subview_container()).toBeNull();
   });
 
-  it('TBL-I-7 TBL-I-21: ArrowDown from bottom row exits to start of line after the table (T10.10 Bug 2 — symmetric)', async () => {
+  it('TBL-I-7 TBL-I-21: ArrowDown from bottom row exits to start of line after the table (Bug 2 — symmetric)', async () => {
     view = mount_editor(container, SAMPLE_TABLE + 'tail');
     await activate_cell(container, 2, 1);
 
@@ -503,11 +503,11 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     await settle();
 
     expect(view.state.doc.toString()).toBe(before_doc);
-    // T10.6.6c: route_to_main no longer calls main_view.focus() — subview stays mounted.
+    // route_to_main no longer calls main_view.focus() — subview stays mounted.
     expect(active_subview_container()).not.toBeNull();
   });
 
-  it('Mod-z keeps focus in the subview and does NOT tear it down (T10.6.6c)', async () => {
+  it('Mod-z keeps focus in the subview and does NOT tear it down', async () => {
     view = mount_editor(container, SAMPLE_TABLE);
     await activate_cell(container, 1, 0);
 
@@ -517,7 +517,7 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     key(sub_cm, { key: 'z', ...mod_init() });
     await settle();
 
-    // After T10.6.6c: subview keeps focus and stays mounted across Mod-z.
+    // Subview keeps focus and stays mounted across Mod-z.
     expect(active_subview_container()).not.toBeNull();
     const sub_cm_after = subview_content_dom();
     expect(
@@ -525,13 +525,13 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     ).toBe(true);
   });
 
-  // Mod-Shift-z / Mod-y redo behavior: under T10.6.6c the subview stays mounted
+  // Mod-Shift-z / Mod-y redo behavior: the subview stays mounted
   // but its state.doc is stale (not yet synced to post-undo cell content). Redo
-  // dispatched against main_view's history applies, but the rebase ViewPlugin
-  // that syncs the subview lands in T10.6.6e. For T10.6.6c we only assert that
+  // dispatched against main_view's history applies, but syncing the subview is
+  // the rebase-on-undo ViewPlugin's job. Here we only assert that
   // the redo path doesn't tear down the subview or move focus away.
 
-  it('Mod-Shift-z does not tear the subview down (T10.6.6c)', async () => {
+  it('Mod-Shift-z does not tear the subview down', async () => {
     view = mount_editor(container, SAMPLE_TABLE);
     await activate_cell(container, 1, 0);
 
@@ -555,7 +555,7 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     ).toBe(true);
   });
 
-  it('Mod-y does not tear the subview down (T10.6.6c)', async () => {
+  it('Mod-y does not tear the subview down', async () => {
     view = mount_editor(container, SAMPLE_TABLE);
     await activate_cell(container, 1, 0);
 
@@ -574,7 +574,7 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     expect(active_subview_container()).not.toBeNull();
   });
 
-  it('TBL-SP-8: cell edit alone pins main-view selection at table.from (T10.6.2 Fix 1, no undo)', async () => {
+  it('TBL-SP-8: cell edit alone pins main-view selection at table.from (Fix 1, no undo)', async () => {
     view = mount_editor(container, SAMPLE_TABLE);
     const table_block = get_table_block(container);
     const table_from = Number(table_block.dataset.tableFrom);
@@ -594,10 +594,10 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     expect(view.state.selection.main.head).toBe(table_from);
   });
 
-  it('TBL-I-9 TBL-SP-8: cell edit + Mod-z: post-undo selection is NOT at table_from - 1 (T10.6.6c regression guard)', async () => {
+  it('TBL-I-9 TBL-SP-8: cell edit + Mod-z: post-undo selection is NOT at table_from - 1 (regression guard)', async () => {
     const prefix = 'hello\n';
     view = mount_editor(container, prefix + SAMPLE_TABLE);
-    // T10.6.6c: route_to_main no longer overrides post-undo selection to
+    // route_to_main no longer overrides post-undo selection to
     // table_from - 1. CM6 history restores its own selection (whatever the
     // pre-edit main-view selection was — depends on test setup). Subview stays
     // mounted and keeps focus.
@@ -614,18 +614,18 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     });
     await next_frame();
     expect(view.state.doc.toString()).not.toBe(before_doc);
-    // T10.6.2 Fix 1: handle_cell_edit pins main-view selection at table_from while editing.
+    // Fix 1: handle_cell_edit pins main-view selection at table_from while editing.
     expect(view.state.selection.main.head).toBe(table_from);
 
     key(subview_content_dom(), { key: 'z', ...mod_init() });
     await settle();
 
     expect(view.state.doc.toString()).toBe(before_doc);
-    // T10.6.6c: the post-undo override at table_from - 1 is REMOVED.
+    // The post-undo override at table_from - 1 is REMOVED.
     // History restores the pre-edit selection wherever it was; we only assert
     // it's not the old override target.
     expect(view.state.selection.main.head).not.toBe(table_from - 1);
-    // T10.6.6c: subview stays mounted, contentDOM keeps focus.
+    // Subview stays mounted, contentDOM keeps focus.
     expect(active_subview_container()).not.toBeNull();
     const sub_cm = subview_content_dom();
     expect(

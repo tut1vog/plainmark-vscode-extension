@@ -58,7 +58,7 @@ async function activate_cell(
 
 const SAMPLE_TABLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n';
 
-describe('cell typing with space — Bug A1 (post-T10.6.6e smoke)', () => {
+describe('cell typing with space — Bug A1 (rebase-on-undo smoke)', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

@@ -95,7 +95,7 @@ function fire_accept(view: EditorView): void {
   apply(view, option, result.from, result.to);
 }
 
-describe('table edge navigation — keymap-driven adjacency injection (T10.6.2)', () => {
+describe('table edge navigation — keymap-driven adjacency injection', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -113,7 +113,7 @@ describe('table edge navigation — keymap-driven adjacency injection (T10.6.2)'
   it('TableEdgeBufferWidget DOM is gone: no .plainmark-table-edge-buffer element after mount', async () => {
     view = mount_editor(container, STARTER);
     await next_frame();
-    // T10.6.2 deleted the TableEdgeBufferWidget — regression guard.
+    // The adjacency-injection rework deleted the TableEdgeBufferWidget — regression guard.
     expect(container.querySelector('.plainmark-table-edge-buffer')).toBeNull();
   });
 
@@ -218,7 +218,7 @@ describe('table edge navigation — keymap-driven adjacency injection (T10.6.2)'
     await settle();
 
     expect(view.state.doc.toString()).toBe(before_doc);
-    // T10.10 Bug 2 fix: exit target is the start of the line strictly after
+    // Bug 2 fix: exit target is the start of the line strictly after
     // info.to, not info.to itself (which sits mid-line inside the block-replace's
     // visual extent and rendered as the giant widget-right-bottom fallback).
     expect(view.state.selection.main.head).toBe(STARTER.length + 1);

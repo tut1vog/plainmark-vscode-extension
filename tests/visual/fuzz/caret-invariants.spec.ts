@@ -22,7 +22,7 @@
 //        (iii) the pre-action line is NOT a structurally-empty marker
 //            line (`> `, `- `, `* `, `+ `, `1. `, `1) ` — possibly with
 //            extra whitespace). Plainmark's `blockquote_empty_line_-
-//            backspace_exit` / `list_empty_bullet_backspace` (T16.2c +
+//            backspace_exit` / `list_empty_bullet_backspace` (and
 //            friends) intentionally collapse the marker on Backspace
 //            there — designed UX, not a bug;
 //        (iv) the post-type doc grew by exactly 1 byte AND caret
@@ -32,7 +32,7 @@
 //        (v) NO Table node has been observed in the syntax tree at any
 //            point in the current sequence (latched per sequence). The
 //            table widget's editing pipeline is async by design — cell
-//            subview creation is rAF-deferred (table.ts T19.23 gate),
+//            subview creation is rAF-deferred (table.ts rAF gate),
 //            focusout teardown is setTimeout(0)-deferred, and a cell
 //            edit re-emits the WHOLE table source (P3 column padding +
 //            TA2 newline injection — the table carve-out in the
@@ -52,10 +52,10 @@
 //      remaining gates above scope around intentional behaviors, not
 //      bugs.
 //   C. Reveal sanity — for every `.plainmark-inline-marker-hidden`
-//      element whose offsetWidth is 0 (T19.26's hide mechanism: display:
+//      element whose offsetWidth is 0 (the hide mechanism: display:
 //      inline-block; width: 0; overflow: hidden), assert the main caret
 //      is NOT inside the marker's source range. Catches the worst-case
-//      T19.23 regression: a marker stays hidden while the caret sits on
+//      reveal-gate regression: a marker stays hidden while the caret sits on
 //      top of it. (Weaker than recomputing the full predicate against the
 //      parent construct's node range — that would duplicate production
 //      logic; deferred. This subset still catches the strict violation.)
@@ -127,7 +127,7 @@ function serialize_selection(view: EditorView): string {
   return `{anchor:${r.anchor},head:${r.head},from:${r.from},to:${r.to}}`;
 }
 
-// Mirrors `blockquote_empty_line_backspace_exit` (T16.2c), `list_empty_bullet_backspace`,
+// Mirrors `blockquote_empty_line_backspace_exit`, `list_empty_bullet_backspace`,
 // and friends — Plainmark's Prec.highest Backspace overrides that fire on
 // structurally-empty marker lines and intentionally collapse the marker. The
 // affordances are correct UX; Oracle B's strict-identity contract doesn't hold

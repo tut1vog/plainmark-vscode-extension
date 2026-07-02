@@ -95,7 +95,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **FM-E-6** — A body line whose text is a YAML value containing or shaped like `---` MUST NOT terminate the block early; only a full closing-fence line (`---`/`...`, trailing whitespace only) closes it.
   _Example:_ `---\nsep: "---"\n---\n` → one frontmatter block; the quoted `---` value is body, the final `---` is the closer.
 
-- **FM-E-7** `[accepted]` — Setext-shaped `text\n---` at document start is NOT frontmatter (no `---` on line 1) and MUST render as plain prose plus a visually inert `---` (lang-markdown's `HeaderMark`), inheriting the T14-deferred Setext-heading limitation. Users wanting an HR insert a blank line (`text\n\n---`).
+- **FM-E-7** `[accepted]` — Setext-shaped `text\n---` at document start is NOT frontmatter (no `---` on line 1) and MUST render as plain prose plus a visually inert `---` (lang-markdown's `HeaderMark`), inheriting the deferred Setext-heading limitation. Users wanting an HR insert a blank line (`text\n\n---`).
   _Example:_ `Title\n---\n` → `Title` as prose and `---` shown as inert meta text, not frontmatter and not a styled HR.
 
 - **FM-E-8** `[accepted]` — Non-YAML frontmatter flavors (TOML `+++`, JSON, etc.) and mid-document Pandoc-style YAML metadata blocks are out of scope; only line-1 YAML `---` frontmatter is recognized.

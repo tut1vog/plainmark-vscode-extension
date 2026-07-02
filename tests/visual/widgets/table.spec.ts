@@ -305,7 +305,7 @@ describe('table — AC1 visual continuity between at-rest <td> and focused subvi
     expect(at_rest_bold.text).toContain('bold');
     expect(at_rest_math.tags.has('MJX-CONTAINER')).toBe(true);
 
-    // Focus the bold cell. The subview's text_styles_extension (T9.7) reveals
+    // Focus the bold cell. The subview's text_styles_extension reveals
     // the ** markers — the visible text gains them. Stripping the markers
     // from the focused fingerprint must yield the same visible text as the
     // emitter produced at rest.
@@ -523,7 +523,7 @@ describe('table — AC5 MC1 normalization on first edit of a mismatched-column t
     const initial_counts = body_pipe_counts(initial);
     expect(new Set(initial_counts).size).toBeGreaterThan(1);
 
-    // T10.9: render-time underflow padding — every body row's <td> count must
+    // Render-time underflow padding — every body row's <td> count must
     // equal the header <th> count, even though the source has mismatched rows.
     const header_th_count = container.querySelectorAll(
       '.plainmark-table-block thead tr th',

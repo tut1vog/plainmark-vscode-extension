@@ -10,13 +10,13 @@ Status legend: `pending` (awaiting owner ratification) · `blessed` · `reopened
 
 | Clause | Compromise | Origin | Status |
 |---|---|---|---|
-| BQ-I-10 | No `Mod-Shift-B` blockquote-toggle shortcut; deferred to a unified command surface rather than added piecemeal per construct. | docs/spec/blockquotes.md (T16, Q4=A) | pending |
-| HEAD-I-4 | No heading-specific Enter/Backspace continuation and no `Mod-1`..`Mod-6` level-toggle command; headings use default key handling. | T14 (decoration-only handler) | pending |
-| HEAD-E-4 | Setext headings (`Title\n===`) receive no styling at all (handler registers only `ATXHeading1..6`). `[unknown]` conformance — never formally decided whether setext should style. Needs a smoke check + owner ruling. | T14 (ATX-only scope) | pending |
+| BQ-I-10 | No `Mod-Shift-B` blockquote-toggle shortcut; deferred to a unified command surface rather than added piecemeal per construct. | docs/spec/blockquotes.md | pending |
+| HEAD-I-4 | No heading-specific Enter/Backspace continuation and no `Mod-1`..`Mod-6` level-toggle command; headings use default key handling. | decoration-only heading handler | pending |
+| HEAD-E-4 | Setext headings (`Title\n===`) receive no styling at all (handler registers only `ATXHeading1..6`). `[unknown]` conformance — never formally decided whether setext should style. Needs a smoke check + owner ruling. | ATX-only heading scope | pending |
 | HEAD-E-5 | Seven-or-more `#` is not treated as a heading (standard CommonMark cap; lezer emits no `ATXHeading`). `[unknown]` — confirm intended. | CommonMark §4.2 | pending |
-| FM-E-7 | Setext-shaped `text\n---` at document start is not frontmatter and renders as inert prose + meta `---` (not a styled HR); inherits the T14 setext deferral. | docs/spec/frontmatter.md | pending |
+| FM-E-7 | Setext-shaped `text\n---` at document start is not frontmatter and renders as inert prose + meta `---` (not a styled HR); inherits the Setext deferral. | docs/spec/frontmatter.md | pending |
 | FM-E-8 | Non-YAML frontmatter flavors (TOML `+++`, JSON) and mid-document Pandoc metadata blocks are out of scope; only line-1 YAML `---` is recognized. | docs/spec/frontmatter.md | pending |
-| CODE-I-6 | No inline-code-specific keybinding (no backtick-wrap toggle, no autoclose); inline code uses default key handling. | T9.7 reveal policy | pending |
+| CODE-I-6 | No inline-code-specific keybinding (no backtick-wrap toggle, no autoclose); inline code uses default key handling. | text-styles reveal policy | pending |
 | EMPH-R-8 | On reveal, emphasis markers return to natural width and shift following text right ("Issue 3") — accepted layout-shift tradeoff after Track A/B alternatives were F5-rejected. | docs/spec/text-styles.md | pending |
 | EMPH-E-10 | CJK-friendly emphasis renders bold/italic/strikethrough that GitHub and VS Code's built-in preview show as literal markers (strict superset of CommonMark; only CJK-adjacent cases gain emphasis). | docs/spec/text-styles.md | blessed |
 | LINK-I-11 | No link-specific keybinding (no insert-link command, no autoclose); the generic selection-wrap surrounds a selection with `[ ]` but adds no `(url)` slot. | links.ts | pending |
@@ -33,7 +33,7 @@ Status legend: `pending` (awaiting owner ratification) · `blessed` · `reopened
 | CALL-I-7 | No callout-specific exit/continuation keymap; exit inherits the blockquote keymap (BQ-I-1/I-2/I-4). No `Mod-Shift-B`-style callout-wrap shortcut and no interactive type-change menu in the MVP. | docs/spec/callouts.md | pending |
 | CALL-E-5 | Obsidian pipe-metadata syntax (`[!NOTE\|meta]`) is not parsed; the `\|` breaks the type match so the line renders as a plain blockquote. Pipe-metadata deferred. | docs/spec/callouts.md (2026-05-18) | pending |
 | CALL-E-6 | Nested callouts receive no inner callout chrome (matches GitHub "callouts cannot be nested"); Obsidian-style nesting deferred. | docs/spec/callouts.md | pending |
-| LIST-R-3 | Bullet glyph cycles by depth bucket (`●`/`○`/`■`), superseding the single-`•`-all-depths plan. | docs/spec/lists.md (T19.7.4) | pending |
+| LIST-R-3 | Bullet glyph cycles by depth bucket (`●`/`○`/`■`), superseding the single-`•`-all-depths plan. | docs/spec/lists.md | pending |
 | LIST-I-11 | Tab/Shift-Tab is generic `indentWithTab`, not a list-grammar-aware indent (no list-specific Tab handler). | lists wiring | pending |
 | LIST-I-12 | No list-toggle command and no keyboard checkbox toggle (checkbox is mouse-only). | lists wiring | pending |
 | LIST-SP-4 | Ordered siblings are never auto-renumbered after edit/insert/delete; source digits are the rendered form. | docs/spec/lists.md | pending |
@@ -57,7 +57,7 @@ Status legend: `pending` (awaiting owner ratification) · `blessed` · `reopened
 
 These `[unknown]` clauses describe composition / parser / cold-mount / live-wiring
 behavior the headless unit suite does not pin. They default to *plausibly
-conforming* and need a smoke check at the T29.8 close-out (those also tagged
+conforming* and need a smoke check at the spec close-out (those also tagged
 `[smoke]` already appear in the manual-smoke list).
 
 | Clause | What needs confirming | Status |

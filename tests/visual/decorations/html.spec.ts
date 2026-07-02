@@ -54,7 +54,7 @@ describe('html block + inline raw HTML — line and mark chrome', () => {
     move_cursor(h.view, doc.length);
     await next_frame();
 
-    // The lang-html overlay annotates TagName via tags.tagName, which the T17.12
+    // The lang-html overlay annotates TagName via tags.tagName, which the
     // HighlightStyle wraps with .plainmark-syntax-tag. The block scope rule
     // (.plainmark-html-block .plainmark-syntax-tag) makes it visible.
     const tag_spans = h.container.querySelectorAll(

@@ -5,7 +5,7 @@
 //   1. `vscode.extensions.getExtension('tutivog.plainmark').activate()`
 //      resolves without throwing and `isActive` becomes true.
 //   2. The console.error spy installed before activation captures zero
-//      calls — would have caught T19.13's cold-boot CSS-var race.
+//      calls — would have caught the cold-boot CSS-var race.
 //   3. `vscode.commands.executeCommand('vscode.openWith', uri, 'tutivog.plainmark')`
 //      for a virtual `.md` URI does not throw and registers a TextDocument.
 

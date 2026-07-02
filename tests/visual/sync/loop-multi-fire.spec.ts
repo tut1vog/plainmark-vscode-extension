@@ -72,7 +72,7 @@ function make_harness(initial: string, uri = 'file:///doc.md'): Harness {
   };
 }
 
-describe('create_sync_loop multi-fire echo (T11 regression) SYNC-G-2 SYNC-G-3 SYNC-G-6 SYNC-H-1 SYNC-H-4', () => {
+describe('create_sync_loop multi-fire echo regression SYNC-G-2 SYNC-G-3 SYNC-G-6 SYNC-H-1 SYNC-H-4', () => {
   it('suppresses all fires of a single applyEdit fan-out (a)', async () => {
     const h = make_harness('hello');
     const loop = create_sync_loop(h.document, h.webview, h.applier);

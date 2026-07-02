@@ -1,4 +1,4 @@
-// T19.24 — Typora-style auto-include-markers-in-selection. End-to-end check
+// Typora-style auto-include-markers-in-selection. End-to-end check
 // that the snap rules fire on document mouseup in the SAME transaction that
 // clears the pointer_down latch.
 //
@@ -44,7 +44,7 @@ function double_click_release(view: EditorView, anchor: number, head: number): v
   document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, detail: 2 }));
 }
 
-describe('selection-snap on document mouseup (T19.24)', () => {
+describe('selection-snap on document mouseup', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -183,7 +183,7 @@ describe('selection-snap on document mouseup (T19.24)', () => {
     expect(v.state.field(pointer_down_field)).toBe(false);
   });
 
-  it('reveals the markers after the snap (T19.23 reveal-on-non-strict-cover)', async () => {
+  it('reveals the markers after the snap (reveal-on-non-strict-cover)', async () => {
     view = mount_editor(container, 'xx **bold** yy\nzz\n');
     await next_frame();
     press_drag_release(view, 5, 9);

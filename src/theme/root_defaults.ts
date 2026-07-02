@@ -21,7 +21,7 @@ export const ROOT_DEFAULTS_CSS = `:root {
   --plainmark-font-code: var(--vscode-editor-font-family);
   --plainmark-code-background: var(--vscode-textCodeBlock-background, var(--vscode-textPreformat-background, transparent));
   --plainmark-code-color: var(--vscode-foreground, inherit);
-  /* Cross-cutting primitives (T3 theming-optimization): one knob re-tints every muted/dim surface; the popover pair re-skins the popup panels (footnote popover, mermaid preview, autocomplete popup). Per-construct overrides still win. */
+  /* Cross-cutting primitives: one knob re-tints every muted/dim surface; the popover pair re-skins the popup panels (footnote popover, mermaid preview, autocomplete popup). Per-construct overrides still win. */
   --plainmark-muted-color: var(--vscode-descriptionForeground, currentColor);
   --plainmark-popover-background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background));
   --plainmark-popover-border-color: var(--vscode-editorHoverWidget-border, currentColor);

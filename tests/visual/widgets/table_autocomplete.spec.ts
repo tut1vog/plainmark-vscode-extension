@@ -229,7 +229,7 @@ describe('table autocomplete — accept path', () => {
     await next_frame();
     await next_frame();
 
-    // Fix 5 (T10.6.2): from === 0 prepends a leading \n. TA2 (T10.6.1) appends trailing \n.
+    // Fix 5: from === 0 prepends a leading \n. TA2 appends trailing \n.
     expect(view.state.doc.toString()).toBe(
       '\n' +
         [
@@ -291,7 +291,7 @@ describe('table autocomplete — accept path', () => {
     expect(has_input_user_event).toBe(true);
   });
 
-  it('TBL-I-16 TBL-SP-7: TA2: no trailing newline injected when a `\\n` already follows the insertion (T10.6.6i)', async () => {
+  it('TBL-I-16 TBL-SP-7: TA2: no trailing newline injected when a `\\n` already follows the insertion', async () => {
     view = mount_editor(container, '|\nhello');
     // Place caret right after the `|`, before the newline, so table_completions
     // matches the `|` line.
@@ -307,9 +307,9 @@ describe('table autocomplete — accept path', () => {
       '|     |     |     |',
     ].join('\n');
     // The completion's `from`..`to` covers the `|` line (positions 0..1).
-    // T10.6.2 prepends a leading `\n` because from === 0. The next byte at
+    // Fix 5 prepends a leading `\n` because from === 0. The next byte at
     // `to` is `\n` (from the original `\nhello`), so TA2 does NOT inject an
-    // extra trailing `\n` (T10.6.6i) — single `\n` between table and `hello`.
+    // extra trailing `\n` — single `\n` between table and `hello`.
     expect(doc).toBe('\n' + starter + '\nhello');
   });
 });

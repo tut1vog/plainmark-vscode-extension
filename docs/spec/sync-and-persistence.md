@@ -96,7 +96,7 @@ The combined echo-suppression strategy is three gates: a
 version-keyed inbound host-side gate, an outbound webview→host identity check,
 and the CM6 `syncAnnotation` gate. One `applyEdit` fires
 `onDidChangeTextDocument` N≥2 times, **all at the same `document.version`** —
-which a counting/boolean gate cannot fit (superseded at T11), a single-text
+which a counting/boolean gate cannot fit (since superseded), a single-text
 snapshot leaks under back-to-back applies, and a byte-equality window over past
 submissions swallows external edits whose bytes match one.
 Since versions are never reused, the gate suppresses on the set of versions

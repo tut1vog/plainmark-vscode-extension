@@ -30,7 +30,7 @@ pre-costed but deferred (git history), not implemented.
 - **HTML-R-3** — Raw HTML MUST NOT be interpreted as live DOM in the main view. The source bytes (`<`, tag name, attributes, `>`) render literally as styled text; no element is constructed from the user's HTML.
   _Example:_ `<b>bold</b>` shows the literal characters `<b>bold</b>`, not bold-weighted text.
 
-- **HTML-R-4** — Block chrome (`.plainmark-html-block`) MUST apply a background tint, monospace font, dim foreground color, and inset padding. The background is a stacked `linear-gradient` painted via `background-image` (not `margin`), inset from the editor edge by `--plainmark-html-margin-x`, to avoid desyncing CM6's height map (T14.1).
+- **HTML-R-4** — Block chrome (`.plainmark-html-block`) MUST apply a background tint, monospace font, dim foreground color, and inset padding. The background is a stacked `linear-gradient` painted via `background-image` (not `margin`), inset from the editor edge by `--plainmark-html-margin-x`, to avoid desyncing CM6's height map.
   _Example:_ a `<script>...</script>` block renders with the same code-surface tint family as a fenced code block.
 
 - **HTML-R-5** — Block chrome MUST NOT distinguish header / body / footer lines and MUST NOT emit a `data-language` label. Every line of every block variant (`<div>`, `<!-- -->`, `<? ?>`, `<!DOCTYPE>`, CDATA, `<script>`) gets the identical `.plainmark-html-block` class.

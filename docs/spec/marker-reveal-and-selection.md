@@ -33,7 +33,7 @@ directly. The
 **scaffold path** (`compute_reveal_ranges` + the intersection test in
 `build_inline_decorations`) is line-expanded and feeds
 a `revealed` boolean to `NodeHandler.handle`; it is the default for structural
-handlers registered with the shared inline scaffold (T17.3.1). The two coexist
+handlers registered with the shared inline scaffold. The two coexist
 deliberately.
 
 Notation in examples: `|` = caret, `→` = action/result, `\n` = literal newline.
@@ -159,7 +159,7 @@ override (`marker_aware_backspace`, registered at `Prec.highest`) pre-empts
 the whole `> ` / list marker together with a just-typed space, silently demoting
 the construct (a content-loss bug caught by the caret-invariant fuzz). Section code `B`.
 
-> _Scope (T32.8): inside a `Blockquote` node (blockquotes AND callouts), Backspace is plain single-character deletion governed by `BQ-I-4` (`blockquote_plain_backspace`, also `Prec.highest`, ahead of this override) — the markup-demote never fires there. The `MRS-B-*` clauses below therefore now govern LISTS; their `>`/callout examples are retained as illustrations of the marker-aware mechanism but the live blockquote/callout outcome is BQ-I-4's plain per-character delete (which yields the same result for the extra-whitespace and lazy-continuation cases, and a plain space-then-`>` delete where the old clauses yielded to the demote)._
+> _Scope: inside a `Blockquote` node (blockquotes AND callouts), Backspace is plain single-character deletion governed by `BQ-I-4` (`blockquote_plain_backspace`, also `Prec.highest`, ahead of this override) — the markup-demote never fires there. The `MRS-B-*` clauses below therefore now govern LISTS; their `>`/callout examples are retained as illustrations of the marker-aware mechanism but the live blockquote/callout outcome is BQ-I-4's plain per-character delete (which yields the same result for the extra-whitespace and lazy-continuation cases, and a plain space-then-`>` delete where the old clauses yielded to the demote)._
 
 - **MRS-B-1** — When the caret sits at the end of a canonical block marker (`>`, `-`/`*`/`+`, or `n.`/`n)`, each followed by one space, possibly nested) AND there is EXTRA whitespace immediately after that marker before content, Backspace MUST delete exactly one character at the caret and MUST NOT delete the marker.
   _Example:_ `>  hello` with caret at column 2 → Backspace → `> hello` (caret at column 1), marker preserved.
