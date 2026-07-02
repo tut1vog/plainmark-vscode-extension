@@ -7,7 +7,7 @@ declare global {
 // Correct only for the single production webview / single EditorView realm; a second realm would share this one-shot load promise.
 let mathjax_load_promise: Promise<void> | null = null;
 
-export function mathjax_ready(): boolean {
+function mathjax_ready(): boolean {
   return !!window.MathJax?.tex2chtmlPromise;
 }
 
