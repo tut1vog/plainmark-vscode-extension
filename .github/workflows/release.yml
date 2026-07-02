@@ -1,0 +1,100 @@
+name: Release
+
+# Publishes to the VS Code Marketplace and cuts a GitHub release (tag +
+# .vsix asset) after CI succeeds on a main-branch push whose package.json
+# version has no v<version> tag yet. Ordinary pushes no-op at the gate;
+# a release is triggered by the version-bump commit (see
+# .claude/commands/release.md in the workspace).
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+# Never cancel a release in flight — a cancelled publish can leave the
+# Marketplace updated but the tag/release missing.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  PNPM_VERSION: 11.0.9
+  NODE_VERSION: 22
+
+jobs:
+  release:
+    name: Publish + tag + GitHub release
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Check whether this version is already released
+        id: gate
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "new=false" >> "$GITHUB_OUTPUT"
+            echo "v$VERSION already tagged — nothing to release."
+          else
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract release notes from CHANGELOG.md
+        if: steps.gate.outputs.new == 'true'
+        run: |
+          awk -v ver="${{ steps.gate.outputs.version }}" '
+            $0 ~ "^## \\[" ver "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "CHANGELOG.md has no section for ${{ steps.gate.outputs.version }} — refusing to release without notes." >&2
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.gate.outputs.new == 'true'
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.new == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Build and package
+        if: steps.gate.outputs.new == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+          npx @vscode/vsce package --no-dependencies
+
+      - name: Publish to the VS Code Marketplace
+        if: steps.gate.outputs.new == 'true'
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: >-
+          npx @vscode/vsce publish --no-dependencies
+          --packagePath "plainmark-${{ steps.gate.outputs.version }}.vsix"
+
+      - name: Create tag and GitHub release
+        if: steps.gate.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "v${{ steps.gate.outputs.version }}"
+          "plainmark-${{ steps.gate.outputs.version }}.vsix"
+          --title "v${{ steps.gate.outputs.version }}"
+          --notes-file release-notes.md
+          --target "${{ github.event.workflow_run.head_sha }}"
