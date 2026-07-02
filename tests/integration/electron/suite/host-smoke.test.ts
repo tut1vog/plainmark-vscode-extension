@@ -1,4 +1,4 @@
-// VS Code Desktop host smoke (T28.7).
+// VS Code Desktop host smoke.
 //
 // Runs inside the extension host process via @vscode/test-electron; the
 // `vscode` import is the live VS Code API. Three assertions:
@@ -46,7 +46,7 @@ async function open_in_plainmark(uri: vscode.Uri): Promise<vscode.TextDocument> 
   return vscode.workspace.openTextDocument(uri);
 }
 
-suite('Plainmark host smoke (T28.7) SYNC-P-2 SYNC-H-6 SHELL-A-8', () => {
+suite('Plainmark host smoke SYNC-P-2 SYNC-H-6 SHELL-A-8', () => {
   test('(a) vscode.openWith → doc.isDirty === false', async () => {
     await with_temp_file(async (uri) => {
       const doc = await open_in_plainmark(uri);

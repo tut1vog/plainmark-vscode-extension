@@ -1,4 +1,4 @@
-// Compile the @vscode/test-electron integration suite (T28.7) into the CJS
+// Compile the @vscode/test-electron integration suite into the CJS
 // shape the VS Code extension host's loader expects. Output to
 // `dist/integration/electron/suite/*.cjs`; `tests/integration/electron/run-tests.mjs`
 // points `extensionTestsPath` at `dist/integration/electron/suite/index.cjs`.

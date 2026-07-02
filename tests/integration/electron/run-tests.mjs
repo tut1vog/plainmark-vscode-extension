@@ -1,4 +1,4 @@
-// Entrypoint for the @vscode/test-electron host smoke (T28.7).
+// Entrypoint for the @vscode/test-electron host smoke.
 //
 // Boots a real VS Code Desktop instance with this extension loaded and
 // hands off to `./suite/index.cjs` (compiled by esbuild into

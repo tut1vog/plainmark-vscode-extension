@@ -91,7 +91,7 @@ jobs:
       - run: pnpm run test:visual
 
   integration-desktop:
-    name: Integration — VS Code Desktop (T28.7)
+    name: Integration — VS Code Desktop
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -228,4 +228,4 @@ Extension activation entry points and the dual Node / Web bundles. Section code
   _Example:_ the web bundle uses a `.cjs` extension (as does the integration web suite), per T28.8.
 
 - **SHELL-A-8** `[smoke]` — On the Node host, after `openWith`, the document MUST be clean (`isDirty == false`); an `applyEdit` MUST mark it dirty and `getText()` MUST reflect the edit; and `executeCommand('undo')` MUST be a no-op while Plainmark is the active custom editor.
-  _Example:_ T28.7 host-smoke asserts the open→edit→undo-muzzle sequence on the Electron host.
+  _Example:_ the host-smoke suite asserts the open→edit→undo-muzzle sequence on the Electron host.
