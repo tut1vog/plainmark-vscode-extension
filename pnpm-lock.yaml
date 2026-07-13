@@ -2091,8 +2091,8 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     hasBin: true
 
-  morgan@1.10.1:
-    resolution: {integrity: sha512-223dMRJtI/l25dJKWpgij2cMtywuG/WiUKXdvwfbhGKBhy1puASqXwFzmWZ7+K73vUPoR7SS2Qz2cI/g9MKw0A==}
+  morgan@1.11.0:
+    resolution: {integrity: sha512-zSkVu3t18r39pw4ixfBKvfZi3y2UOqr7d4WYwcj3m8nXpEQK4rPO6GLzs/CExoRgmX3y9EjmmcXqv6jq0SK46g==}
     engines: {node: '>= 0.8.0'}
 
   mrmime@2.0.1:
@@ -2119,10 +2119,6 @@ packages:
 
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
-
-  on-finished@2.3.0:
-    resolution: {integrity: sha512-ikqdkGAAyf/X/gPhXGvfgAytDZtDbr+bkNUJ0N9h5MI/dmdgCs3l6hoHrcUv41sRKew3jIwrp4qQDXiK99Utww==}
-    engines: {node: '>= 0.8'}
 
   on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
@@ -2666,8 +2662,8 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  ws@8.20.0:
-    resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
+  ws@8.21.0:
+    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -3758,7 +3754,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 3.1.0
       vitest: 4.1.9(@types/node@22.19.18)(@vitest/browser-playwright@4.1.9)(vite@7.3.6(@types/node@22.19.18)(jiti@2.7.0)(yaml@2.9.0))
-      ws: 8.20.0
+      ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -4632,7 +4628,7 @@ snapshots:
 
   koa-morgan@1.0.1:
     dependencies:
-      morgan: 1.10.1
+      morgan: 1.11.0
     transitivePeerDependencies:
       - supports-color
 
@@ -4806,12 +4802,12 @@ snapshots:
       yargs-parser: 21.1.1
       yargs-unparser: 2.0.0
 
-  morgan@1.10.1:
+  morgan@1.11.0:
     dependencies:
       basic-auth: 2.0.1
       debug: 2.6.9
       depd: 2.0.0
-      on-finished: 2.3.0
+      on-finished: 2.4.1
       on-headers: 1.1.0
     transitivePeerDependencies:
       - supports-color
@@ -4829,10 +4825,6 @@ snapshots:
   negotiator@0.6.3: {}
 
   obug@2.1.1: {}
-
-  on-finished@2.3.0:
-    dependencies:
-      ee-first: 1.1.1
 
   on-finished@2.4.1:
     dependencies:
@@ -5384,7 +5376,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@8.20.0: {}
+  ws@8.21.0: {}
 
   xtend@4.0.2: {}
 
