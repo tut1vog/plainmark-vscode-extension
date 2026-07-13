@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.2.4] - 2026-07-13
+
+### Fixed
+
+- **Typing `#` no longer restyles the line before you finish the heading** — a bare `#`-run (`#`, `##`, …) with nothing after it stays plain text; the line becomes a heading once you type the space after the markers.
+
 ## [1.2.3] - 2026-07-02
 
 ### Security
