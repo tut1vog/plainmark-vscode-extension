@@ -16,7 +16,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## R · Rendering
 
-- **HEAD-R-1** — Each ATX heading line MUST receive a `Decoration.line` whose class is `plainmark-h<level> plainmark-collapse-adjacent`, where `<level>` is the heading level 1–6 derived from the run of leading `#` characters.
+- **HEAD-R-1** — Each ATX heading line MUST receive a `Decoration.line` whose class is `plainmark-h<level> plainmark-collapse-adjacent`, where `<level>` is the heading level 1–6 derived from the run of leading `#` characters. Exception: a bare `#`-run with no trailing space receives no decoration (HEAD-E-1).
   _Example:_ `## Title` → the line element carries `class="plainmark-h2 plainmark-collapse-adjacent"`.
 
 - **HEAD-R-2** — All six ATX levels MUST be recognized: `#`→`plainmark-h1` through `######`→`plainmark-h6`, keyed on the lezer `ATXHeading1`..`ATXHeading6` node names.
@@ -67,8 +67,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## E · Edge cases
 
-- **HEAD-E-1** — An empty heading — a `#`-run followed only by a space, or a bare `#`-run with nothing after it — MUST still receive its `plainmark-h<level>` line class but MUST NOT hide the marker, so the user can see the level they typed.
-  _Example:_ `# ` → renders as a `plainmark-h1` line with the `# ` visible; bare `#` → `plainmark-h1` line with the `#` visible.
+- **HEAD-E-1** — An empty heading with a trailing space (`#`-run + space, no text) MUST still receive its `plainmark-h<level>` line class but MUST NOT hide the marker, so the user can see the level they typed. A bare `#`-run with nothing after it MUST receive no heading decoration — it renders as plain paragraph text (Typora parity) even though CommonMark parses it as an empty ATX heading.
+  _Example:_ `# ` → renders as a `plainmark-h1` line with the `# ` visible; bare `#` → renders as plain paragraph text, no heading class.
 
 - **HEAD-E-2** — A trailing closing `#`-run MUST remain visible; only the opening `#`-run and its space are covered by the marker mark (the hide range ends at the opening marker, not the line end).
   _Example:_ `## Heading ##` → renders `Heading ##` (opening `## ` hidden, closing ` ##` shown).

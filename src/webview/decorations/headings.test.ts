@@ -134,8 +134,18 @@ describe('HEAD-E-1: empty heading', () => {
     expect(snapshot(state)).toEqual([line(0, h1)]);
   });
 
-  it('shows the marker for a bare hash with no trailing space', () => {
+  it('renders a bare hash with no trailing space as plain text (no heading class)', () => {
     const state = make_state('#\nzz\n', 1);
-    expect(snapshot(state)).toEqual([line(0, h1)]);
+    expect(snapshot(state)).toEqual([]);
+  });
+
+  it('renders a bare multi-hash run with no trailing space as plain text', () => {
+    const state = make_state('######\nzz\n', 6);
+    expect(snapshot(state)).toEqual([]);
+  });
+
+  it('renders a bare hash as plain text with the caret off the line', () => {
+    const state = make_state('#\nzz\n', 3);
+    expect(snapshot(state)).toEqual([]);
   });
 });

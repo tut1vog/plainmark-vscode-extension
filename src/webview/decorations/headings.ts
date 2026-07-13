@@ -12,14 +12,18 @@ function heading_handler(node_name: string, level: number): NodeHandler {
     nodeNames: [node_name],
     handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
       const line_from = state.doc.lineAt(node.from).from;
-      const decorations: Range<Decoration>[] = [line_deco.range(line_from)];
 
       const first = node.node.firstChild;
-      if (!first || first.name !== 'HeaderMark') return decorations;
+      if (!first || first.name !== 'HeaderMark') return [line_deco.range(line_from)];
 
       const after = first.to;
       const has_trailing_space =
         after < state.doc.length && state.doc.sliceString(after, after + 1) === ' ';
+      // A bare `#`-run with no space after it renders as plain text (Typora
+      // parity, HEAD-E-1) even though CommonMark parses it as an empty heading.
+      if (!has_trailing_space && after >= node.to) return [];
+
+      const decorations: Range<Decoration>[] = [line_deco.range(line_from)];
       const hide_to = has_trailing_space ? after + 1 : after;
 
       // Reveal scoped to the marker range so the `#`-run shows only at the start of the heading text (HEAD-R-4); a caret deeper in the text re-hides it (accepted shift, HEAD-E-7).
