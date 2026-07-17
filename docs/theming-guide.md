@@ -148,7 +148,8 @@ Names follow one rule: `--plainmark-<construct>[-<sub-construct>]-<property>[-<s
 | `--plainmark-table-border-color` | `var(--vscode-widget-border, currentColor)` |
 | `--plainmark-table-cell-padding` | `6px 13px` |
 | `--plainmark-table-cell-min-width` | `2em` |
-| `--plainmark-table-cell-word-break` | `break-word` |
+| `--plainmark-table-cell-word-break` | `normal` |
+| `--plainmark-table-cell-overflow-wrap` | `break-word` |
 | `--plainmark-table-header-weight` | `600` |
 | `--plainmark-table-row-alt-background` | `color-mix(in srgb, var(--vscode-foreground) 4%, transparent)` |
 

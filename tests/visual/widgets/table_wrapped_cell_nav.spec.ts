@@ -58,9 +58,10 @@ function key(target: Element, init: KeyboardEventInit): void {
   target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }));
 }
 
-// A long unbroken token in the first body cell wraps to several visual rows
-// under the narrow container width + word-break: break-word.
-const LONG = 'wraplongtoken'.repeat(6);
+// Multi-word text in the first body cell wraps at spaces to several visual
+// rows under the narrow container width (word-break: normal keeps words whole,
+// so a single unbroken token would widen the column instead of wrapping).
+const LONG = 'wrap long token '.repeat(6).trim();
 const TABLE = `| ${LONG} | b | c |\n|---|---|---|\n| ${LONG} | y | z |\n`;
 
 describe('TBL-I-7 — wrapped-cell vertical nav uses logical, not visual, lines', () => {

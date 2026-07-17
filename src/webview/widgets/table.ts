@@ -395,6 +395,12 @@ function build_subview_extensions(state: EditorState, extra: Extension[] = []): 
       '.cm-line': { padding: '0' },
       '.cm-scroller': { overflow: 'visible', fontFamily: 'inherit' },
       '.cm-focused': { outline: 'none' },
+      // lineWrapping's base theme puts anywhere-wrapping on .cm-content — match
+      // the td defaults so wrapping doesn't shift when a cell activates.
+      '.cm-content.cm-lineWrapping': {
+        wordBreak: 'var(--plainmark-table-cell-word-break, normal)' as 'normal',
+        overflowWrap: 'var(--plainmark-table-cell-overflow-wrap, break-word)' as 'break-word',
+      },
     }),
     ...extra,
   ];
@@ -1104,7 +1110,10 @@ const table_theme = EditorView.theme({
     border: '1px solid var(--plainmark-table-border-color, var(--vscode-widget-border, currentColor))',
     padding: 'var(--plainmark-table-cell-padding, 6px 13px)',
     minWidth: 'var(--plainmark-table-cell-min-width, 2em)',
-    wordBreak: 'var(--plainmark-table-cell-word-break, break-word)' as 'break-word',
+    wordBreak: 'var(--plainmark-table-cell-word-break, normal)' as 'normal',
+    // break-word (not the inherited `anywhere`) keeps min-content at longest-word
+    // width, so auto layout never squeezes a column into mid-word breaks.
+    overflowWrap: 'var(--plainmark-table-cell-overflow-wrap, break-word)' as 'break-word',
     verticalAlign: 'top',
   },
   '.plainmark-table-block th': {
