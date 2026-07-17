@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.2.5] - 2026-07-17
+
+### Fixed
+
+- **Table text wraps at word boundaries** — long text in a table cell now wraps between words, the way GitHub renders tables, instead of breaking mid-word at arbitrary characters.
+
 ## [1.2.4] - 2026-07-13
 
 ### Fixed
