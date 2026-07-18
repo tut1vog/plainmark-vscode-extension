@@ -211,10 +211,12 @@ Names follow one rule: `--plainmark-<construct>[-<sub-construct>]-<property>[-<s
 | Variable | Default |
 | --- | --- |
 | `--plainmark-list-marker-color` | `var(--plainmark-muted-color, var(--vscode-descriptionForeground, currentColor))` |
-| `--plainmark-list-bullet` | `'●'` |
-| `--plainmark-list-bullet-2` | `'○'` |
-| `--plainmark-list-bullet-3` | `'■'` |
+| `--plainmark-list-bullet-size` | `0.3em` |
+| `--plainmark-list-bullet-2-size` | `0.3em` |
+| `--plainmark-list-bullet-3-size` | `0.26em` |
 | `--plainmark-list-item-spacing` | `0.25em` |
+
+> **Retired variables:** `--plainmark-list-bullet`, `--plainmark-list-bullet-2`, and `--plainmark-list-bullet-3` (character glyph overrides) no longer have any effect. Bullet markers are now drawn as font-independent shapes so they render identically on every platform; use the `-size` variables above and `--plainmark-list-marker-color` to tune them.
 | `--plainmark-task-checkbox-size` | `0.85em` |
 | `--plainmark-task-checkbox-background` | `var(--vscode-checkbox-background, transparent)` |
 | `--plainmark-task-checkbox-border-color` | `var(--vscode-checkbox-border, currentColor)` |

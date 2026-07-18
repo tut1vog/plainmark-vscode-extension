@@ -98,9 +98,9 @@ export const ROOT_DEFAULTS_CSS = `:root {
 
   /* Lists / task lists */
   --plainmark-list-marker-color: var(--plainmark-muted-color, var(--vscode-descriptionForeground, currentColor));
-  --plainmark-list-bullet: '●';
-  --plainmark-list-bullet-2: '○';
-  --plainmark-list-bullet-3: '■';
+  --plainmark-list-bullet-size: 0.3em;
+  --plainmark-list-bullet-2-size: 0.3em;
+  --plainmark-list-bullet-3-size: 0.26em;
   --plainmark-list-item-spacing: 0.25em;
   --plainmark-task-checkbox-size: 0.85em;
   --plainmark-task-checkbox-background: var(--vscode-checkbox-background, transparent);

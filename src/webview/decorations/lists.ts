@@ -51,8 +51,8 @@ class ListBulletWidget extends WidgetType {
   eq(): boolean {
     return true;
   }
-  // The glyph is drawn by the .plainmark-list-bullet::before theme rule from
-  // var(--plainmark-list-bullet) so a plainmark.styles override takes effect live.
+  // The marker is drawn by the .plainmark-list-bullet::before theme rules
+  // (CSS box geometry) so a plainmark.styles override takes effect live.
   toDOM(): HTMLElement {
     const span = document.createElement('span');
     span.className = 'plainmark-list-bullet';
@@ -216,29 +216,46 @@ const lists_theme = EditorView.theme({
       'var(--plainmark-list-marker-color, var(--vscode-descriptionForeground, currentColor))',
   },
   '.plainmark-list-marker-hidden': { fontSize: '0' },
+  // The widget span stays display:inline — an inline-block sized span here
+  // distorts CM6 caret/selection height (cursor geometry derives from adjacent
+  // client rects; confirmed by the CM6 maintainer on discuss.codemirror.net).
   '.plainmark-list-bullet': {
-    display: 'inline-block',
-    width: 'var(--plainmark-list-indent, 1em)',
-    // Reset the inherited negative text-indent — without it the • is dragged out of its box.
-    textIndent: '0',
     color:
       'var(--plainmark-list-marker-color, var(--vscode-descriptionForeground, currentColor))',
   },
-  // Depth-cycled glyphs (Typora/GitHub: disc -> hollow circle -> square; square
-  // for level 3+) keyed off the line's data-list-depth bucket. Each glyph is a
-  // theme-overridable variable; the value must be a quoted CSS <string> —
-  // `content` rejects a bare token. The hollow circle / square read optically
-  // larger than the filled disc at the same em, so they are scaled down.
+  // Depth-cycled markers (disc -> ring -> square; square for level 3+) drawn as
+  // CSS box geometry, not font glyphs — U+25CF/25CB/25A0 resolve from different
+  // faces per host (Segoe UI vs Apple Symbols), so character markers render at
+  // visibly different sizes across platforms. The tiny inline-block ::before is
+  // far shorter than the line box, so it cannot inflate caret height; its
+  // margin-right pads the marker column out to one indent unit so the hanging
+  // indent (LIST-E-4) still aligns.
   '.plainmark-list-bullet::before': {
-    content: 'var(--plainmark-list-bullet, "●")',
+    content: '""',
+    display: 'inline-block',
+    boxSizing: 'border-box',
+    width: 'var(--plainmark-list-bullet-size, 0.3em)',
+    height: 'var(--plainmark-list-bullet-size, 0.3em)',
+    marginRight:
+      'calc(var(--plainmark-list-indent, 1em) - var(--plainmark-list-bullet-size, 0.3em))',
+    borderRadius: '50%',
+    backgroundColor: 'currentColor',
+    verticalAlign: 'middle',
   },
   '.plainmark-list-item[data-list-depth="1"] .plainmark-list-bullet::before': {
-    content: 'var(--plainmark-list-bullet-2, "○")',
-    fontSize: '0.6em',
+    width: 'var(--plainmark-list-bullet-2-size, 0.3em)',
+    height: 'var(--plainmark-list-bullet-2-size, 0.3em)',
+    marginRight:
+      'calc(var(--plainmark-list-indent, 1em) - var(--plainmark-list-bullet-2-size, 0.3em))',
+    backgroundColor: 'transparent',
+    border: 'max(1px, 0.075em) solid currentColor',
   },
   '.plainmark-list-item[data-list-depth="2"] .plainmark-list-bullet::before': {
-    content: 'var(--plainmark-list-bullet-3, "■")',
-    fontSize: '0.5em',
+    width: 'var(--plainmark-list-bullet-3-size, 0.26em)',
+    height: 'var(--plainmark-list-bullet-3-size, 0.26em)',
+    marginRight:
+      'calc(var(--plainmark-list-indent, 1em) - var(--plainmark-list-bullet-3-size, 0.26em))',
+    borderRadius: '0',
   },
   '.plainmark-task-checkbox': {
     width: 'var(--plainmark-task-checkbox-size, 0.85em)',
