@@ -4,6 +4,16 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-07-18
+
+### Changed
+
+- **Custom bullet characters are no longer configurable** — because bullets are now shapes instead of text, the settings that replaced a bullet with a character of your choice (`--plainmark-list-bullet`, `--plainmark-list-bullet-2`, `--plainmark-list-bullet-3`) no longer do anything. If you had set them, bullets will revert to the default appearance; the matching `-size` settings adjust how large each level is drawn.
+
+### Fixed
+
+- **List bullets look the same on every platform** — nested bullets were drawn with symbol characters that each operating system rendered from a different font, so they came out shrunken and uneven at deeper indent levels. Bullets are now drawn as shapes rather than text and render identically everywhere.
+
 ## [1.2.5] - 2026-07-17
 
 ### Fixed
