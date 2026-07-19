@@ -81,7 +81,7 @@
 | CALL-E-6 | accepted | accepted | — |
 | CALL-E-7 | smoke | conforming | — |
 | CALL-E-8 | UNCOVERED | unknown | — |
-| CALL-I-1 | tier-b + smoke | conforming | `callout.spec.ts` |
+| CALL-I-1 | tier-b + smoke | conforming | `callout-geometry.spec.ts`, `callout.spec.ts` |
 | CALL-I-2 | tier-a | conforming | `callout_autocomplete.test.ts` |
 | CALL-I-3 | tier-a | conforming | `callout_autocomplete.test.ts` |
 | CALL-I-4 | tier-a | conforming | `callout_autocomplete.test.ts` |
@@ -89,14 +89,14 @@
 | CALL-I-7 | accepted | accepted | — |
 | CALL-R-1 | tier-a | conforming | `callout_detect.test.ts` |
 | CALL-R-2 | tier-a | conforming | `callout_detect.test.ts` |
-| CALL-R-3 | tier-b + smoke | conforming | `callout.spec.ts` |
+| CALL-R-3 | tier-b + smoke | conforming | `callout-geometry.spec.ts`, `callout.spec.ts` |
 | CALL-R-4 | tier-a + smoke | conforming | `callout_detect.test.ts` |
-| CALL-R-5 | smoke | conforming | — |
+| CALL-R-5 | tier-b + smoke | conforming | `callout-geometry.spec.ts` |
 | CALL-R-6 | smoke | conforming | — |
 | CALL-R-7 | tier-a | conforming | `callout_detect.test.ts` |
 | CALL-R-8 | tier-a + smoke | conforming | `callout_detect.test.ts` |
 | CALL-R-9 | tier-a | conforming | `callout_detect.test.ts` |
-| CALL-R-10 | tier-b + smoke | conforming | `callout.spec.ts`, `selection-alignment.spec.ts` |
+| CALL-R-10 | tier-b + smoke | conforming | `callout-geometry.spec.ts`, `callout.spec.ts`, `selection-alignment.spec.ts` |
 | CALL-SP-1 | tier-a + tier-b + inherited | conforming | — |
 | CALL-SP-2 | UNCOVERED | conforming | — |
 
@@ -608,7 +608,7 @@
 | MATH-E-13 | accepted | accepted | — |
 | MATH-E-14 | tier-a | conforming | `dissolved_math.test.ts`, `inline_decorations_suppression.test.ts` |
 | MATH-I-1 | tier-a | conforming | `math.test.ts` |
-| MATH-I-2 | tier-a | conforming | `math.test.ts` |
+| MATH-I-2 | tier-a + tier-b | conforming | `math.test.ts`, `math-geometry.spec.ts` |
 | MATH-I-3 | tier-a | conforming | `math.test.ts` |
 | MATH-I-4 | tier-a + smoke | unknown | `math.test.ts` |
 | MATH-I-5 | tier-a | conforming | `math_preview.test.ts` |
@@ -623,12 +623,12 @@
 | MATH-I-14 | smoke | conforming | — |
 | MATH-I-15 | tier-a + tier-b + smoke | conforming | `math_click_select.test.ts`, `math-click-select.spec.ts` |
 | MATH-R-1 | tier-a | conforming | `math.test.ts` |
-| MATH-R-2 | tier-a | conforming | `math.test.ts` |
-| MATH-R-3 | tier-a + smoke | conforming | `math.test.ts` |
+| MATH-R-2 | tier-a + tier-b | conforming | `math.test.ts`, `math-geometry.spec.ts` |
+| MATH-R-3 | tier-a + tier-b + smoke | conforming | `math.test.ts`, `math-geometry.spec.ts` |
 | MATH-R-4 | smoke | conforming | — |
 | MATH-R-5 | tier-a + smoke | conforming | `math.test.ts`, `mathjax_loader.test.ts` |
 | MATH-R-6 | tier-a + smoke | conforming | `math.test.ts` |
-| MATH-R-7 | smoke | conforming | — |
+| MATH-R-7 | tier-b + smoke | conforming | `math-geometry.spec.ts` |
 | MATH-R-8 | smoke | conforming | — |
 | MATH-R-9 | smoke | conforming | — |
 | MATH-SP-1 | tier-a + tier-b + inherited | conforming | `math.test.ts` |
@@ -651,7 +651,7 @@
 | MMD-E-9 | smoke + accepted | accepted | — |
 | MMD-E-10 | smoke | unknown | — |
 | MMD-E-11 | UNCOVERED | divergent | — |
-| MMD-I-1 | tier-a | conforming | `mermaid.test.ts` |
+| MMD-I-1 | tier-a + tier-b | conforming | `mermaid.test.ts`, `mermaid-geometry.spec.ts` |
 | MMD-I-2 | smoke | conforming | — |
 | MMD-I-3 | tier-a + smoke | conforming | `mermaid.test.ts` |
 | MMD-I-4 | UNCOVERED | conforming | — |
@@ -659,11 +659,11 @@
 | MMD-R-1 | tier-a | conforming | `mermaid.test.ts` |
 | MMD-R-2 | tier-a | conforming | `mermaid.test.ts` |
 | MMD-R-3 | smoke | unknown | — |
-| MMD-R-4 | smoke | unknown | — |
-| MMD-R-5 | smoke | unknown | — |
-| MMD-R-6 | tier-a + smoke | conforming | `mermaid.test.ts` |
+| MMD-R-4 | tier-b + smoke | unknown | `mermaid-geometry.spec.ts` |
+| MMD-R-5 | tier-b + smoke | unknown | `mermaid-geometry.spec.ts` |
+| MMD-R-6 | tier-a + tier-b + smoke | conforming | `mermaid.test.ts`, `mermaid-geometry.spec.ts` |
 | MMD-R-7 | tier-a | conforming | `mermaid.test.ts`, `mermaid_loader.test.ts` |
-| MMD-R-8 | smoke | conforming | — |
+| MMD-R-8 | tier-b + smoke | conforming | `mermaid-geometry.spec.ts` |
 | MMD-SP-1 | tier-a + tier-b + inherited | conforming | `mermaid.test.ts` |
 | MMD-SP-2 | UNCOVERED | conforming | — |
 | MMD-SP-3 | tier-a | conforming | `mermaid.test.ts` |
@@ -715,21 +715,21 @@
 
 | Clause | Coverage | Conformance | Tests |
 |---|---|---|---|
-| SYNC-G-1 | tier-a | conforming | `sync.test.ts` |
-| SYNC-G-2 | tier-a + tier-b | conforming | `loop.test.ts`, `loop-multi-fire.spec.ts` |
-| SYNC-G-3 | tier-a + tier-b | conforming | `loop.test.ts`, `loop-multi-fire.spec.ts` |
+| SYNC-G-1 | tier-a + tier-b | conforming | `sync.test.ts`, `round-trip.spec.ts` |
+| SYNC-G-2 | tier-a + tier-b | conforming | `loop.test.ts`, `loop-multi-fire.spec.ts`, `round-trip.spec.ts` |
+| SYNC-G-3 | tier-a + tier-b | conforming | `loop.test.ts`, `loop-multi-fire.spec.ts`, `round-trip.spec.ts` |
 | SYNC-G-4 | tier-a | conforming | `loop.test.ts` |
 | SYNC-G-5 | tier-b | conforming | `loop-multi-fire.spec.ts` |
 | SYNC-G-6 | tier-b + smoke | conforming | `loop-multi-fire.spec.ts` |
 | SYNC-G-7 | tier-a | conforming | `sync.test.ts` |
 | SYNC-G-8 | tier-a | conforming | `sync.test.ts` |
-| SYNC-H-1 | tier-b | conforming | `loop-multi-fire.spec.ts` |
-| SYNC-H-2 | tier-a | conforming | `sync.test.ts` |
+| SYNC-H-1 | tier-b | conforming | `loop-multi-fire.spec.ts`, `round-trip.spec.ts` |
+| SYNC-H-2 | tier-a + tier-b | conforming | `sync.test.ts`, `round-trip.spec.ts` |
 | SYNC-H-3 | tier-a | conforming | `translate.test.ts` |
 | SYNC-H-4 | tier-b + smoke | conforming | `loop-multi-fire.spec.ts` |
 | SYNC-H-5 | smoke | conforming | — |
 | SYNC-H-6 | tier-b + inherited | conforming | `host-smoke.test.ts` |
-| SYNC-H-7 | tier-a | conforming | `loop.test.ts` |
+| SYNC-H-7 | tier-a + tier-b | conforming | `loop.test.ts`, `round-trip.spec.ts` |
 | SYNC-H-8 | tier-b + smoke | conforming | `table_undo_rebase.spec.ts` |
 | SYNC-P-1 | UNCOVERED | conforming | — |
 | SYNC-P-2 | tier-b + smoke | conforming | `host-smoke.test.ts`, `host-write-path.test.ts` |
@@ -744,14 +744,14 @@
 | SYNC-P-11 | UNCOVERED | conforming | — |
 | SYNC-P-12 | smoke | conforming | — |
 | SYNC-P-13 | smoke | conforming | — |
-| SYNC-W-1 | tier-a | conforming | `sync.test.ts` |
+| SYNC-W-1 | tier-a + tier-b | conforming | `sync.test.ts`, `round-trip.spec.ts` |
 | SYNC-W-2 | tier-a | conforming | `sync.test.ts` |
 | SYNC-W-3 | tier-a + tier-b | conforming | `full_replace.test.ts`, `loop.test.ts`, `host-write-path.test.ts` |
 | SYNC-W-4 | tier-a | conforming | `full_replace.test.ts`, `loop.test.ts` |
 | SYNC-W-5 | tier-a | conforming | `loop.test.ts` |
 | SYNC-W-6 | tier-a + tier-b + inherited | conforming | — |
 | SYNC-W-7 | tier-a + tier-b + inherited | conforming | — |
-| SYNC-W-8 | tier-a | conforming | `loop.test.ts` |
+| SYNC-W-8 | tier-a + tier-b | conforming | `loop.test.ts`, `round-trip.spec.ts` |
 
 ## `docs/spec/tables.md`
 
@@ -804,7 +804,7 @@
 | TBL-I-33 | tier-a + tier-b + smoke | conforming | `table_keybindings.test.ts`, `table_context_menu.test.ts`, `table_ops.test.ts`, `table_context_menu.spec.ts` |
 | TBL-I-34 | tier-a + tier-b + smoke | conforming | `table_ops.test.ts`, `table_keymap.spec.ts` |
 | TBL-R-1 | tier-a | conforming | `table.test.ts` |
-| TBL-R-2 | tier-b + smoke | conforming | `table.spec.ts` |
+| TBL-R-2 | tier-b + smoke | conforming | `table-geometry.spec.ts`, `table.spec.ts` |
 | TBL-R-3 | tier-b + smoke | conforming | `table.spec.ts`, `table_inline_emit.spec.ts`, `table_keymap.spec.ts` |
 | TBL-R-4 | tier-a + tier-b | conforming | `table.test.ts`, `table.spec.ts`, `table_inline_emit.spec.ts` |
 | TBL-R-5 | tier-b + smoke | conforming | `table_inline_emit.spec.ts` |
@@ -812,7 +812,7 @@
 | TBL-R-7 | tier-a + tier-b | conforming | `table.test.ts`, `table_line_after_typing.spec.ts` |
 | TBL-R-8 | tier-a | conforming | `table.test.ts`, `table-edit-cycle.test.ts` |
 | TBL-R-9 | tier-b + smoke | conforming | `table.spec.ts` |
-| TBL-R-10 | smoke | conforming | — |
+| TBL-R-10 | tier-b + smoke | conforming | `table-geometry.spec.ts` |
 | TBL-R-11 | tier-a + tier-b | conforming | `table.test.ts`, `table_keymap.spec.ts` |
 | TBL-R-12 | tier-a | conforming | `table.test.ts`, `table-edit-cycle.test.ts` |
 | TBL-R-13 | UNCOVERED | conforming | — |
