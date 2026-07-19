@@ -462,8 +462,8 @@
 | INV-HOST-1 | build | conforming | — |
 | INV-SP-1 | tier-a + tier-b | conforming | `no-edit-cycle.test.ts`, `lone-cr-eol.test.ts`, `table-edit-cycle.test.ts`, `paste-flow.spec.ts`, `source-preservation-fuzz.spec.ts` |
 | INV-SP-2 | tier-a + tier-b | conforming | `table-edit-cycle.test.ts`, `source-preservation-fuzz.spec.ts` |
-| INV-SP-3 | smoke | conforming | — |
-| INV-SP-4 | tier-a | conforming | `no-edit-cycle.test.ts`, `lone-cr-eol.test.ts` |
+| INV-SP-3 | tier-a + tier-b + smoke | conforming | `full_replace.test.ts`, `host-write-path.test.ts` |
+| INV-SP-4 | tier-a | conforming | `full_replace.test.ts`, `no-edit-cycle.test.ts`, `lone-cr-eol.test.ts` |
 | INV-UNDO-1 | tier-b | conforming | `table_keymap.spec.ts` |
 | INV-UNDO-2 | tier-b | conforming | `host-smoke.test.ts` |
 
@@ -709,7 +709,7 @@
 | PARA-R-7 | UNCOVERED | conforming | — |
 | PARA-SP-1 | tier-a + tier-b + inherited | conforming | — |
 | PARA-SP-2 | UNCOVERED | conforming | — |
-| PARA-SP-3 | smoke + inherited | conforming | — |
+| PARA-SP-3 | tier-a + tier-b + smoke + inherited | conforming | — |
 
 ## `docs/spec/sync-and-persistence.md`
 
@@ -732,11 +732,11 @@
 | SYNC-H-7 | tier-a | conforming | `loop.test.ts` |
 | SYNC-H-8 | tier-b + smoke | conforming | `table_undo_rebase.spec.ts` |
 | SYNC-P-1 | UNCOVERED | conforming | — |
-| SYNC-P-2 | tier-b + smoke | conforming | `host-smoke.test.ts` |
+| SYNC-P-2 | tier-b + smoke | conforming | `host-smoke.test.ts`, `host-write-path.test.ts` |
 | SYNC-P-3 | UNCOVERED | conforming | — |
 | SYNC-P-4 | smoke + accepted | accepted | — |
 | SYNC-P-5 | tier-a + smoke + inherited | conforming | — |
-| SYNC-P-6 | smoke + inherited | conforming | — |
+| SYNC-P-6 | tier-a + tier-b + smoke + inherited | conforming | `full_replace.test.ts`, `host-write-path.test.ts` |
 | SYNC-P-7 | build + inherited | conforming | — |
 | SYNC-P-8 | UNCOVERED | conforming | — |
 | SYNC-P-9 | UNCOVERED | conforming | — |
@@ -746,8 +746,8 @@
 | SYNC-P-13 | smoke | conforming | — |
 | SYNC-W-1 | tier-a | conforming | `sync.test.ts` |
 | SYNC-W-2 | tier-a | conforming | `sync.test.ts` |
-| SYNC-W-3 | tier-a | conforming | `loop.test.ts` |
-| SYNC-W-4 | tier-a | conforming | `loop.test.ts` |
+| SYNC-W-3 | tier-a + tier-b | conforming | `full_replace.test.ts`, `loop.test.ts`, `host-write-path.test.ts` |
+| SYNC-W-4 | tier-a | conforming | `full_replace.test.ts`, `loop.test.ts` |
 | SYNC-W-5 | tier-a | conforming | `loop.test.ts` |
 | SYNC-W-6 | tier-a + tier-b + inherited | conforming | — |
 | SYNC-W-7 | tier-a + tier-b + inherited | conforming | — |
@@ -827,7 +827,7 @@
 | TBL-SP-7 | tier-b + smoke | conforming | `table_autocomplete.spec.ts`, `table_line_after_typing.spec.ts`, `table_ta2_overinjection.spec.ts` |
 | TBL-SP-8 | tier-b + inherited | conforming | `table.spec.ts`, `table_keymap.spec.ts`, `table_undo_history.spec.ts` |
 | TBL-SP-9 | tier-a + tier-b | conforming | `table.test.ts`, `table_serialize.test.ts`, `table-edit-cycle.test.ts`, `table.spec.ts` |
-| TBL-SP-10 | smoke + inherited | conforming | — |
+| TBL-SP-10 | tier-a + tier-b + smoke + inherited | conforming | — |
 | TBL-SP-11 | tier-a + tier-b + inherited | conforming | — |
 | TBL-SP-12 | tier-b | conforming | `table_edge_nav.spec.ts` |
 

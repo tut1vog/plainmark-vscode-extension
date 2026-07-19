@@ -10,7 +10,8 @@ import type {
   WebviewPasteImageMessage,
   WebviewToHostMessage,
 } from '../sync/protocol.js';
-import { lf_to_native, native_to_lf } from '../sync/translate.js';
+import { native_to_lf } from '../sync/translate.js';
+import { plan_full_replace } from './full_replace.js';
 import { ROOT_DEFAULTS_CSS } from '../theme/root_defaults.js';
 import { normalize_theme_id, theme_css_for } from '../theme/themes.js';
 import {
@@ -59,6 +60,14 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     line: number;
   }>();
   static readonly on_did_change_cursor = PlainmarkEditorProvider._on_did_change_cursor.event;
+  // Test seam (see resolveCustomTextEditor): maps a bound document's URI string
+  // to its live webview-message dispatch. Populated ONLY under the desktop
+  // integration harness (PLAINMARK_TEST_HOOK); empty and unreferenced in a
+  // shipped extension.
+  private static readonly test_message_injectors = new Map<
+    string,
+    (raw: unknown) => Promise<void>
+  >();
 
   static get_active_panel(): vscode.WebviewPanel | null {
     if (
@@ -260,7 +269,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       get_panel_for_uri: (uri) => PlainmarkEditorProvider.get_panel_for_uri(uri),
       on_did_change_cursor: PlainmarkEditorProvider.on_did_change_cursor,
     });
-    return vscode.Disposable.from(
+    const disposables: vscode.Disposable[] = [
       editor,
       noop_undo,
       noop_redo,
@@ -271,7 +280,23 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       open_in_plainmark,
       select_theme,
       outline,
-    );
+    ];
+    // Gated test command (inert in production): pushes a synthetic webview
+    // message into a panel's real dispatch, keyed by document URI. Not declared
+    // in package.json `contributes.commands`, so it never appears in the palette;
+    // registered only when PLAINMARK_TEST_HOOK is set, so it does not exist in a
+    // shipped build.
+    if (test_hook_enabled()) {
+      disposables.push(
+        vscode.commands.registerCommand(
+          'tutivog.plainmark.__test__inject_message',
+          async (uri_string: string, raw: unknown): Promise<void> => {
+            await PlainmarkEditorProvider.test_message_injectors.get(uri_string)?.(raw);
+          },
+        ),
+      );
+    }
+    return vscode.Disposable.from(...disposables);
   }
 
   constructor(private readonly context: vscode.ExtensionContext) {}
@@ -342,17 +367,31 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
 
     const applier: SyncEditApplier = {
       async apply_full_replace(uri_string: string, lf_text: string): Promise<boolean> {
-        if (uri_string !== document.uri.toString()) return false;
-        const eol = get_eol();
-        const native_text = lf_to_native(lf_text, eol);
+        // Pure decision (URI guard + EOL translation + whole-doc range) lives in
+        // full_replace.ts; only the vscode WorkspaceEdit/applyEdit wiring stays
+        // here. The plan's range reproduces
+        // [positionAt(0), positionAt(getText().length)] via line_count +
+        // last_line_length, so the applied edit is byte-identical.
+        const last_line = document.lineCount - 1;
+        const plan = plan_full_replace(
+          {
+            uri: document.uri.toString(),
+            eol: get_eol(),
+            line_count: document.lineCount,
+            last_line_length: document.lineAt(last_line).text.length,
+          },
+          uri_string,
+          lf_text,
+        );
+        if (plan.kind === 'skip') return false;
         const we = new vscode.WorkspaceEdit();
         we.replace(
           document.uri,
           new vscode.Range(
-            document.positionAt(0),
-            document.positionAt(document.getText().length),
+            new vscode.Position(plan.start.line, plan.start.character),
+            new vscode.Position(plan.end.line, plan.end.character),
           ),
-          native_text,
+          plan.text,
         );
         return await vscode.workspace.applyEdit(we);
       },
@@ -393,7 +432,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       },
     );
 
-    const sub_msg = webviewPanel.webview.onDidReceiveMessage((raw) => {
+    // Extracted so the desktop integration harness can drive this exact dispatch
+    // with a synthetic `update` (see the test seam below). Returns the loop's
+    // promise so a test can await the resulting apply; production discards it
+    // (`void`), keeping the fire-and-forget behavior byte-identical.
+    const dispatch_webview_message = (raw: unknown): Promise<void> => {
       const message = parse_webview_message(raw);
       // IPC-boundary trace gated to non-`update` messages — `update` already
       // logs per-message inside loop.ts and fires on every keystroke. This
@@ -403,15 +446,33 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       if (message?.type !== 'update') {
         sync_log.debug('onDidReceiveMessage', { type: message?.type ?? '<non-string>' });
       }
-      if (try_handle_link_click(message, document.uri)) return;
-      if (try_handle_style_load_error(message)) return;
-      if (try_handle_table_edit_error(message)) return;
+      if (try_handle_link_click(message, document.uri)) return Promise.resolve();
+      if (try_handle_style_load_error(message)) return Promise.resolve();
+      if (try_handle_table_edit_error(message)) return Promise.resolve();
       if (message?.type === 'paste_image') {
         void handle_paste_image(message, document, webviewPanel.webview);
-        return;
+        return Promise.resolve();
       }
-      void loop.handle_webview_message(raw);
-    });
+      return loop.handle_webview_message(raw);
+    };
+    const sub_msg = webviewPanel.webview.onDidReceiveMessage(
+      (raw) => void dispatch_webview_message(raw),
+    );
+
+    // Test seam — inert in production. Only when PLAINMARK_TEST_HOOK is set
+    // (which the desktop integration harness alone does) is this panel's real
+    // dispatch registered so `tutivog.plainmark.__test__inject_message` can push
+    // a synthetic webview `update` into it. The Mocha suite runs in the extension
+    // host and cannot type into the webview iframe, so this is the smallest seam
+    // that exercises onDidReceiveMessage → sync loop → apply_full_replace end to
+    // end. With the env var unset the map is never populated AND the command is
+    // never registered (see register()), so no seam exists in a shipped build.
+    if (test_hook_enabled()) {
+      PlainmarkEditorProvider.test_message_injectors.set(
+        document.uri.toString(),
+        dispatch_webview_message,
+      );
+    }
 
     const sub_config = vscode.workspace.onDidChangeConfiguration((e) => {
       const styles_changed = e.affectsConfiguration('plainmark.styles', document.uri);
@@ -467,6 +528,8 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       PlainmarkEditorProvider.active_panels.delete(webviewPanel);
       PlainmarkEditorProvider.panel_documents.delete(webviewPanel);
       PlainmarkEditorProvider.panel_cursors.delete(webviewPanel);
+      // No-op unless the test seam populated it (see resolveCustomTextEditor).
+      PlainmarkEditorProvider.test_message_injectors.delete(document.uri.toString());
       if (PlainmarkEditorProvider.last_active_panel === webviewPanel) {
         PlainmarkEditorProvider.last_active_panel = null;
       }
@@ -539,6 +602,15 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
 </body>
 </html>`;
   }
+}
+
+// True only when the desktop integration harness sets PLAINMARK_TEST_HOOK=1.
+// Read via globalThis so the reference is safe in the Web host (which has no
+// `process`) and needs no Node import (INV-HOST-1).
+function test_hook_enabled(): boolean {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+    ?.env;
+  return env?.PLAINMARK_TEST_HOOK === '1';
 }
 
 function getNonce(): string {

@@ -21,6 +21,12 @@ try {
     extensionDevelopmentPath: extension_development_path,
     extensionTestsPath: extension_tests_path,
     launchArgs: ['--disable-extensions', '--disable-workspace-trust'],
+    // Arms the provider's test seam (PlainmarkEditorProvider test_hook_enabled)
+    // for this run only, so host-write-path.test.ts can inject a synthetic
+    // webview `update` into the real onDidReceiveMessage dispatch. The env var
+    // is scoped to this spawned extension-host process; a shipped extension
+    // never sees it, so the seam stays inert in production.
+    extensionTestsEnv: { PLAINMARK_TEST_HOOK: '1' },
   });
 } catch (err) {
   console.error('Failed to run host smoke tests:', err);
