@@ -1,5 +1,16 @@
 import * as vscode from 'vscode';
-import { classify_style_entry } from './styles_resolve.js';
+import {
+  plan_plainmark_styles,
+  plan_style_watch,
+  type Disposable,
+  type PlannedStyle,
+  type StyleBases,
+  type StylePlan,
+  type StyleReloadMessage,
+  type StyleUriOps,
+  type StyleWatcher,
+  type StyleWatchOps,
+} from './styles_plan.js';
 import { create_logger } from '../log.js';
 
 const log = create_logger('init');
@@ -9,21 +20,15 @@ const log = create_logger('init');
 // paths only; external `<link>` injection (never inline `<style>`); per-file
 // `createFileSystemWatcher` for live reload via cache-bust message; config
 // change triggers a full webview-html reload.
+//
+// The resolution/watch decisions (which base each entry resolves against, warning
+// aggregation, resource-root dedup, watcher wiring) live in the vscode-free
+// styles_plan.ts so vitest can exercise them. This file supplies the vscode URI
+// arithmetic behind the facade the planner consumes.
 
-export interface ResolvedStyle {
-  /** Webview-loadable URI string for `<link href>`. Stable across cache-busts. */
-  href: string;
-  /** Local-filesystem URI; used as the watcher target. */
-  local_uri: vscode.Uri;
-}
+export type ResolvedStyle = PlannedStyle<vscode.Uri>;
 
-export interface StyleResolution {
-  resolved: ResolvedStyle[];
-  /** Directories to add to `localResourceRoots` so the webview can load each style. */
-  resource_roots: vscode.Uri[];
-  /** Operator-visible warnings — surfaced via `showWarningMessage`. */
-  warnings: string[];
-}
+export type StyleResolution = StylePlan<vscode.Uri>;
 
 export function resolve_plainmark_styles(
   document_uri: vscode.Uri,
@@ -31,57 +36,22 @@ export function resolve_plainmark_styles(
 ): StyleResolution {
   const config = vscode.workspace.getConfiguration('plainmark', document_uri);
   const raw = config.get<unknown>('styles');
-  if (!Array.isArray(raw)) return { resolved: [], resource_roots: [], warnings: [] };
+  const folder = vscode.workspace.workspaceFolders?.[0];
 
-  const resolved: ResolvedStyle[] = [];
-  const resource_root_set = new Map<string, vscode.Uri>();
-  const warnings: string[] = [];
-
-  for (const entry of raw) {
-    const classified = classify_style_entry(entry);
-    if (classified.kind === 'invalid') {
-      warnings.push(`plainmark.styles: ignored entry — ${classified.reason}`);
-      continue;
-    }
-    if (classified.kind === 'declined_remote') {
-      warnings.push(
-        `plainmark.styles: ignored remote URL "${classified.raw}" — http(s):// is unsupported in v1`,
-      );
-      continue;
-    }
-
-    let local_uri: vscode.Uri;
-    try {
-      if (classified.kind === 'file_uri') {
-        local_uri = vscode.Uri.parse(classified.raw, true);
-      } else if (classified.kind === 'absolute_path') {
-        local_uri = vscode.Uri.file(classified.raw);
-      } else {
-        // relative_path — first workspace folder, fallback to document directory.
-        const folder = vscode.workspace.workspaceFolders?.[0];
-        const base = folder
-          ? folder.uri
-          : vscode.Uri.joinPath(document_uri, '..');
-        local_uri = vscode.Uri.joinPath(base, classified.raw);
-      }
-    } catch {
-      warnings.push(`plainmark.styles: failed to parse "${classified.raw}"`);
-      continue;
-    }
-
-    const parent = vscode.Uri.joinPath(local_uri, '..');
-    resource_root_set.set(parent.toString(), parent);
-    resolved.push({
-      href: webview.asWebviewUri(local_uri).toString(),
-      local_uri,
-    });
-  }
-
-  return {
-    resolved,
-    resource_roots: Array.from(resource_root_set.values()),
-    warnings,
+  const bases: StyleBases<vscode.Uri> = {
+    workspace_folder: folder ? folder.uri : null,
+    document_dir: () => vscode.Uri.joinPath(document_uri, '..'),
   };
+  const ops: StyleUriOps<vscode.Uri> = {
+    parse_file_uri: (raw_uri) => vscode.Uri.parse(raw_uri, true),
+    from_absolute_path: (path) => vscode.Uri.file(path),
+    join: (base, relative) => vscode.Uri.joinPath(base, relative),
+    parent: (uri) => vscode.Uri.joinPath(uri, '..'),
+    to_string: (uri) => uri.toString(),
+    to_webview_href: (uri) => webview.asWebviewUri(uri).toString(),
+  };
+
+  return plan_plainmark_styles(raw, bases, ops);
 }
 
 function uri_basename(uri: vscode.Uri): string {
@@ -89,9 +59,7 @@ function uri_basename(uri: vscode.Uri): string {
   return parts[parts.length - 1] ?? '';
 }
 
-export interface StyleWatchHandle {
-  dispose(): void;
-}
+export type StyleWatchHandle = Disposable;
 
 /**
  * Per-file `createFileSystemWatcher` for every resolved style. On `onDidChange`,
@@ -107,27 +75,22 @@ export function watch_styles(
   resolved: readonly ResolvedStyle[],
   webview: vscode.Webview,
 ): StyleWatchHandle {
-  const subs: vscode.Disposable[] = [];
-  for (const { href, local_uri } of resolved) {
-    try {
+  const ops: StyleWatchOps<vscode.Uri> = {
+    create_watcher: (local_uri) => {
       const parent = vscode.Uri.joinPath(local_uri, '..');
       const watcher = vscode.workspace.createFileSystemWatcher(
         new vscode.RelativePattern(parent, uri_basename(local_uri)),
       );
-      const fire = () => {
-        log.debug('plainmark.styles reload', { href_len: href.length });
-        void webview.postMessage({ type: 'style_reload', href });
-      };
-      subs.push(watcher.onDidChange(fire));
-      subs.push(watcher.onDidCreate(fire));
-      subs.push(watcher);
-    } catch {
-      // Web target may reject paths outside the workspace — fall back to manual reload.
-    }
-  }
-  return {
-    dispose: () => {
-      for (const s of subs) s.dispose();
+      return {
+        on_change: (handler) => watcher.onDidChange(handler),
+        on_create: (handler) => watcher.onDidCreate(handler),
+        dispose: () => watcher.dispose(),
+      } satisfies StyleWatcher & Disposable;
+    },
+    post_message: (message: StyleReloadMessage) => {
+      log.debug('plainmark.styles reload', { href_len: message.href.length });
+      void webview.postMessage(message);
     },
   };
+  return plan_style_watch(resolved, ops);
 }
