@@ -120,6 +120,37 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
         );
       }
 
+      // Positive assertion: the paste must actually LAND. The byte-preservation
+      // checks above are trivially satisfied by a paste that silently inserts
+      // nothing, so without this a broken (no-op) paste handler would pass.
+      // CM6's default paste handler inserts the clipboard `text/plain` verbatim
+      // at the caret (it ignores `text/html`), so for every fixture the doc MUST
+      // grow by exactly `text_plain.length` and that exact text MUST occupy the
+      // span beginning at the paste position.
+      const expected = fixture.text_plain;
+      const inserted = after_text.slice(CARET_OFFSET, CARET_OFFSET + inserted_length);
+      if (inserted_length !== expected.length) {
+        throw new Error(
+          `paste flow: doc did not grow by the pasted length for fixture "${fixture.name}"\n` +
+            `expected growth: ${expected.length} (text/plain length)\n` +
+            `  actual growth: ${inserted_length}`,
+        );
+      }
+      if (inserted !== expected) {
+        throw new Error(
+          `paste flow: pasted content did not land for fixture "${fixture.name}"\n` +
+            `expected inserted: ${JSON.stringify(expected)}\n` +
+            `  actual inserted: ${JSON.stringify(inserted)}`,
+        );
+      }
+      if (new_caret !== CARET_OFFSET + expected.length) {
+        throw new Error(
+          `paste flow: caret did not advance past the paste for fixture "${fixture.name}"\n` +
+            `expected caret: ${CARET_OFFSET + expected.length}\n` +
+            `  actual caret: ${new_caret}`,
+        );
+      }
+
       const captured = unexpected_console_snapshot();
       if (captured.length > 0) {
         throw new Error(

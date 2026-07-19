@@ -6,9 +6,12 @@
 // select-all, undo, redo. Invariants checked at every step:
 //   1. No exception thrown around the action.
 //   2. No error-class console output (enforced globally by the console sentinel).
-//   3. CM6 state stays self-consistent (`view.state.doc.length` ===
-//      `view.state.doc.toString().length`, i.e. no buffer/selection divergence
-//      that would surface as a thrown stack later).
+//   3. The syntax tree CM6 maintains incrementally across every keystroke stays
+//      byte-position-identical to a from-scratch full parse of the current
+//      document text — the live tree every decoration/widget renders from never
+//      diverges from ground truth. (lezer's incremental-parse == full-parse
+//      guarantee, checked with the same `compareTree` oracle as
+//      `tests/fuzz/spec-corpus.test.ts`.)
 //
 // Determinism: a single seed drives every action. Failures print the seed,
 // the sequence index, and the full action list up to the failure so the run
@@ -18,7 +21,9 @@ import { afterAll, beforeAll, describe, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { ensureSyntaxTree } from '@codemirror/language';
 import { editor_extensions } from '../../../src/webview/editor_extensions.js';
+import { compareTree } from '../../fuzz/compare-tree.js';
 import { gen_markdown } from '../../fuzz/gen-markdown.js';
 import { mulberry32, type Rng } from '../../fuzz/rng.js';
 import { ensure_mathjax } from '../mathjax-ready.js';
@@ -123,12 +128,38 @@ describe('monkey fuzz: random user-input sequence stays consistent NAV-M-6', () 
           );
         }
 
+        // Content invariant: the live syntax tree CM6 maintains incrementally
+        // across every keystroke MUST stay byte-position-identical to a fresh
+        // full parse of the current document text. A divergence means the tree
+        // the decorations render from no longer matches the source — a real
+        // corruption the old `doc.length === doc.toString().length` tautology
+        // could never surface (both are UTF-16 code-unit counts of the same
+        // rope). Same `compareTree` oracle as tests/fuzz/spec-corpus.test.ts;
+        // the standard cursor stays in the outer tree, so async nested
+        // code-language mounts do not perturb the comparison.
         const doc_string = view.state.doc.toString();
-        if (doc_string.length !== view.state.doc.length) {
+        const live_tree = ensureSyntaxTree(view.state, doc_string.length, 5000);
+        const fresh_state = EditorState.create({
+          doc: doc_string,
+          extensions: [...editor_extensions],
+        });
+        const fresh_tree = ensureSyntaxTree(fresh_state, doc_string.length, 5000);
+        if (!live_tree || !fresh_tree) {
           throw new Error(
-            `monkey: doc-length/doc-string mismatch — seed=0x${SEED.toString(16)} ` +
+            `monkey: could not compute syntax tree — seed=0x${SEED.toString(16)} ` +
               `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name}) ` +
-              `len=${view.state.doc.length} stringLen=${doc_string.length}\n` +
+              `live=${live_tree ? 'ok' : 'null'} fresh=${fresh_tree ? 'ok' : 'null'}\n` +
+              `trace: ${trace.join(' → ')}`,
+          );
+        }
+        try {
+          compareTree(live_tree, fresh_tree);
+        } catch (err) {
+          throw new Error(
+            `monkey: live syntax tree diverged from a full parse — seed=0x${SEED.toString(16)} ` +
+              `seq=${s} seq_seed=0x${seq_seed.toString(16)} action=${a} (${action.name})\n` +
+              `${err instanceof Error ? err.message : String(err)}\n` +
+              `doc=${JSON.stringify(doc_string)}\n` +
               `trace: ${trace.join(' → ')}`,
           );
         }

@@ -90,6 +90,11 @@ describe('INV-SP-1 INV-SP-2: source-preservation fuzz: edits leave bytes outside
 
     const rng = mulberry32(SEED);
 
+    // Count edits the generator intended to change something (a non-empty
+    // insert or a non-empty deletion). The final assertion uses this to prove
+    // the fuzz actually exercised real edits rather than no-oping vacuously.
+    let effective_edits = 0;
+
     for (let d = 0; d < DOC_COUNT; d++) {
       const doc_seed = ((rng() * 0xffffffff) >>> 0) || 1;
       const initial = gen_markdown({ seed: doc_seed });
@@ -131,9 +136,38 @@ describe('INV-SP-1 INV-SP-2: source-preservation fuzz: edits leave bytes outside
               `delta=${delta}`,
           );
         }
+
+        // Positive assertion: the intended edit MUST take effect. Replacing
+        // [from, to) with `insert` grows the doc by exactly
+        // `insert.length - (to - from)` and places `insert` at offset `from`.
+        // The head/tail checks above are trivially satisfied by an edit that
+        // changes nothing, so without this an editor that silently dropped the
+        // dispatch would pass — the no-op hole this fuzz must close.
+        const expected_delta = insert.length - (to - from);
+        if (delta !== expected_delta) {
+          throw new Error(
+            `source-preservation: edit had no effect on length: seed=0x${SEED.toString(16)} doc=${d} ` +
+              `doc_seed=0x${doc_seed.toString(16)} edit=${e} target=${target.name}[${target.from},${target.to}) ` +
+              `applied={from:${from},to:${to},insert:${JSON.stringify(insert)}} ` +
+              `expected_delta=${expected_delta} actual_delta=${delta}`,
+          );
+        }
+        if (insert.length > 0 && after.slice(from, from + insert.length) !== insert) {
+          throw new Error(
+            `source-preservation: inserted text did not land at the edit position: seed=0x${SEED.toString(16)} doc=${d} ` +
+              `doc_seed=0x${doc_seed.toString(16)} edit=${e} target=${target.name}[${target.from},${target.to}) ` +
+              `applied={from:${from},to:${to},insert:${JSON.stringify(insert)}} ` +
+              `landed=${JSON.stringify(after.slice(from, from + insert.length))}`,
+          );
+        }
+        if (insert.length > 0 || to > from) effective_edits++;
       }
     }
 
-    expect(view.state.doc.length).toBeGreaterThanOrEqual(0);
+    // The byte-preservation oracle is only meaningful over edits that actually
+    // mutate the document; a run that no-oped every edit would satisfy it
+    // vacuously. Assert the generator drove a substantial body of real edits
+    // (replaces the prior `doc.length >= 0` tautology, which asserted nothing).
+    expect(effective_edits).toBeGreaterThan(DOC_COUNT);
   }, 180000);
 });
