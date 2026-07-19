@@ -12,7 +12,8 @@ import type {
 } from '../sync/protocol.js';
 import { native_to_lf } from '../sync/translate.js';
 import { plan_full_replace } from './full_replace.js';
-import { ROOT_DEFAULTS_CSS } from '../theme/root_defaults.js';
+import { build_webview_html, getNonce } from './webview_html.js';
+import { classify_link_click } from './link_click.js';
 import { normalize_theme_id, theme_css_for } from '../theme/themes.js';
 import {
   resolve_plainmark_styles,
@@ -542,65 +543,26 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     styles: readonly ResolvedStyle[],
     keybindings: ResolvedTableKeybindings,
   ): string {
-    const nonce = getNonce();
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview.js'),
-    );
-    const mathjaxUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'mathjax.js'),
-    );
-    const mermaidUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'mermaid.js'),
-    );
-    const fontsBase = `${webview
-      .asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'fonts'))
-      .toString()}/`;
-    // `style-src` widens to include `${webview.cspSource}` so user `<link>` tags load — THEME-R-7.
-    const csp = [
-      `default-src 'none'`,
-      `style-src 'unsafe-inline' ${webview.cspSource}`,
-      `img-src ${webview.cspSource} https:`,
-      `font-src ${webview.cspSource}`,
-      `script-src 'nonce-${nonce}'`,
-    ].join('; ');
-    // Theme block sits between root defaults and user links — cascade contract: root defaults → active theme → user styles.
+    // Gather the vscode-dependent values (asWebviewUri, cspSource, theme config)
+    // here; the pure string construction (CSP, nonce placement, escaping,
+    // `</script>` neutralization) lives in webview_html.ts so vitest can test it.
+    const asWebviewUri = (...segments: string[]): string =>
+      webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...segments)).toString();
     const theme_id = normalize_theme_id(
       vscode.workspace.getConfiguration('plainmark').get('theme'),
     );
-    const theme_css = theme_css_for(theme_id);
-    const theme_style = theme_css ? `<style nonce="${nonce}">${theme_css}</style>` : '';
-    // User `<link>` tags follow the `:root` defaults `<style>` so user values win — THEME-R-6 cascade order.
-    const user_links = styles
-      .map(
-        ({ href }) =>
-          `<link rel="stylesheet" href="${escape_attribute(href)}" data-plainmark-style="${escape_attribute(href)}">`,
-      )
-      .join('\n  ');
-    // `<style>` precedes script tags so CM6's style-mod insertion stays lower-precedence than our `:root` defaults.
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="${csp}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plainmark</title>
-  <style nonce="${nonce}">${ROOT_DEFAULTS_CSS}</style>
-  ${theme_style}
-  ${user_links}
-</head>
-<body>
-  <div id="editor"></div>
-  <script nonce="${nonce}">window.__mathjax_font_url = ${JSON.stringify(fontsBase)};</script>
-  <script nonce="${nonce}">window.__plainmark_mathjax = ${JSON.stringify({ url: mathjaxUri.toString(), nonce })};</script>
-  <script nonce="${nonce}">window.__plainmark_mermaid = ${JSON.stringify({ url: mermaidUri.toString(), nonce })};</script>
-  <script nonce="${nonce}">window.__plainmark_theme = ${JSON.stringify(theme_id)};</script>
-  <script nonce="${nonce}">window.__plainmark_table_keybindings = ${
-    // user-settable strings can contain "</script>", which would terminate the inline script
-    JSON.stringify(keybindings).replace(/</g, '\\u003c')
-  };</script>
-  <script nonce="${nonce}" src="${scriptUri}"></script>
-</body>
-</html>`;
+    return build_webview_html({
+      nonce: getNonce(),
+      cspSource: webview.cspSource,
+      scriptUri: asWebviewUri('dist', 'webview.js'),
+      mathjaxUri: asWebviewUri('dist', 'mathjax.js'),
+      mermaidUri: asWebviewUri('dist', 'mermaid.js'),
+      fontsBase: `${asWebviewUri('dist', 'fonts')}/`,
+      themeId: theme_id,
+      themeCss: theme_css_for(theme_id),
+      styleHrefs: styles.map(({ href }) => href),
+      keybindings,
+    });
   }
 }
 
@@ -611,17 +573,6 @@ function test_hook_enabled(): boolean {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
     ?.env;
   return env?.PLAINMARK_TEST_HOOK === '1';
-}
-
-function getNonce(): string {
-  // globalThis.crypto (Web Crypto) works in both Node 22 and browser — no Node import needed
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function escape_attribute(value: string): string {
-  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
 }
 
 // Narrow an untrusted IPC payload to the shared wire union at the host boundary;
@@ -757,40 +708,39 @@ function compute_document_dir_uri(doc_uri: vscode.Uri): vscode.Uri | null {
   return vscode.Uri.joinPath(doc_uri, '..');
 }
 
-// Matches any RFC-3986 scheme — non-scheme hrefs are treated as document-relative.
-const SCHEME_RE = /^[a-z][a-z0-9+.-]*:/i;
-
 function try_handle_link_click(msg: WebviewToHostMessage | null, doc_uri: vscode.Uri): boolean {
   if (msg?.type !== 'link_click') return false;
-  if (typeof msg.href !== 'string' || msg.href.length === 0) {
-    widget_log.debug('link_click ipc: empty href');
-    return true;
-  }
-  const href = msg.href;
-  if (href.startsWith('#')) {
-    widget_log.debug('link_click ipc: bare fragment ignored');
-    return true;
-  }
-  if (SCHEME_RE.test(href)) {
-    widget_log.debug('link_click ipc: openExternal', { href_len: href.length });
-    try {
-      void vscode.env.openExternal(vscode.Uri.parse(href));
-    } catch {
-      // Malformed URI — swallow; nothing actionable to surface yet.
-    }
-    return true;
-  }
+  // Pure routing decision (scheme detection + relative/untitled classification)
+  // lives in link_click.ts; only the vscode wiring stays here.
   const dir = compute_document_dir_uri(doc_uri);
-  if (!dir) {
-    widget_log.debug('link_click ipc: relative but no document dir (untitled)');
-    return true;
+  const decision = classify_link_click(msg.href, { has_document_dir: dir !== null });
+  switch (decision.kind) {
+    case 'ignore-empty':
+      widget_log.debug('link_click ipc: empty href');
+      return true;
+    case 'ignore-fragment':
+      widget_log.debug('link_click ipc: bare fragment ignored');
+      return true;
+    case 'open-external':
+      widget_log.debug('link_click ipc: openExternal', { href_len: decision.href.length });
+      try {
+        void vscode.env.openExternal(vscode.Uri.parse(decision.href));
+      } catch {
+        // Malformed URI — swallow; nothing actionable to surface yet.
+      }
+      return true;
+    case 'noop-untitled':
+      widget_log.debug('link_click ipc: relative but no document dir (untitled)');
+      return true;
+    case 'open-workspace-relative':
+      try {
+        // dir is non-null here — has_document_dir gated this branch.
+        const target = vscode.Uri.joinPath(dir!, decision.href);
+        widget_log.debug('link_click ipc: vscode.open', { href_len: decision.href.length });
+        void vscode.commands.executeCommand('vscode.open', target);
+      } catch {
+        // Bad relative path — swallow.
+      }
+      return true;
   }
-  try {
-    const target = vscode.Uri.joinPath(dir, href);
-    widget_log.debug('link_click ipc: vscode.open', { href_len: href.length });
-    void vscode.commands.executeCommand('vscode.open', target);
-  } catch {
-    // Bad relative path — swallow.
-  }
-  return true;
 }
