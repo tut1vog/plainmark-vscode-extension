@@ -52,6 +52,7 @@ import {
   lazy_continuation_backspace,
   marker_aware_backspace,
 } from './decorations/marker_aware_backspace.js';
+import { paragraph_gap_extension } from './decorations/paragraph_gap.js';
 import { pointer_state_extension } from './decorations/pointer_state.js';
 import { selection_wrap_extension } from './decorations/selection_wrap.js';
 import { spacing_extension } from './decorations/spacing.js';
@@ -249,6 +250,7 @@ const editor_extensions_core: Extension[] = [
   footnote_theme,
   footnote_popover_extension,
   spacing_extension,
+  paragraph_gap_extension,
 ];
 
 // Prose-column constraint — constrain the contenteditable

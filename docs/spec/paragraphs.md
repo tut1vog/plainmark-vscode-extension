@@ -7,24 +7,26 @@ kind: construct
 # Paragraphs and Line Breaks — Specification
 
 Normative behavior for paragraphs and line breaks. A paragraph is the **baseline
-construct**: it is the absence of any other construct, so there is no
-dedicated paragraph handler. Paragraph semantics are plain CommonMark with **no**
-special remapping. The Typora-style paragraph model (Enter → `\n\n`, blank-line
-gap rendering) once attempted was fully reverted; the clauses below
-describe the current post-revert behavior.
+construct**: it is the absence of any other construct; source semantics are plain
+CommonMark with **no** input remapping (Enter inserts one `\n`). Rendering adds
+one thing on top: the **hard-newline paragraph gap** (PARA-R-7, adopted
+2026-07-19 by user election, reversing the 2026-05-20 revert) — a render-only
+vertical gap above eligible lines so a hard `\n` reads as a paragraph break,
+while soft-wrapped rows keep body line-height. The reverted Typora-style
+`\n\n` input remap stays reverted.
 
 Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README §2).
 
 ## R · Rendering
 
-- **PARA-R-1** — A paragraph MUST render as its inline content with no marker chrome, no line decoration class, and no widget: a paragraph is the absence of any other construct, so no decoration is emitted for it.
+- **PARA-R-1** — A paragraph MUST render as its inline content with no marker chrome and no widget; the only line decoration a paragraph line carries is the paragraph-gap spacing class (PARA-R-7).
   _Example:_ `hello world` renders as `hello world` with no added wrapper, marker, or background.
 
 - **PARA-R-2** — Paragraph text MUST soft-wrap at the prose-column width via `EditorView.lineWrapping`; a long logical line MUST NOT introduce horizontal scrolling and MUST NOT alter source bytes.
   _Example:_ a single-line paragraph wider than the column wraps onto multiple visual rows; the source remains one line.
 
-- **PARA-R-3** — A blank line MUST act as a paragraph separator: consecutive non-blank lines render as one paragraph, and a blank line between them renders two distinct paragraphs (plain CommonMark).
-  _Example:_ `a\nb` → one paragraph (`a b` after wrap); `a\n\nb` → two paragraphs.
+- **PARA-R-3** — A blank line MUST act as a paragraph separator in source semantics (plain CommonMark: consecutive non-blank lines are one paragraph, a blank line splits two); visually, blank lines render as normal-height caret-placeable rows that also carry the PARA-R-7 gap.
+  _Example:_ `a\nb` → one CommonMark paragraph across two source lines; `a\n\nb` → two paragraphs with a visible blank row between them.
 
 - **PARA-R-4** `[smoke]` — Vertical spacing between a paragraph and an adjacent block construct MUST flow from the unified spacing surface: `.cm-line` carries no vertical margin (CM6 height-map rule), and adjacent opt-in constructs collapse doubled padding via `plainmark-collapse-adjacent`.
   _Example:_ a paragraph directly above a blockquote shows a single inter-block gap, not a doubled one.
@@ -34,6 +36,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 - **PARA-R-6** — A plain paragraph line MUST flush to x=0 (the CM6 baseTheme `.cm-line` inset is zeroed); only construct themes re-apply their own inset.
   _Example:_ `text` starts at the left edge of the prose column with no leading indent.
+
+- **PARA-R-7** — Every gap-eligible line after the first document line MUST carry paragraph-gap padding-top (`--plainmark-paragraph-gap`, default `0.75em`) — padding, never margin (CM6 height-map rule). Gap-eligible: prose lines, blank lines, setext-heading lines (unstyled in Plainmark), and the first line of a top-level list. Not eligible: lines of code blocks, frontmatter, block math, HTML blocks, tables, blockquotes, ATX headings, horizontal rules, and interior list lines (second item onward, nested lists, item continuations). Eligibility MUST be invariant across bullet-marker typing transitions — `para\n-` (setext state), `para\n* ` (paragraph state), and `para\n* x` (list state) all keep the gap, so no marker keystroke moves the layout vertically.
+  _Example:_ `para\n- x\n- y` → the gap sits above `- x` (first list line); `- y` gets only the tight list-item spacing.
 
 ## I · Interaction
 
@@ -74,5 +79,5 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **PARA-E-4** `[smoke]` — A very long paragraph line MUST soft-wrap within the centered prose column without horizontal scroll, breaking at the column max-width (`--plainmark-container-max-width`) folded into `.cm-content`.
   _Example:_ a paragraph longer than the viewport wraps inside the centered column; no horizontal scrollbar appears.
 
-- **PARA-E-5** — A single `\n` between two non-blank lines MUST NOT render as a paragraph break or inject a visual gap (the reverted soft-break-with-gap rendering MUST NOT recur); both lines remain one paragraph per CommonMark.
-  _Example:_ `line one\nline two` renders as one wrapped paragraph (`line one line two`), with no blank-line gap between the two source lines.
+- **PARA-E-5** — A single `\n` between two non-blank prose lines MUST render as a visual paragraph break (the PARA-R-7 gap above the second line) while remaining one CommonMark paragraph in source; the gap is render-only and MUST NOT add, remove, or move any byte. This deliberately diverges from rendered-Markdown output (which would join the lines) — adopted 2026-07-19 by user election, reversing this clause's previous prohibition.
+  _Example:_ `line one\nline two` stays two source lines / one CommonMark paragraph; the editor shows `line two` below a paragraph gap.

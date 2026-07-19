@@ -350,6 +350,7 @@ Names follow one rule: `--plainmark-<construct>[-<sub-construct>]-<property>[-<s
 | --- | --- |
 | `--plainmark-font-size` | `16px` |
 | `--plainmark-body-line-height` | `1.5` |
+| `--plainmark-paragraph-gap` | `0.75em` |
 
 ### Mermaid diagrams (widget chrome only — diagram interiors are themed by Mermaid from the VS Code theme)
 

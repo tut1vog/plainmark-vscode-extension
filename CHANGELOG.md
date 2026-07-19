@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Paragraphs are now visibly separated** — every line started by pressing Enter gets a wider gap above it, like paragraphs on a rendered page, while lines that merely wrap keep their normal tight spacing; lists, quotes, headings, code, and tables keep their existing spacing.
+
 ## [1.3.0] - 2026-07-18
 
 ### Changed

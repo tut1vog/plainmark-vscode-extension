@@ -62,7 +62,11 @@ describe('oracle line-height pin', () => {
     expect(body_el).toBeTruthy();
 
     const heading_h = heading_el.getBoundingClientRect().height;
-    const body_h = body_el.getBoundingClientRect().height;
+    // The body line follows a hard newline, so it carries the paragraph-gap
+    // padding-top; the oracle samples a bare synthetic line, which has none.
+    const body_h =
+      body_el.getBoundingClientRect().height -
+      parseFloat(getComputedStyle(body_el).paddingTop);
     // sanity: the harness renders the heading tall, so a sampled heading would diverge
     expect(heading_h).toBeGreaterThan(body_h + 5);
 

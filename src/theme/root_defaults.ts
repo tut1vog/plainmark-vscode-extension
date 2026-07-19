@@ -216,6 +216,8 @@ export const ROOT_DEFAULTS_CSS = `:root {
   /* Body typography — no --vscode-* chain; VS Code editor font-size is 12px (macOS) / 14px (Linux/Windows) and underdelivers vs GitHub's 16px baseline. Hard-coded 16px is the prevailing pattern across MPE, github-markdown-css, Typora, and Obsidian, and is CM6-safe for content font overrides. */
   --plainmark-font-size: 16px;
   --plainmark-body-line-height: 1.5;
+  /* Paragraph-break gap above each prose line that follows a hard newline; soft-wrapped rows are unaffected. */
+  --plainmark-paragraph-gap: 0.75em;
 
   /* Selection and caret — selection-background is the wash actually painted (the clipped selection layer sits above text, so the value must stay translucent); the 40% mix lives here, not at the consumption site, so themes/users pin final colors with their own alpha. */
   --plainmark-selection-background: color-mix(in srgb, var(--vscode-editor-selectionBackground, rgb(0, 102, 204)) 40%, transparent);
