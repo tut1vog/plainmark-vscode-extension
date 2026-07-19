@@ -89,7 +89,7 @@ are in play. Section code `M`.
 - **NAV-M-5** — The caret MUST NOT come to rest strictly inside any atomic range; for every atomic range `[from, to)`, `head > from && head < to` MUST be false.
   _Example:_ arrow-walking up to and over a collapsed table → head is at `from` or `to`, never an interior offset (oracle O5).
 - **NAV-M-6** — These mechanical oracles MUST continue to hold when navigation is interleaved with document-mutating keystrokes (typing, Enter, Backspace, Delete) that trigger widget and decoration rebuilds, not only under caret-only movement.
-  _Example:_ the monkey fuzz mixes edits with arrow keys across many seeds and re-asserts O1–O5 after every key.
+  _Example:_ the caret-invariant fuzz re-asserts O1–O5 after every action with edits interleaved; the monkey fuzz mixes the same interleaving across many seeds and re-asserts live-tree/full-parse integrity after every key.
 
 ## S — Caret-position synchronization
 
