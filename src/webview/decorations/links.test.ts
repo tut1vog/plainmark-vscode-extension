@@ -16,7 +16,7 @@ function make_state(doc: string, anchor: number): EditorState {
 interface DecoSnapshot {
   from: number;
   to: number;
-  kind: 'link' | 'marker' | 'hidden';
+  kind: 'link' | 'marker' | 'hidden' | 'definition';
   href?: string;
 }
 
@@ -43,6 +43,8 @@ function snapshot(state: EditorState): DecoSnapshot[] {
       });
     } else if (spec.class === 'plainmark-link-marker') {
       out.push({ from, to, kind: 'marker' });
+    } else if (spec.class === 'plainmark-link-definition') {
+      out.push({ from, to, kind: 'definition' });
     } else {
       out.push({ from, to, kind: 'hidden' });
     }
@@ -66,6 +68,11 @@ const hide = (from: number, to: number): DecoSnapshot => ({
   from,
   to,
   kind: 'hidden',
+});
+const def = (from: number, to: number): DecoSnapshot => ({
+  from,
+  to,
+  kind: 'definition',
 });
 
 describe('LINK-R-1 LINK-R-2 LINK-R-3 Link `[text](url)`', () => {
@@ -324,5 +331,178 @@ describe('AUTO-R-4 AUTO-R-5 GFM bare-URL autolink', () => {
     const state = make_state(doc, 19); // off-line
     const link_decos = snapshot(state).filter((d) => d.kind === 'link');
     expect(link_decos).toEqual([]);
+  });
+});
+
+describe('LINK-E-2 reference links `[text][ref]` / `[text][]`', () => {
+  // 'see [text][ref] end\n\n[ref]: https://x.io\n'
+  //  0    5    10   15   20    26        38
+  // Link [4,15): '[' 4, text [5,9)='text', ']' 9, LinkLabel [10,15)='[ref]'.
+  // LinkReference [21,40): the definition, url 'https://x.io' at [28,40).
+  const full = 'see [text][ref] end\n\n[ref]: https://x.io\n';
+
+  it('LINK-E-2 LINK-R-4: full ref off-caret hides `[` and `][ref]` and styles the text with the resolved href', () => {
+    const state = make_state(full, 30); // caret on the definition line, off the ref
+    expect(snapshot(state)).toEqual([
+      hide(4, 5),
+      link(5, 9, 'https://x.io'),
+      hide(9, 15),
+      def(21, 40),
+    ]);
+  });
+
+  it('LINK-E-2 LINK-I-1: reveals both marker runs when the caret is inside the bracketed text', () => {
+    const state = make_state(full, 6);
+    expect(snapshot(state)).toEqual([
+      marker(4, 5),
+      link(5, 9, 'https://x.io'),
+      marker(9, 15),
+      def(21, 40),
+    ]);
+  });
+
+  it('LINK-E-2 LINK-I-2: node-scoped — caret on the ref line but outside the ref keeps markers hidden', () => {
+    const state = make_state(full, 17); // inside 'end', outside [4,15)
+    expect(snapshot(state)).toEqual([
+      hide(4, 5),
+      link(5, 9, 'https://x.io'),
+      hide(9, 15),
+      def(21, 40),
+    ]);
+  });
+
+  it('LINK-E-2 LINK-I-3: a selection strictly covering the ref on both sides keeps markers hidden', () => {
+    const state = EditorState.create({
+      doc: full,
+      extensions: [markdown({ extensions: [GFM] })],
+      selection: { anchor: 0, head: 19 }, // 0 < 4 and 19 > 15 (strict cover)
+    });
+    expect(snapshot(state)).toEqual([
+      hide(4, 5),
+      link(5, 9, 'https://x.io'),
+      hide(9, 15),
+      def(21, 40),
+    ]);
+  });
+
+  it('LINK-E-2 LINK-I-4: moving the caret off the ref restores marker-hiding', () => {
+    let state = make_state(full, 6);
+    expect(snapshot(state)).toEqual([
+      marker(4, 5),
+      link(5, 9, 'https://x.io'),
+      marker(9, 15),
+      def(21, 40),
+    ]);
+    state = state.update({ selection: { anchor: 30 } }).state;
+    expect(snapshot(state)).toEqual([
+      hide(4, 5),
+      link(5, 9, 'https://x.io'),
+      hide(9, 15),
+      def(21, 40),
+    ]);
+  });
+
+  it('LINK-E-2: collapsed ref `[text][]` resolves against the bracketed text', () => {
+    // 'go [text][] now\n\n[text]: https://x.io\n'
+    // Link [3,11): '[' 3, text [4,8)='text', ']' 8, LinkLabel [9,11)='[]'.
+    const collapsed = 'go [text][] now\n\n[text]: https://x.io\n';
+    const state = make_state(collapsed, 30); // off the ref
+    expect(snapshot(state)).toEqual([
+      hide(3, 4),
+      link(4, 8, 'https://x.io'),
+      hide(8, 11),
+      def(17, 37),
+    ]);
+  });
+
+  it('LINK-E-2: case-insensitive resolution — `[Text][REF]` matches `[ref]:`', () => {
+    // 'x [Text][REF] y\n\n[ref]: https://x.io\n'
+    // Link [2,13): '[' 2, text [3,7)='Text', ']' 7, LinkLabel [8,13)='[REF]'.
+    const doc = 'x [Text][REF] y\n\n[ref]: https://x.io\n';
+    const state = make_state(doc, 25); // off the ref
+    expect(snapshot(state)).toEqual([
+      hide(2, 3),
+      link(3, 7, 'https://x.io'),
+      hide(7, 13),
+      def(17, 36),
+    ]);
+  });
+
+  it('LINK-E-2: case-insensitive collapsed resolution — `[Text][]` matches `[text]:`', () => {
+    // 'x [Text][] y\n\n[text]: https://x.io\n'
+    // Link [2,10): '[' 2, text [3,7)='Text', ']' 7, LinkLabel [8,10)='[]'.
+    const doc = 'x [Text][] y\n\n[text]: https://x.io\n';
+    const state = make_state(doc, 25); // off the ref
+    expect(snapshot(state)).toEqual([
+      hide(2, 3),
+      link(3, 7, 'https://x.io'),
+      hide(7, 10),
+      def(14, 34),
+    ]);
+  });
+
+  it('LINK-E-2: multiple definitions of a label — the first wins (CommonMark)', () => {
+    // 'x [a][r] y\n\n[r]: https://first.io\n[r]: https://second.io\n'
+    // Link [2,8): '[' 2, text [3,4)='a', ']' 4, LinkLabel [5,8)='[r]'.
+    const doc = 'x [a][r] y\n\n[r]: https://first.io\n[r]: https://second.io\n';
+    const state = make_state(doc, 20); // off the ref, on the first def line
+    expect(snapshot(state)).toEqual([
+      hide(2, 3),
+      link(3, 4, 'https://first.io'),
+      hide(4, 8),
+      def(12, 33),
+      def(34, 56),
+    ]);
+  });
+
+  it('LINK-E-2: a definition may precede its reference (cross-block, backward resolution)', () => {
+    // '[a]: https://early.io\n\nuse [a][a] now\n'
+    // LinkReference [0,21); Link [27,33): '[' 27, text [28,29)='a', ']' 29, LinkLabel [30,33)='[a]'.
+    const doc = '[a]: https://early.io\n\nuse [a][a] now\n';
+    const state = make_state(doc, 10); // off the ref, on the def line
+    expect(snapshot(state)).toEqual([
+      def(0, 21),
+      hide(27, 28),
+      link(28, 29, 'https://early.io'),
+      hide(29, 33),
+    ]);
+  });
+
+  it('LINK-E-2: unresolved full ref (no matching definition) stays raw — no decoration', () => {
+    const doc = 'see [text][missing] end\n';
+    const state = make_state(doc, 22);
+    expect(snapshot(state)).toEqual([]);
+  });
+
+  it('LINK-E-2: unresolved collapsed ref stays raw — no decoration', () => {
+    const doc = 'see [text][] end\n';
+    const state = make_state(doc, 15);
+    expect(snapshot(state)).toEqual([]);
+  });
+
+  it('LINK-E-2: shortcut form `[text]` is excluded — left raw even when a definition exists', () => {
+    // lezer emits a `Link` for every `[...]` in prose, so a shortcut is
+    // indistinguishable from ordinary bracketed text except by resolution.
+    const doc = 'see [text] end\n\n[text]: https://x.io\n';
+    const state = make_state(doc, 12); // off the '[text]'
+    // Only the definition line is dimmed; the shortcut '[text]' is untouched.
+    expect(snapshot(state).filter((d) => d.kind !== 'definition')).toEqual([]);
+  });
+});
+
+describe('LINK-E-3 reference definition lines `[ref]: url`', () => {
+  // '[ref]: https://x.io\nzz\n' — LinkReference [0,19); paragraph 'zz' [20,22).
+  const doc = '[ref]: https://x.io\nzz\n';
+
+  it('LINK-E-3: the whole definition span is dimmed, and its URL is not link-decorated', () => {
+    const state = make_state(doc, 21); // caret on the 'zz' line, off the definition
+    expect(snapshot(state)).toEqual([def(0, 19)]);
+  });
+
+  it('LINK-E-3: dimming is caret-invariant — nothing is hidden and there is no reveal transition', () => {
+    const on_line = make_state(doc, 3); // caret inside the definition
+    expect(snapshot(on_line)).toEqual([def(0, 19)]);
+    const off_line = make_state(doc, 21);
+    expect(snapshot(off_line)).toEqual([def(0, 19)]);
   });
 });

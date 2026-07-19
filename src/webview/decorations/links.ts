@@ -1,6 +1,7 @@
+import { syntaxTree } from '@codemirror/language';
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
-import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
+import type { SyntaxNode, SyntaxNodeRef, Tree } from '@lezer/common';
 import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 import { create_logger } from '../../log.js';
@@ -33,12 +34,110 @@ function link_marks(node: SyntaxNode): SyntaxNode[] {
 // (known tradeoff). See text_styles.ts comment.
 const hide_marker = Decoration.mark({ class: 'plainmark-inline-marker-hidden' });
 const marker_mark = Decoration.mark({ class: 'plainmark-link-marker' });
+// `[ref]: url` definition lines: dimmed as editor chrome, reusing the muted
+// marker color (no new stable CSS variable). See reference_definition_handler.
+const definition_dim_mark = Decoration.mark({ class: 'plainmark-link-definition' });
 
 function link_mark(href: string): Decoration {
   return Decoration.mark({
     class: 'plainmark-link',
     attributes: { [HREF_ATTR]: href },
   });
+}
+
+// Reference-link resolution (CommonMark). A `[ref]: url` definition parses as a
+// block-level `LinkReference` node; a `[text][ref]` (full) or `[text][]`
+// (collapsed) reference parses as a `Link` node — the SAME node type as inline
+// links, distinguished only by having exactly two `LinkMark` children and no
+// `(url)`. Labels match case-insensitively with internal whitespace collapsed
+// (CommonMark label normalization); the first definition of a label wins.
+function normalize_label(label: string): string {
+  return label.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+// Building the label→url map is O(document); memoize on syntax-tree identity so
+// the per-`Link`-node handler does not rescan the whole tree for every
+// reference. The WeakMap key is the tree, so background re-parses (new tree)
+// naturally invalidate the cache.
+const definitions_by_tree = new WeakMap<Tree, Map<string, string>>();
+
+function collect_definitions(state: EditorState): Map<string, string> {
+  const map = new Map<string, string>();
+  syntaxTree(state).iterate({
+    enter(node) {
+      if (node.name !== 'LinkReference') return;
+      const label = find_first_child(node.node, 'LinkLabel');
+      const url = find_first_child(node.node, 'URL');
+      if (!label || !url) return;
+      // LinkLabel spans `[label]`; strip the outer brackets before normalizing.
+      const key = normalize_label(state.doc.sliceString(label.from + 1, label.to - 1));
+      if (!key || map.has(key)) return; // first definition wins (CommonMark)
+      map.set(key, state.doc.sliceString(url.from, url.to));
+    },
+  });
+  return map;
+}
+
+function get_definitions(state: EditorState): Map<string, string> {
+  const tree = syntaxTree(state);
+  let map = definitions_by_tree.get(tree);
+  if (!map) {
+    map = collect_definitions(state);
+    definitions_by_tree.set(tree, map);
+  }
+  return map;
+}
+
+// Resolve a reference label to its definition URL anywhere in the document
+// (cross-block: the definition may sit before or after the reference), or null
+// when no definition matches.
+function resolve_reference(state: EditorState, label: string): string | null {
+  const key = normalize_label(label);
+  if (!key) return null;
+  return get_definitions(state).get(key) ?? null;
+}
+
+// `[text][ref]` / `[text][]` — 2 `LinkMark` children (`[`, `]`) plus a
+// `LinkLabel` covering the trailing `[ref]` / `[]`. Off-caret: hide the leading
+// `[` and the trailing `][ref]` run, leaving the bracketed text link-styled;
+// on-caret: reveal both runs with the muted marker treatment (mirrors the
+// inline-link reveal). Shortcut `[text]` (no `LinkLabel` child) is left raw.
+function reference_link_decorations(
+  n: SyntaxNode,
+  state: EditorState,
+): Range<Decoration>[] {
+  const marks = link_marks(n);
+  const open = marks[0];
+  const close_bracket = marks[1];
+  if (open.from !== n.from) return [];
+  const text_from = open.to;
+  const text_to = close_bracket.from;
+  if (text_from >= text_to) return []; // empty bracketed text → no decoration
+
+  const label_node = find_first_child(n, 'LinkLabel');
+  // Shortcut form `[text]` has no LinkLabel child. lezer emits a `Link` node for
+  // every `[...]` in prose, so a shortcut is indistinguishable from ordinary
+  // bracketed text except by resolution; requiring the explicit `[ref]`/`[]`
+  // tail keeps ordinary brackets untouched.
+  if (!label_node) return [];
+  const label_raw = state.doc.sliceString(label_node.from, label_node.to);
+  const label =
+    label_raw === '[]'
+      ? state.doc.sliceString(text_from, text_to) // collapsed → the text is the label
+      : state.doc.sliceString(label_node.from + 1, label_node.to - 1); // full → inside `[…]`
+
+  const href = resolve_reference(state, label);
+  if (href === null) return []; // unresolved reference stays raw/undecorated
+
+  const decorations: Range<Decoration>[] = [link_mark(href).range(text_from, text_to)];
+  if (should_reveal_for_selection(state, n.from, n.to)) {
+    decorations.push(marker_mark.range(open.from, open.to));
+    decorations.push(marker_mark.range(close_bracket.from, label_node.to));
+  } else {
+    decorations.push(hide_marker.range(open.from, open.to));
+    decorations.push(hide_marker.range(close_bracket.from, label_node.to));
+  }
+  return decorations;
 }
 
 // `[text](url "title")` — children: LinkMark `[`, inline content, LinkMark `]`,
@@ -51,6 +150,8 @@ const link_handler: NodeHandler = {
   handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
     const n = node.node;
     const marks = link_marks(n);
+    // Reference link `[text][ref]` / `[text][]` — 2 LinkMarks, no `(url)`.
+    if (marks.length === 2) return reference_link_decorations(n, state);
     if (marks.length < 4) return [];
     const open = marks[0];
     const close_bracket = marks[1];
@@ -77,6 +178,17 @@ const link_handler: NodeHandler = {
     decorations.push(hide_marker.range(open.from, open.to));
     decorations.push(hide_marker.range(close_bracket.from, close_paren.to));
     return decorations;
+  },
+};
+
+// `[ref]: url` reference definition — dimmed as editor chrome (LINK-E-3). The
+// whole `LinkReference` span (label, colon, URL, optional title) renders in the
+// muted marker color; nothing is hidden, no line is removed, and there is no
+// caret reveal — the bytes stay fully visible and editable at all times.
+const reference_definition_handler: NodeHandler = {
+  nodeNames: ['LinkReference'],
+  handle(node: SyntaxNodeRef): Range<Decoration>[] {
+    return [definition_dim_mark.range(node.from, node.to)];
   },
 };
 
@@ -126,6 +238,7 @@ const bare_url_handler: NodeHandler = {
 
 export const link_handlers: readonly NodeHandler[] = [
   link_handler,
+  reference_definition_handler,
   autolink_handler,
   bare_url_handler,
 ];
@@ -143,6 +256,12 @@ const links_theme = EditorView.theme({
     textDecoration: 'var(--plainmark-link-decoration-hover, underline)',
   },
   '.plainmark-link-marker': {
+    color:
+      'var(--plainmark-link-marker-color, var(--vscode-descriptionForeground, currentColor))',
+  },
+  // Reference-definition line dim — reuses the muted marker color (no new
+  // stable CSS variable), so `[ref]: url` lines read as chrome, not prose.
+  '.plainmark-link-definition': {
     color:
       'var(--plainmark-link-marker-color, var(--vscode-descriptionForeground, currentColor))',
   },
