@@ -63,7 +63,7 @@ function current_theme_name(): string {
 let mermaid_load_promise: Promise<void> | null = null;
 
 // dist/mermaid.js is injected on first diagram encounter — diagram-free docs never load it.
-function load_mermaid(): Promise<void> {
+export function load_mermaid(): Promise<void> {
   if (mermaid_load_promise) return mermaid_load_promise;
   const promise = new Promise<void>((resolve, reject) => {
     if (get_mermaid()) {

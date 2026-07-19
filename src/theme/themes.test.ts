@@ -59,8 +59,12 @@ describe.each([
   ['GITHUB_DARK_CSS', GITHUB_DARK_CSS],
   ['CLAUDIFY_CSS', CLAUDIFY_CSS],
 ])('%s integrity THEME-D-6', (_name, css) => {
-  it('is a string, not a backtick-broken comparison expression', () => {
-    expect(typeof css).toBe('string');
+  it('is a non-empty CSS block exposing the --plainmark- variable surface', () => {
+    // A backtick-broken template literal collapses to a boolean comparison
+    // (THEME-D-6): it would have no length and carry none of the theme's
+    // promised --plainmark-* variables. A real fixed-palette block has both.
+    expect(css.length).toBeGreaterThan(0);
+    expect(css).toContain('--plainmark-');
   });
 
   it('contains no backtick characters', () => {

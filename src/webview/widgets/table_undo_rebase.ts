@@ -30,7 +30,7 @@ function cell_text_map(ext: TableExtraction, state: EditorState): Map<string, st
   return map;
 }
 
-function find_differing_cell(
+export function find_differing_cell(
   pre: EditorState,
   pre_ext: TableExtraction,
   post: EditorState,
