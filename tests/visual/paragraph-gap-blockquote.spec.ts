@@ -3,14 +3,16 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
-// Guards PARA-R-7 as amended by ADR-0007: quote and callout interiors share
-// the prose paragraph rhythm. Interior blockquote lines (any depth), quoted
-// blank lines, callout body lines, and quoted list continuations carry the
-// paragraph gap; the first line of the outermost quote keeps only the block's
-// own padding (no tinted band above the first paragraph), quoted list marker
-// lines keep tight item spacing, and quoted non-prose constructs stay
-// excluded. The computed-padding cases pin the (0,4,0) tripled-class cascade
-// win over the blockquote per-depth and callout-body padding rules.
+// Guards PARA-R-7 as amended by ADR-0007, and its construct mirrors BQ-R-13
+// (quote interiors) and CALL-R-11 (callout bodies): quote and callout
+// interiors share the prose paragraph rhythm. Interior blockquote lines (any
+// depth), quoted blank lines, callout body lines (minus the first, under the
+// header), and quoted list continuations carry the paragraph gap; the first
+// line of the outermost quote keeps only the block's own padding (no tinted
+// band above the first paragraph), quoted list marker lines keep tight item
+// spacing, and quoted non-prose constructs stay excluded. The
+// computed-padding cases pin the (0,4,0) tripled-class cascade win over the
+// blockquote per-depth and callout-body padding rules.
 
 const GAP_CLASS = 'plainmark-paragraph-gap';
 
