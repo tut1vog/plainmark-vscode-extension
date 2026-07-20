@@ -22,24 +22,27 @@ const list_marker_mark = Decoration.mark({ class: 'plainmark-list-marker' });
 const hide_marker = Decoration.replace({});
 const task_marker_hidden = Decoration.mark({ class: 'plainmark-list-marker-hidden' });
 
-// Where the line's blockquote prefix ends: past the last QuoteMark before the
-// ListMark, plus its one trailing space (mirroring blockquote.ts's hide range).
-// The marker hide below must start HERE, not at line start — the transparent
-// `> ` span stays in flow because it draws the quote's nesting bar (its
-// `::before`) and its advance backs the line's hanging indent; anchoring the
-// hide at line start swallows that span, so the bar vanishes and the bullet
-// paints at the border column. Returns line_from when the line is not quoted.
-function after_quote_prefix(state: EditorState, line_from: number, mark_from: number): number {
-  let end = line_from;
+// Where the marker hide starts. Outside a quote: LINE START — leading nesting
+// whitespace is swallowed so nesting comes purely from the
+// --plainmark-list-depth padding. Inside a quote: the MARKER itself, for two
+// reasons. First, the `> ` prefix must stay in flow — its transparent
+// QuoteMark span draws the quote's nesting bar and its advance backs the
+// hanging indent; hiding it kills the bar and paints the bullet at the border
+// column. Second, the nesting spaces after the prefix must stay in flow too:
+// the quote's per-line inline indent overrides the list depth padding, and
+// that indent is the source-literal prefix advance (BQ-R-12
+// quote_prefix_counts) which COUNTS those spaces — on a quoted line they ARE
+// the visible nesting step.
+function marker_hide_from(state: EditorState, line_from: number, mark_from: number): number {
+  let quoted = false;
   syntaxTree(state).iterate({
     from: line_from,
     to: mark_from,
     enter(node) {
-      if (node.name === 'QuoteMark' && node.to <= mark_from && node.to > end) end = node.to;
+      if (node.name === 'QuoteMark' && node.to <= mark_from) quoted = true;
     },
   });
-  if (end === line_from) return line_from;
-  return end < mark_from && state.doc.sliceString(end, end + 1) === ' ' ? end + 1 : end;
+  return quoted ? mark_from : line_from;
 }
 
 // Nesting depth = count of enclosing ListItem ancestors (0 at the top level).
@@ -110,10 +113,11 @@ const list_item_handler: NodeHandler = {
       return decorations;
     }
 
-    // Off-line: hide the source's leading whitespace (after any blockquote
-    // prefix) so nesting comes purely from the --plainmark-list-depth padding,
-    // not from the source space count.
-    const hide_from = after_quote_prefix(state, line_from, mark.from);
+    // Off-line: hide the source's leading whitespace so nesting comes purely
+    // from the --plainmark-list-depth padding, not from the source space count
+    // — except inside a quote, where the prefix and nesting spaces stay in
+    // flow (see marker_hide_from).
+    const hide_from = marker_hide_from(state, line_from, mark.from);
     if (is_ordered) {
       if (mark.from > hide_from) decorations.push(hide_marker.range(hide_from, mark.from));
       decorations.push(list_marker_mark.range(mark.from, mark.to));
