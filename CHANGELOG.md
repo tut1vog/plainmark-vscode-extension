@@ -8,7 +8,7 @@ to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **Paragraph spacing now applies inside quotes and callouts** — a new line inside a blockquote (`> `) or callout body gets the same paragraph gap as regular text, tinted with the quote's background and with the quote bar running through it unbroken, instead of the previous much tighter spacing. The first line of a quote keeps its compact block padding, and lists or code blocks inside quotes keep their own spacing.
+- **Paragraph spacing now applies inside quotes and callouts** — a new line inside a blockquote (`> `) or callout body gets the same paragraph gap as regular text, tinted with the quote's background and with the quote bar running through it unbroken, instead of the previous much tighter spacing. The first line of a quote and the line directly under a callout's title keep their compact spacing, and lists or code blocks inside quotes keep their own spacing.
 
 ### Fixed
 

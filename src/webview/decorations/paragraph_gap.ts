@@ -1,5 +1,5 @@
 import { syntaxTree } from '@codemirror/language';
-import { RangeSetBuilder } from '@codemirror/state';
+import { type EditorState, RangeSetBuilder } from '@codemirror/state';
 import {
   Decoration,
   type DecorationSet,
@@ -7,6 +7,8 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view';
+import type { SyntaxNode } from '@lezer/common';
+import { detect_callout } from './callout_detect.js';
 
 // Constructs that own their spacing (or where a newline is content, not a
 // paragraph break) — no line of these ever carries the gap. Setext headings
@@ -56,9 +58,10 @@ const gap_line = Decoration.line({ class: 'plainmark-paragraph-gap' });
 // gap hands off to item spacing. Blank lines between loose items have no
 // ListItem ancestor and stay tight, so loose-list geometry is unchanged.
 function gap_eligible(
-  tree: ReturnType<typeof syntaxTree>,
+  state: EditorState,
   line: { from: number; to: number; text: string },
 ): boolean {
+  const tree = syntaxTree(state);
   // Skip the lexical quote prefix (`>` runs and whitespace, BQ-R-12's scan),
   // not just whitespace: probing at a bare `>` resolves to the QuoteMark,
   // whose ancestors skip the ListItem a quoted list line belongs to.
@@ -66,7 +69,7 @@ function gap_eligible(
   const probe = Math.min(line.from + prefix, line.to);
   let outermost_list: { from: number } | null = null;
   let innermost_item: { from: number } | null = null;
-  let outermost_quote: { from: number } | null = null;
+  let outermost_quote: SyntaxNode | null = null;
   for (let n = tree.resolveInner(probe, 1); n; n = n.parent!) {
     if (NON_PROSE_CONTEXTS.has(n.name)) return false;
     if (n.name === 'ListItem' && innermost_item === null) innermost_item = n;
@@ -74,14 +77,23 @@ function gap_eligible(
     if (n.name === 'Blockquote') outermost_quote = n;
     if (!n.parent) break;
   }
-  // First line of the outermost quote (plain or callout): the block's outer
-  // breathing room stays --plainmark-blockquote-padding-y / the callout header
-  // padding — gap padding here would render as a fat tinted band above the
-  // quote's first paragraph, since .cm-line padding sits inside the background
-  // and margins are banned (height-map rule). Interior lines (any depth,
-  // callout bodies, quoted blanks) fall through to the prose/list rules, so
-  // deepening an interior line with another `>` never moves the layout.
-  if (outermost_quote !== null && outermost_quote.from >= line.from) return false;
+  if (outermost_quote !== null) {
+    // First line of the outermost quote (plain or callout): the block's outer
+    // breathing room stays --plainmark-blockquote-padding-y / the callout
+    // header padding — gap padding here would render as a fat tinted band
+    // above the quote's first paragraph, since .cm-line padding sits inside
+    // the background and margins are banned (height-map rule). Interior lines
+    // (any depth, quoted blanks) fall through to the prose/list rules, so
+    // deepening an interior line with another `>` never moves the layout.
+    if (outermost_quote.from >= line.from) return false;
+    // First BODY line of a callout (the line right under the header): the
+    // title→content seam stays the header's title-padding-bottom alone —
+    // owner smoke rejected gap-sized spacing under the icon line (CALL-R-11).
+    // Later body lines keep the gap like any quote interior.
+    const header_line = state.doc.lineAt(outermost_quote.from);
+    if (line.from === header_line.to + 1 && detect_callout(state, outermost_quote) !== null)
+      return false;
+  }
   if (outermost_list === null || outermost_list.from >= line.from) return true;
   return innermost_item !== null && innermost_item.from < line.from;
 }
@@ -91,13 +103,12 @@ function gap_eligible(
 // .cm-line, so wrap boundaries are untouched (PARA-E-5 amendment, 2026-07-19).
 function build_gap_decorations(view: EditorView): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
-  const tree = syntaxTree(view.state);
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
       // Blank lines included — the gap must exist the instant Enter creates
       // the line, or the first typed character reflows the layout.
-      if (line.number > 1 && gap_eligible(tree, line)) {
+      if (line.number > 1 && gap_eligible(view.state, line)) {
         builder.add(line.from, line.from, gap_line);
       }
       pos = line.to + 1;

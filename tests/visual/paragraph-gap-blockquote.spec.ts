@@ -74,8 +74,10 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7 / ADR-0007)', 
     expect(await gap_flags('> a\nb')).toEqual([false, true]);
   });
 
-  it('callout body lines carry the gap; the header line does not', async () => {
-    expect(await gap_flags('> [!note] title\n> body\n> more')).toEqual([false, true, true]);
+  it('callout body lines carry the gap, except the first one under the header', async () => {
+    // Title→content seam stays the header's title-padding-bottom alone
+    // (owner smoke 2026-07-20 rejected gap-sized spacing under the icon line).
+    expect(await gap_flags('> [!note] title\n> body\n> more')).toEqual([false, false, true]);
   });
 
   it('a fenced code block inside a quote stays excluded', async () => {
@@ -93,7 +95,10 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7 / ADR-0007)', 
   });
 
   it('the gap padding beats the callout-body padding-top reset in the cascade', async () => {
-    const lines = await mount('> [!note] title\n> body');
-    expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(12, 0);
+    const lines = await mount('> [!note] title\n> body\n> more');
+    // First body line: no gap — callout-body padding reset (0px) applies.
+    expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(0, 0);
+    // Later body lines: the gap (0.75em = 12px) wins over the reset.
+    expect(parseFloat(getComputedStyle(lines[2]).paddingTop)).toBeCloseTo(12, 0);
   });
 });
