@@ -29,7 +29,7 @@ export interface FullReplaceTarget {
   last_line_length: number;
 }
 
-export interface ReplacePosition {
+interface ReplacePosition {
   line: number;
   character: number;
 }

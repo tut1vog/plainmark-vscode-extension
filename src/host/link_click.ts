@@ -19,7 +19,7 @@
 // whitespace/control-char-prefixed href (` javascript:…`) is NOT recognized as a
 // scheme and falls through to workspace-relative resolution instead of reaching
 // openExternal.
-export const SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
+const SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
 
 // Schemes allowed to reach `vscode.env.openExternal` (ADR-0004). Everything else
 // scheme-shaped is dropped: VS Code's trusted-domains prompt gates only
@@ -27,7 +27,7 @@ export const SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
 // handler unchecked (`javascript:`, `data:`, `.desktop`/UNC vectors, …). `file:`
 // is deliberately absent — it routes to `vscode.open` (in-editor) instead, so a
 // hostile document cannot launch the OS default-app handler on a local path.
-export const ALLOWED_EXTERNAL_SCHEMES: ReadonlySet<string> = new Set([
+const ALLOWED_EXTERNAL_SCHEMES: ReadonlySet<string> = new Set([
   'http',
   'https',
   'mailto',

@@ -79,7 +79,7 @@ export function hanging_indent_px(gt_count: number, ws_count: number, metrics: M
 // quote_prefix_counts' full run this EXCLUDES list-nesting spaces after the
 // prefix — on a list line those are hidden (lists.ts), so they must not be
 // counted into the line's indent.
-export const quote_only_prefix_re = /^(?:[ \t]*>)+[ \t]?/;
+const quote_only_prefix_re = /^(?:[ \t]*>)+[ \t]?/;
 
 // Nesting units a quoted LIST line adds to its hanging indent: the
 // ListItem-ancestor count of the ListMark that opens the line's content
@@ -89,7 +89,7 @@ export const quote_only_prefix_re = /^(?:[ \t]*>)+[ \t]?/;
 // and the nesting spaces are hidden, so the quote indent carries the units:
 // wrapped rows then hang at the item's text column, mirroring an unquoted
 // list. The matching FIRST-row step is in-flow marker margin (lists_theme).
-export function quoted_list_indent_units(state: EditorState, line_from: number, line_text: string): number {
+function quoted_list_indent_units(state: EditorState, line_from: number, line_text: string): number {
   const m = quote_only_prefix_re.exec(line_text);
   if (!m) return 0;
   let i = m[0].length;
