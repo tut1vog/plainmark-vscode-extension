@@ -1,0 +1,46 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index ee5c93ca491431b80566feab7e7944bb6851a528..e684990c1cfb5e37981bb0997fae8efc08720af5 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -217,7 +217,17 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state: state$1, d
+         let inner = context[context.length - 1];
+         if (inner.to - inner.spaceAfter.length > pos - line.from)
+             return dont = { range };
+-        let emptyLine = pos >= (inner.to - inner.spaceAfter.length) && !/\S/.test(line.text.slice(inner.to));
++        // PLAINMARK PATCH (lazy-continuation-enter): the empty-item test measures the
++        // caret line against the item FIRST line's marker width (inner.to), so a
++        // lazy continuation line no longer than the marker (`1. a\n2. we\ndfd|`:
++        // "dfd" = 3 chars = "2. " width) is misread as an empty item line, and the
++        // make-list-non-tight branch below inserts the newline at line START --
++        // the line and caret visibly shift down. A continuation line (upstream's
++        // own `continued` predicate: item begun on an earlier line) is never an
++        // empty item line; guard with its negation so Enter falls through to the
++        // continuation path (plain newline at the caret, no marker).
++        let emptyLine = pos >= (inner.to - inner.spaceAfter.length) && !/\S/.test(line.text.slice(inner.to)) &&
++            !(inner.item && inner.item.from < line.from);
+         // Empty line in list
+         if (inner.item && emptyLine) {
+             let first = inner.node.firstChild, second = inner.node.getChild("ListItem", "ListItem");
+diff --git a/dist/index.js b/dist/index.js
+index bb9082cf6682ba328426a23aecaa4d2427878525..fda158767e4ebf292d0aa7eadc22a4b477fcc57b 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -215,7 +215,17 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state, dispatch }
+         let inner = context[context.length - 1];
+         if (inner.to - inner.spaceAfter.length > pos - line.from)
+             return dont = { range };
+-        let emptyLine = pos >= (inner.to - inner.spaceAfter.length) && !/\S/.test(line.text.slice(inner.to));
++        // PLAINMARK PATCH (lazy-continuation-enter): the empty-item test measures the
++        // caret line against the item FIRST line's marker width (inner.to), so a
++        // lazy continuation line no longer than the marker (`1. a\n2. we\ndfd|`:
++        // "dfd" = 3 chars = "2. " width) is misread as an empty item line, and the
++        // make-list-non-tight branch below inserts the newline at line START --
++        // the line and caret visibly shift down. A continuation line (upstream's
++        // own `continued` predicate: item begun on an earlier line) is never an
++        // empty item line; guard with its negation so Enter falls through to the
++        // continuation path (plain newline at the caret, no marker).
++        let emptyLine = pos >= (inner.to - inner.spaceAfter.length) && !/\S/.test(line.text.slice(inner.to)) &&
++            !(inner.item && inner.item.from < line.from);
+         // Empty line in list
+         if (inner.item && emptyLine) {
+             let first = inner.node.firstChild, second = inner.node.getChild("ListItem", "ListItem");
