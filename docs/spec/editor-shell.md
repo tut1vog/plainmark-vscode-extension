@@ -140,8 +140,8 @@ the host→webview types are `sync`, `insert_table`, `insert_footnote`, `style_r
 - **SHELL-M-2** — On the host side, `onDidReceiveMessage` MUST give the shell-owned sideband handlers (`link_click`, `style_load_error`, `table_edit_error`) first refusal before forwarding to the sync loop; a message consumed by a sideband handler MUST NOT reach `loop.handle_webview_message`.
   _Example:_ a `{ type: 'link_click', href }` is handled by `try_handle_link_click` and returns before the sync loop sees it.
 
-- **SHELL-M-3** — A `link_click` with an RFC-3986 scheme MUST be opened with `vscode.env.openExternal`; a document-relative href MUST be resolved against the document directory and opened with `vscode.open`; a bare `#fragment` MUST be ignored; a relative href on a parentless (e.g. `untitled:`) document MUST be dropped.
-  _Example:_ `link_click` `https://x` → `openExternal`; `./img.png` → `vscode.open(joinPath(docDir,'./img.png'))`; `#sec` → ignored.
+- **SHELL-M-3** — A `link_click` whose RFC-3986 scheme is on the external allowlist (`http`, `https`, `mailto`, `vscode`, `vscode-insiders`; matched case-insensitively) MUST be opened with `vscode.env.openExternal`; a `file:` href MUST be opened in-editor with `vscode.open`, never `openExternal`; any other scheme-bearing href MUST be dropped with no side effects (ADR-0004); a document-relative href MUST be resolved against the document directory and opened with `vscode.open`; a bare `#fragment` MUST be ignored; a relative href on a parentless (e.g. `untitled:`) document MUST be dropped.
+  _Example:_ `link_click` `https://x` → `openExternal`; `file:///notes.md` → `vscode.open`; `javascript:alert(1)` → dropped; `./img.png` → `vscode.open(joinPath(docDir,'./img.png'))`; `#sec` → ignored.
 
 - **SHELL-M-4** — The webview MUST translate a DOM `plainmark-link-click` CustomEvent into a `link_click` host message, dropping events with an empty href.
   _Example:_ a link widget dispatches `plainmark-link-click` with `{ href }` → webview posts `{ type: 'link_click', href }`.

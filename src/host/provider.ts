@@ -729,6 +729,21 @@ function try_handle_link_click(msg: WebviewToHostMessage | null, doc_uri: vscode
         // Malformed URI — swallow; nothing actionable to surface yet.
       }
       return true;
+    case 'open-file':
+      // file: opens in-editor, never via the OS default-app handler (ADR-0004).
+      widget_log.debug('link_click ipc: file scheme via vscode.open', {
+        href_len: decision.href.length,
+      });
+      try {
+        void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(decision.href));
+      } catch {
+        // Malformed URI — swallow.
+      }
+      return true;
+    case 'blocked-scheme':
+      // Off-allowlist scheme — silent drop (ADR-0004); breadcrumb only.
+      widget_log.debug('link_click ipc: blocked scheme', { scheme: decision.scheme });
+      return true;
     case 'noop-untitled':
       widget_log.debug('link_click ipc: relative but no document dir (untitled)');
       return true;

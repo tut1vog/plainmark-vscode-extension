@@ -6,26 +6,46 @@
 // and the `vscode.Uri.joinPath` resolution) stays in provider.ts and switches on
 // the returned decision.
 //
-// Contract: SHELL-M-3 (scheme → openExternal; document-relative → resolve
-// against the document dir + vscode.open; bare `#fragment` → ignore; relative on
-// a parentless document → drop), LINK-I-9 (empty href dropped before it can
-// reach openExternal), LINK-I-12 (a scheme-bearing href opens verbatim; a
-// relative href resolves against the document URI's directory).
+// Contract: SHELL-M-3 (allowlisted scheme → openExternal; `file:` → vscode.open,
+// never openExternal; non-allowlisted scheme → dropped; document-relative →
+// resolve against the document dir + vscode.open; bare `#fragment` → ignore;
+// relative on a parentless document → drop), LINK-I-9 (empty href dropped before
+// it can reach openExternal), LINK-I-12 (an allowlisted scheme-bearing href
+// opens verbatim; a relative href resolves against the document URI's
+// directory). Allowlist rationale: ADR-0004.
 
 // Matches any RFC-3986 scheme — non-scheme hrefs are treated as document-relative.
 // Anchored at the start with no allowance for leading whitespace, so a
 // whitespace/control-char-prefixed href (` javascript:…`) is NOT recognized as a
 // scheme and falls through to workspace-relative resolution instead of reaching
 // openExternal.
-export const SCHEME_RE = /^[a-z][a-z0-9+.-]*:/i;
+export const SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
+
+// Schemes allowed to reach `vscode.env.openExternal` (ADR-0004). Everything else
+// scheme-shaped is dropped: VS Code's trusted-domains prompt gates only
+// http/https, so any other scheme handed to openExternal reaches the OS shell
+// handler unchecked (`javascript:`, `data:`, `.desktop`/UNC vectors, …). `file:`
+// is deliberately absent — it routes to `vscode.open` (in-editor) instead, so a
+// hostile document cannot launch the OS default-app handler on a local path.
+export const ALLOWED_EXTERNAL_SCHEMES: ReadonlySet<string> = new Set([
+  'http',
+  'https',
+  'mailto',
+  'vscode',
+  'vscode-insiders',
+]);
 
 export type LinkClickDecision =
   // Missing / empty href — dropped so a degenerate link never reaches openExternal (LINK-I-9).
   | { kind: 'ignore-empty' }
   // Bare `#fragment` — in-document anchor, ignored (SHELL-M-3).
   | { kind: 'ignore-fragment' }
-  // Scheme-bearing href — opened verbatim with vscode.env.openExternal (SHELL-M-3 / LINK-I-12).
+  // Allowlisted scheme-bearing href — opened verbatim with vscode.env.openExternal (SHELL-M-3 / LINK-I-12).
   | { kind: 'open-external'; href: string }
+  // `file:` href — opened inside the editor with vscode.open, never openExternal (SHELL-M-3 / ADR-0004).
+  | { kind: 'open-file'; href: string }
+  // Scheme-bearing href off the allowlist — dropped, no side effects (SHELL-M-3 / ADR-0004).
+  | { kind: 'blocked-scheme'; href: string; scheme: string }
   // Document-relative href — resolved against the document dir + vscode.open (SHELL-M-3).
   | { kind: 'open-workspace-relative'; href: string }
   // Relative href on a parentless (e.g. untitled:) document — dropped (SHELL-M-3).
@@ -40,7 +60,13 @@ export interface LinkClickContext {
 export function classify_link_click(href: unknown, ctx: LinkClickContext): LinkClickDecision {
   if (typeof href !== 'string' || href.length === 0) return { kind: 'ignore-empty' };
   if (href.startsWith('#')) return { kind: 'ignore-fragment' };
-  if (SCHEME_RE.test(href)) return { kind: 'open-external', href };
+  const scheme_match = SCHEME_RE.exec(href);
+  if (scheme_match) {
+    const scheme = scheme_match[1].toLowerCase();
+    if (scheme === 'file') return { kind: 'open-file', href };
+    if (ALLOWED_EXTERNAL_SCHEMES.has(scheme)) return { kind: 'open-external', href };
+    return { kind: 'blocked-scheme', href, scheme };
+  }
   if (!ctx.has_document_dir) return { kind: 'noop-untitled', href };
   return { kind: 'open-workspace-relative', href };
 }
