@@ -80,6 +80,22 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7 / ADR-0007)', 
     expect(await gap_flags('> [!note] title\n> body\n> more')).toEqual([false, false, true]);
   });
 
+  it('an EMPTY first callout body line matches the typed state (no first-keystroke jump)', async () => {
+    // The end-of-line probe must lean left to find the Blockquote a
+    // prefix-only line terminates — with side 1 the empty body line at doc
+    // end resolved to Document, took the prose gap, and typing the first
+    // character snapped the line up to the title seam.
+    expect(await gap_flags('> [!note] title\n> ')).toEqual([false, false]);
+    view?.destroy();
+    expect(await gap_flags('> [!note] title\n> x')).toEqual([false, false]);
+  });
+
+  it('a trailing empty quote continuation line carries the gap like its typed state', async () => {
+    expect(await gap_flags('> a\n> ')).toEqual([false, true]);
+    view?.destroy();
+    expect(await gap_flags('> a\n> b')).toEqual([false, true]);
+  });
+
   it('a fenced code block inside a quote stays excluded', async () => {
     expect(await gap_flags('> a\n> ```\n> code\n> ```')).toEqual([false, false, false, false]);
   });

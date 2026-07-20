@@ -67,10 +67,18 @@ function gap_eligible(
   // whose ancestors skip the ListItem a quoted list line belongs to.
   const prefix = /^[ \t>]*/.exec(line.text)![0].length;
   const probe = Math.min(line.from + prefix, line.to);
+  // Prefix-only and blank lines probe at line END, where a construct that
+  // ends exactly there is invisible to side 1 — resolveInner climbs to
+  // Document. An empty callout body line at doc end (`> [!note] t\n> `) lost
+  // its Blockquote ancestor that way: it took the bogus prose gap, and the
+  // first typed character restored the context and snapped the line up to the
+  // title seam. Lean left (-1) at end-of-line probes so the line resolves
+  // into the construct it terminates; content probes keep side 1.
+  const side = probe === line.to ? -1 : 1;
   let outermost_list: { from: number } | null = null;
   let innermost_item: { from: number } | null = null;
   let outermost_quote: SyntaxNode | null = null;
-  for (let n = tree.resolveInner(probe, 1); n; n = n.parent!) {
+  for (let n = tree.resolveInner(probe, side); n; n = n.parent!) {
     if (NON_PROSE_CONTEXTS.has(n.name)) return false;
     if (n.name === 'ListItem' && innermost_item === null) innermost_item = n;
     if (LIST_CONTEXTS.has(n.name)) outermost_list = n;
