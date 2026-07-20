@@ -74,22 +74,63 @@ export function hanging_indent_px(gt_count: number, ws_count: number, metrics: M
   return Math.round((gt_count * metrics.gt + ws_count * metrics.space) * 100) / 100;
 }
 
+// The lexical quote prefix alone: every `>` (with interleaved indent) plus the
+// one trailing space that belongs to the last marker. Unlike
+// quote_prefix_counts' full run this EXCLUDES list-nesting spaces after the
+// prefix — on a list line those are hidden (lists.ts), so they must not be
+// counted into the line's indent.
+export const quote_only_prefix_re = /^(?:[ \t]*>)+[ \t]?/;
+
+// Nesting units a quoted LIST line adds to its hanging indent: the
+// ListItem-ancestor count of the ListMark that opens the line's content
+// (depth + 1 — one unit for the marker slot itself, one per nesting level), or
+// 0 when the line's first content glyph is not a ListMark. The list's own
+// depth padding cannot convey this (the quote's inline indent overrides it),
+// and the nesting spaces are hidden, so the quote indent carries the units:
+// wrapped rows then hang at the item's text column, mirroring an unquoted
+// list. The matching FIRST-row step is in-flow marker margin (lists_theme).
+export function quoted_list_indent_units(state: EditorState, line_from: number, line_text: string): number {
+  const m = quote_only_prefix_re.exec(line_text);
+  if (!m) return 0;
+  let i = m[0].length;
+  while (i < line_text.length && (line_text[i] === ' ' || line_text[i] === '\t')) i++;
+  if (i >= line_text.length) return 0;
+  const node = syntaxTree(state).resolveInner(line_from + i, 1);
+  if (node.name !== 'ListMark') return 0;
+  let units = 0;
+  for (let p = node.parent; p; p = p.parent) {
+    if (p.name === 'ListItem') units++;
+  }
+  return units;
+}
+
 // Hanging indent as inline style on the line: `padding-left` pushes content to the
 // indent column; the equal negative `text-indent` cancels it for the first row
 // (BQ-R-12 net-to-zero origin) so the in-flow transparent `> ` markers + any
 // leading content spaces sit before content and the first row's visible glyph
 // lands at the SAME column as wrapped continuation rows (which hang at
-// padding-left). Cached per (depth, px).
+// padding-left). The net-to-zero pair also pins the per-marker bars: a line
+// whose padding and indent did not cancel would paint its bar off-column. On
+// a list line the indent adds `units` list-indent steps on top of the prefix
+// px (see quoted_list_indent_units). Cached per (depth, px, units).
 const indent_line_cache = new Map<string, Decoration>();
-function indent_line_decoration(depth: number, px: number): Decoration {
-  const key = `${depth}:${px}`;
+function indent_line_decoration(depth: number, px: number, units: number): Decoration {
+  const key = `${depth}:${px}:${units}`;
   let deco = indent_line_cache.get(key);
   if (!deco) {
+    const expr =
+      units > 0
+        ? `calc(${px}px + ${units} * var(--plainmark-list-indent, 1em))`
+        : `${px}px`;
+    const style =
+      units > 0
+        ? `padding-left:${expr};text-indent:calc(-1 * ${expr})`
+        : `padding-left:${px}px;text-indent:-${px}px`;
     deco = Decoration.line({
       class: 'plainmark-blockquote plainmark-collapse-adjacent',
       attributes: {
         'data-blockquote-depth': depth.toString(),
-        style: `padding-left:${px}px;text-indent:-${px}px`,
+        style,
       },
     });
     indent_line_cache.set(key, deco);
@@ -153,12 +194,17 @@ const blockquote_handler: NodeHandler = {
       // is the line's own literal prefix advance (quote_prefix_counts).
       const raw_depth = depth_at_line(state, line.from, line.to);
       const clamped = Math.min(Math.max(raw_depth, 1), MAX_DEPTH);
-      const counts = quote_prefix_counts(line.text);
+      const units = quoted_list_indent_units(state, line.from, line.text);
+      // List line: count only the quote prefix (nesting spaces are hidden);
+      // otherwise the full literal run, including intentional content spaces.
+      const counts = quote_prefix_counts(
+        units > 0 ? (quote_only_prefix_re.exec(line.text)?.[0] ?? line.text) : line.text,
+      );
       // Inline measured indent once the probe has run; the class-only decoration
       // (theme em fallback) covers the first frame before measurement.
       const deco =
         metrics.gt > 0
-          ? indent_line_decoration(clamped, hanging_indent_px(counts.gt, counts.ws, metrics))
+          ? indent_line_decoration(clamped, hanging_indent_px(counts.gt, counts.ws, metrics), units)
           : depth_line_decorations.get(clamped);
       if (deco) decorations.push(deco.range(line.from));
     }

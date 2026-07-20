@@ -24,25 +24,27 @@ const task_marker_hidden = Decoration.mark({ class: 'plainmark-list-marker-hidde
 
 // Where the marker hide starts. Outside a quote: LINE START — leading nesting
 // whitespace is swallowed so nesting comes purely from the
-// --plainmark-list-depth padding. Inside a quote: the MARKER itself, for two
-// reasons. First, the `> ` prefix must stay in flow — its transparent
-// QuoteMark span draws the quote's nesting bar and its advance backs the
-// hanging indent; hiding it kills the bar and paints the bullet at the border
-// column. Second, the nesting spaces after the prefix must stay in flow too:
-// the quote's per-line inline indent overrides the list depth padding, and
-// that indent is the source-literal prefix advance (BQ-R-12
-// quote_prefix_counts) which COUNTS those spaces — on a quoted line they ARE
-// the visible nesting step.
+// --plainmark-list-depth padding. Inside a quote: just past the quote prefix
+// (the last QuoteMark plus its one trailing space). The `> ` prefix itself
+// must stay in flow — its transparent QuoteMark span draws the quote's
+// nesting bar and its advance backs the hanging indent; hiding it kills the
+// bar and paints the bullet at the border column. The nesting spaces after
+// the prefix ARE hidden, like outside: the nesting step is depth-driven —
+// in-flow marker margin for the first row (lists_theme quote rules) and
+// indent units in the quote's line padding for wrapped rows (blockquote.ts
+// quoted_list_indent_units) — so a nested marker aligns with its parent's
+// text column instead of drifting by the source space count.
 function marker_hide_from(state: EditorState, line_from: number, mark_from: number): number {
-  let quoted = false;
+  let end = line_from;
   syntaxTree(state).iterate({
     from: line_from,
     to: mark_from,
     enter(node) {
-      if (node.name === 'QuoteMark' && node.to <= mark_from) quoted = true;
+      if (node.name === 'QuoteMark' && node.to <= mark_from && node.to > end) end = node.to;
     },
   });
-  return quoted ? mark_from : line_from;
+  if (end === line_from) return line_from;
+  return end < mark_from && state.doc.sliceString(end, end + 1) === ' ' ? end + 1 : end;
 }
 
 // Nesting depth = count of enclosing ListItem ancestors (0 at the top level).
@@ -282,6 +284,24 @@ const lists_theme = EditorView.theme({
     marginRight:
       'calc(var(--plainmark-list-indent, 1em) - var(--plainmark-list-bullet-3-size, 0.26em))',
     borderRadius: '0',
+  },
+  // Inside a quote the line's depth padding is overridden by the quote's
+  // inline net-to-zero indent, and net-to-zero pins every first row at the
+  // same origin — so the first-row nesting step must be IN-FLOW advance,
+  // carried by the marker itself: each marker pushes right by depth·unit,
+  // landing a nested marker on its parent's text column exactly like an
+  // unquoted list. Wrapped rows get the matching step from the quote's line
+  // padding (blockquote.ts quoted_list_indent_units). The depth var is 0 on
+  // revealed lines, so revealed source text gets no phantom offset. Margins
+  // and padding on inline boxes are horizontal-only — no caret-height risk.
+  '.plainmark-blockquote .plainmark-list-bullet::before': {
+    marginLeft: 'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))',
+  },
+  '.plainmark-blockquote .plainmark-list-marker': {
+    paddingLeft: 'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))',
+  },
+  '.plainmark-blockquote .plainmark-task-checkbox': {
+    marginLeft: 'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))',
   },
   '.plainmark-task-checkbox': {
     width: 'var(--plainmark-task-checkbox-size, 0.85em)',

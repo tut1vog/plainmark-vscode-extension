@@ -469,16 +469,16 @@ describe('list markers inside a blockquote', () => {
     ]);
   });
 
-  it('(f) keeps a nested item’s nesting spaces in flow inside a quote', () => {
-    // '> - a\n>   - n\nz\n' — inner ListMark[10,11); the spaces [8,10) are the
-    // visible nesting step (the quote’s inline indent counts them, and the
-    // list depth padding is overridden on quoted lines) so they must NOT be
-    // swallowed by the bullet replace.
+  it('(f) swallows a nested item’s nesting spaces inside a quote', () => {
+    // '> - a\n>   - n\nz\n' — inner ListMark[10,11); the bullet replace covers
+    // the nesting spaces [8,10) plus the marker, like an unquoted nested item:
+    // the nesting step is depth-driven (marker margin + quote indent units),
+    // not source-space-driven, so it matches unquoted list geometry.
     expect(snapshot(make_state('> - a\n>   - n\nz\n', 15))).toEqual([
       line(0, 'plainmark-list-item'),
       bullet(2, 4),
       line(6, 'plainmark-list-item'),
-      bullet(10, 12),
+      bullet(8, 12),
     ]);
   });
 });

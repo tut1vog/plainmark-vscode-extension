@@ -117,3 +117,55 @@ describe('blockquote line decoration — measured-indent branch BQ-R-12', () => 
     expect(decos[0].style).toBeUndefined();
   });
 });
+
+describe('quoted list line indent — depth-driven units', () => {
+  function line_styles(doc: string): Array<string | undefined> {
+    const state = EditorState.create({
+      doc,
+      extensions: [
+        markdown({ extensions: [GFM] }),
+        marker_metrics_field.init(() => ({ gt: 7, space: 4 })),
+      ],
+      selection: { anchor: doc.length },
+    });
+    const set = build_inline_decorations(
+      state,
+      [{ from: 0, to: state.doc.length }],
+      build_registry(blockquote_handlers),
+    );
+    const out: Array<string | undefined> = [];
+    set.between(0, state.doc.length, (from, to, deco) => {
+      if (from !== to) return;
+      out.push((deco.spec as { attributes?: Record<string, string> }).attributes?.style);
+    });
+    return out;
+  }
+
+  it('adds one indent unit on a depth-0 list line, counting only the quote prefix', () => {
+    // '> - a' — prefix '> ' → 1·7 + 1·4 = 11px, plus 1 unit for the marker slot
+    expect(line_styles('> - a\n')).toEqual([
+      'padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
+    ]);
+  });
+
+  it('adds depth+1 units on a nested list line, excluding the nesting spaces from the px', () => {
+    // line 2 '>   - n' — prefix-only counts stay gt 1, ws 1 (11px); 2 units
+    expect(line_styles('> - a\n>   - n\n')).toEqual([
+      'padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
+      'padding-left:calc(11px + 2 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 2 * var(--plainmark-list-indent, 1em)))',
+    ]);
+  });
+
+  it('keeps the plain px form on a non-list quote line, counting the full literal run', () => {
+    // '>   x' — not a list; intentional content spaces stay counted: 1·7 + 3·4 = 19px
+    expect(line_styles('>   x\n')).toEqual(['padding-left:19px;text-indent:-19px']);
+  });
+
+  it('keeps the plain px form on a list item continuation line', () => {
+    // line 2 '>   cont' is ListItem content but has no ListMark of its own
+    expect(line_styles('> - a\n>   cont\n')).toEqual([
+      'padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
+      'padding-left:19px;text-indent:-19px',
+    ]);
+  });
+});
