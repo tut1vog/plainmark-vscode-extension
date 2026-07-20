@@ -208,15 +208,6 @@ const editor_extensions_core: Extension[] = [
       { key: 'Tab', run: quoted_list_tab_indent, shift: quoted_list_tab_dedent },
       { key: 'Enter', run: blockquote_empty_line_outdent },
       { key: 'Enter', run: block_delimiter_autoclose },
-      // Shadows markdownKeymap's unconfigured default: nonTightLists:false
-      // disables upstream's tight-list loosening, so Enter on an empty item
-      // exits the list in a single press (LIST-I-7) instead of first inserting
-      // a blank line above the item — upstream only did that when the empty
-      // item was exactly the second one, and on empty nested items it inserted
-      // a stray space-only line where this config dedents one level instead.
-      // Identical to the default on every non-list path (blockquotes, fences),
-      // so the two quote/fence handlers above still claim their cases first.
-      { key: 'Enter', run: insertNewlineContinueMarkupCommand({ nonTightLists: false }) },
       { key: 'Backspace', run: blockquote_plain_backspace },
       { key: 'Backspace', run: list_empty_bullet_backspace },
       { key: 'Backspace', run: list_dangling_indent_backspace },
@@ -241,6 +232,22 @@ const editor_extensions_core: Extension[] = [
   // A plain single-click on a rendered math widget selects its inner LaTeX (sans
   // `$`/`$$`) so it is ready to copy; same mouseSelectionStyle hook as above.
   math_click_select,
+  // Shadows markdownKeymap's unconfigured Enter (auto-wired at Prec.high
+  // inside markdown(); equal precedence, earlier-in-array wins — so this must
+  // sit above the markdown() entry). nonTightLists:false disables upstream's
+  // tight-list loosening, so Enter on an empty item exits the list in a
+  // single press (LIST-I-7) instead of first inserting a blank line above the
+  // item; on empty nested items it dedents one level instead of inserting a
+  // stray space-only line. Prec.high, NOT the Prec.highest block above: the
+  // completion accept keymap is Prec.highest (registered by autocompletion()
+  // later in this array), and outranking it eats Enter while the
+  // callout/table popup is open — a newline lands instead of the selected
+  // completion.
+  Prec.high(
+    keymap.of([
+      { key: 'Enter', run: insertNewlineContinueMarkupCommand({ nonTightLists: false }) },
+    ]),
+  ),
   markdown({
     codeLanguages: languages,
     extensions: [GFM, math_grammar_extension, footnote_grammar_extension, frontmatter_grammar_extension],
