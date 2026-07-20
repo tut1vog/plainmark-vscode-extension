@@ -40,8 +40,18 @@ const gap_line = Decoration.line({ class: 'plainmark-paragraph-gap' });
 // `para\n* ` as paragraph text, `para\n* x` as a list — all transitional states
 // on the way to a bullet. Prose lines, blank lines, setext lines, AND the first
 // line of a top-level list all keep the gap, so none of those reclassifications
-// moves the layout vertically; only interior list lines drop to the tighter
-// item spacing (which lists.ts applies via an adjacent-sibling rule).
+// moves the layout vertically; only interior list MARKER lines (a ListItem
+// starts on the line) drop to the tighter item spacing (which lists.ts applies
+// via an adjacent-sibling rule).
+//
+// Item continuation lines — lazy (`- a\nb`) or indented (`- a\n  b`), i.e.
+// lines inside an item begun on an earlier line — keep the gap: under the
+// hard-newline break model (PARA-R-7, amended per ADR-0006) they read as
+// paragraphs, not soft wraps. Marker typing on one stays a single jump: `-`
+// prepended to existing text is still continuation prose (`-next`), and the
+// space keystroke completes a real item (`- next`) in the same instant the
+// gap hands off to item spacing. Blank lines between loose items have no
+// ListItem ancestor and stay tight, so loose-list geometry is unchanged.
 function gap_eligible(
   tree: ReturnType<typeof syntaxTree>,
   line: { from: number; to: number; text: string },
@@ -49,12 +59,15 @@ function gap_eligible(
   const indent = line.text.length - line.text.trimStart().length;
   const probe = Math.min(line.from + indent, line.to);
   let outermost_list: { from: number } | null = null;
+  let innermost_item: { from: number } | null = null;
   for (let n = tree.resolveInner(probe, 1); n; n = n.parent!) {
     if (NON_PROSE_CONTEXTS.has(n.name)) return false;
+    if (n.name === 'ListItem' && innermost_item === null) innermost_item = n;
     if (LIST_CONTEXTS.has(n.name)) outermost_list = n;
     if (!n.parent) break;
   }
-  return outermost_list === null || outermost_list.from >= line.from;
+  if (outermost_list === null || outermost_list.from >= line.from) return true;
+  return innermost_item !== null && innermost_item.from < line.from;
 }
 
 // A hard `\n` renders as a paragraph break: every eligible line after the
