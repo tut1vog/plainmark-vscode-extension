@@ -12,7 +12,11 @@ import {
 // paragraph break) — no line of these ever carries the gap. Setext headings
 // are deliberately absent: Plainmark renders them as plain prose, and typing
 // `-` under a paragraph transiently parses as a setext underline — excluding
-// it here would flash the layout mid-bullet-typing.
+// it here would flash the layout mid-bullet-typing. Blockquote is also absent
+// (ADR-0007): quote and callout interiors share the prose paragraph rhythm —
+// only the first line of the outermost quote is excluded (see gap_eligible) —
+// and inner non-prose constructs still bail here because the ancestor walk
+// runs inner→outer, hitting e.g. a quoted FencedCode before the Blockquote.
 const NON_PROSE_CONTEXTS = new Set([
   'FencedCode',
   'CodeBlock',
@@ -22,7 +26,6 @@ const NON_PROSE_CONTEXTS = new Set([
   'CommentBlock',
   'ProcessingInstructionBlock',
   'Table',
-  'Blockquote',
   'ATXHeading1',
   'ATXHeading2',
   'ATXHeading3',
@@ -56,16 +59,29 @@ function gap_eligible(
   tree: ReturnType<typeof syntaxTree>,
   line: { from: number; to: number; text: string },
 ): boolean {
-  const indent = line.text.length - line.text.trimStart().length;
-  const probe = Math.min(line.from + indent, line.to);
+  // Skip the lexical quote prefix (`>` runs and whitespace, BQ-R-12's scan),
+  // not just whitespace: probing at a bare `>` resolves to the QuoteMark,
+  // whose ancestors skip the ListItem a quoted list line belongs to.
+  const prefix = /^[ \t>]*/.exec(line.text)![0].length;
+  const probe = Math.min(line.from + prefix, line.to);
   let outermost_list: { from: number } | null = null;
   let innermost_item: { from: number } | null = null;
+  let outermost_quote: { from: number } | null = null;
   for (let n = tree.resolveInner(probe, 1); n; n = n.parent!) {
     if (NON_PROSE_CONTEXTS.has(n.name)) return false;
     if (n.name === 'ListItem' && innermost_item === null) innermost_item = n;
     if (LIST_CONTEXTS.has(n.name)) outermost_list = n;
+    if (n.name === 'Blockquote') outermost_quote = n;
     if (!n.parent) break;
   }
+  // First line of the outermost quote (plain or callout): the block's outer
+  // breathing room stays --plainmark-blockquote-padding-y / the callout header
+  // padding — gap padding here would render as a fat tinted band above the
+  // quote's first paragraph, since .cm-line padding sits inside the background
+  // and margins are banned (height-map rule). Interior lines (any depth,
+  // callout bodies, quoted blanks) fall through to the prose/list rules, so
+  // deepening an interior line with another `>` never moves the layout.
+  if (outermost_quote !== null && outermost_quote.from >= line.from) return false;
   if (outermost_list === null || outermost_list.from >= line.from) return true;
   return innermost_item !== null && innermost_item.from < line.from;
 }
@@ -111,10 +127,17 @@ const paragraph_gap_plugin = ViewPlugin.fromClass(
 
 const paragraph_gap_theme = EditorView.theme({
   // Padding, not margin — CM6's height map excludes margins on .cm-line
-  // (same rule as headings/lists, T14.1). Class doubled so a first-of-list
-  // line beats `.plainmark-list-item + .plainmark-list-item` item spacing
-  // deterministically (adjacent lists with switched markers).
-  '.cm-line.plainmark-paragraph-gap.plainmark-paragraph-gap': {
+  // (same rule as headings/lists, T14.1). Class TRIPLED for a deterministic
+  // (0,4,0) win over every padding-top peer at (0,3,0) or below: the doubled
+  // form already beat `.plainmark-list-item + .plainmark-list-item` item
+  // spacing, but tied with the blockquote per-depth rule
+  // (`.plainmark-blockquote[data-blockquote-depth]:not(.plainmark-callout)`),
+  // leaving quote-interior gaps (ADR-0007) to source order; the third class
+  // also outranks `.plainmark-callout-body`'s padding-top reset. The quote
+  // tint and nesting bars span the padded box (bars are top:0/bottom:0 on the
+  // line; the callout accent is a background gradient), so the gap renders as
+  // in-quote space with unbroken chrome.
+  '.cm-line.plainmark-paragraph-gap.plainmark-paragraph-gap.plainmark-paragraph-gap': {
     paddingTop: 'var(--plainmark-paragraph-gap, 0.75em)',
   },
 });

@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Paragraph spacing now applies inside quotes and callouts** — a new line inside a blockquote (`> `) or callout body gets the same paragraph gap as regular text, tinted with the quote's background and with the quote bar running through it unbroken, instead of the previous much tighter spacing. The first line of a quote keeps its compact block padding, and lists or code blocks inside quotes keep their own spacing.
+
 ### Fixed
 
 - **Text directly below a list now reads as a paragraph** — a line typed under the last list item without a blank line used to hug the bullet with wrapped-line spacing; it now gets the normal paragraph gap above it. Applies to bullet, numbered, and task lists, to nested lists, and to indented continuation lines inside an item.
