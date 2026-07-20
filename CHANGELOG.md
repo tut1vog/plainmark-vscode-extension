@@ -4,6 +4,14 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Text directly below a list now reads as a paragraph** — a line typed under the last list item without a blank line used to hug the bullet with wrapped-line spacing; it now gets the normal paragraph gap above it. Applies to bullet, numbered, and task lists, to nested lists, and to indented continuation lines inside an item.
+- **Enter no longer shifts a short line under a list** — pressing Enter at the end of a line directly below a list that was no longer than the list marker (for example a three-character word under a numbered item) inserted the new line *above* it, visibly pushing the line and the caret down; the newline now goes exactly at the caret.
+- **Enter leaves an empty list item in a single press** — pressing Enter on an empty item used to first insert a blank line above it and required a second press to exit the list; it now removes the marker immediately, leaving the caret on a plain line. On an empty nested item, each press un-indents one level.
+
 ## [1.5.0] - 2026-07-20
 
 ### Added
