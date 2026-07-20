@@ -4,6 +4,20 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Reference-style links now render** — `[text][ref]` and `[text][]` links display like regular links, resolved through their matching `[ref]: url` definition line, which is dimmed so it reads as metadata; plain `[text]` shortcuts and unresolved references stay as typed.
+
+### Changed
+
+- **`file:` links open inside the editor** — Cmd/Ctrl+clicking a `file:` link now opens the target as an editor tab instead of launching the operating system's default application for it.
+
+### Security
+
+- **Link opening is restricted to safe address types** — Cmd/Ctrl+clicking a link now only opens web (`http`/`https`), email (`mailto`), and VS Code (`vscode`) addresses; a link with any other scheme (such as `javascript:` or `data:`) does nothing, so a malicious document can no longer hand dangerous addresses to the system opener.
+
 ## [1.4.0] - 2026-07-19
 
 ### Added
