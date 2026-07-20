@@ -34,7 +34,7 @@ Status legend: `pending` (awaiting owner ratification) · `blessed` · `reopened
 | CALL-E-5 | Obsidian pipe-metadata syntax (`[!NOTE\|meta]`) is not parsed; the `\|` breaks the type match so the line renders as a plain blockquote. Pipe-metadata deferred. | docs/spec/callouts.md (2026-05-18) | pending |
 | CALL-E-6 | Nested callouts receive no inner callout chrome (matches GitHub "callouts cannot be nested"); Obsidian-style nesting deferred. | docs/spec/callouts.md | pending |
 | LIST-R-3 | Bullet glyph cycles by depth bucket (`●`/`○`/`■`), superseding the single-`•`-all-depths plan. | docs/spec/lists.md | pending |
-| LIST-I-11 | Tab/Shift-Tab is generic `indentWithTab`, not a list-grammar-aware indent (no list-specific Tab handler). | lists wiring | pending |
+| LIST-I-11 | Tab/Shift-Tab on unquoted lines is generic `indentWithTab`, not a list-grammar-aware indent; the only list-aware Tab is the quoted-list handler (LIST-I-14), added because the generic line-start insert mutates the `>` prefix. | lists wiring | pending |
 | LIST-I-12 | No list-toggle command and no keyboard checkbox toggle (checkbox is mouse-only). | lists wiring | pending |
 | LIST-SP-4 | Ordered siblings are never auto-renumbered after edit/insert/delete; source digits are the rendered form. | docs/spec/lists.md | pending |
 | CBLK-I-10 | No copy button on code blocks in v1 (widget + clipboard + caret-trap defense deferred). | docs/spec/code-blocks.md | pending |

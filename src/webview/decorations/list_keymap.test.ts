@@ -204,7 +204,7 @@ describe('list_dangling_indent_backspace LIST-I-13 LIST-SP-2 LIST-SP-3', () => {
   });
 });
 
-describe('quoted_list_tab_indent', () => {
+describe('quoted_list_tab_indent LIST-I-14', () => {
   it('(a) inserts the indent unit after the quote prefix, not at line start', () => {
     // '> - b' — caret in the item text; nesting spaces belong after '> '
     const { view, applied, doc, head } = make_view('> - b', 5);
@@ -260,7 +260,7 @@ describe('quoted_list_tab_indent', () => {
   });
 });
 
-describe('quoted_list_tab_dedent', () => {
+describe('quoted_list_tab_dedent LIST-I-14', () => {
   it('(a) removes one indent unit of nesting spaces after the quote prefix', () => {
     const { view, doc, head } = make_view('>   - n', 7);
     expect(quoted_list_tab_dedent(view)).toBe(true);

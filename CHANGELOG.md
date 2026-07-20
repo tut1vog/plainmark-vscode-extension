@@ -9,6 +9,11 @@ to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **Reference-style links now render** — `[text][ref]` and `[text][]` links display like regular links, resolved through their matching `[ref]: url` definition line, which is dimmed so it reads as metadata; plain `[text]` shortcuts and unresolved references stay as typed.
+- **Tab nests list items inside quotes** — pressing Tab on a list item inside a blockquote now indents the item one level deeper (and Shift-Tab un-indents it), instead of inserting spaces in front of the `>` and breaking the quote.
+
+### Fixed
+
+- **Lists inside quotes render like lists outside them** — a list item inside a blockquote used to draw its bullet on top of the quote's left border (hiding the border on that line), and nested items sat flush with their parents instead of stepping right. Bullets, numbers, and checkboxes now sit inside the quote with the same indentation steps as an unquoted list — each nesting level aligns with the left edge of its parent's text, wrapped lines included — and the border stays continuous.
 
 ### Changed
 

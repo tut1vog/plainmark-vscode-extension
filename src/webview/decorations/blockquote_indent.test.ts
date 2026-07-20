@@ -118,7 +118,7 @@ describe('blockquote line decoration — measured-indent branch BQ-R-12', () => 
   });
 });
 
-describe('quoted list line indent — depth-driven units', () => {
+describe('quoted list line indent — depth-driven units BQ-R-12 LIST-R-11', () => {
   function line_styles(doc: string): Array<string | undefined> {
     const state = EditorState.create({
       doc,

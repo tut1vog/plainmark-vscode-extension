@@ -422,7 +422,7 @@ function make_view(initial_doc: string, anchor: number, head?: number): FakeView
   };
 }
 
-describe('list markers inside a blockquote', () => {
+describe('list markers inside a blockquote LIST-R-2 LIST-R-5 LIST-R-6 LIST-R-11 BQ-E-9', () => {
   // The `> ` quote prefix must stay in flow: the transparent QuoteMark span
   // draws the quote's nesting bar (blockquote.ts) and its advance backs the
   // line's hanging indent. A marker hide anchored at line start swallows the
