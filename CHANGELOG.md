@@ -4,24 +4,24 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.5.0] - 2026-07-20
 
 ### Added
 
-- **Reference-style links now render** — `[text][ref]` and `[text][]` links display like regular links, resolved through their matching `[ref]: url` definition line, which is dimmed so it reads as metadata; plain `[text]` shortcuts and unresolved references stay as typed.
-- **Tab nests list items inside quotes** — pressing Tab on a list item inside a blockquote now indents the item one level deeper (and Shift-Tab un-indents it), instead of inserting spaces in front of the `>` and breaking the quote.
-
-### Fixed
-
-- **Lists inside quotes render like lists outside them** — a list item inside a blockquote used to draw its bullet on top of the quote's left border (hiding the border on that line), and nested items sat flush with their parents instead of stepping right. Bullets, numbers, and checkboxes now sit inside the quote with the same indentation steps as an unquoted list — each nesting level aligns with the left edge of its parent's text, wrapped lines included — and the border stays continuous.
+- **Reference-style links now render** — `[text][ref]` and `[text][]` display like regular links, resolved through their `[ref]: url` definition line, which is dimmed to read as metadata. Plain `[text]` shortcuts and unresolved references stay as typed.
+- **Tab nests list items inside quotes** — Tab on a list item inside a blockquote indents it one level deeper, Shift-Tab un-indents, instead of breaking the quote.
 
 ### Changed
 
-- **`file:` links open inside the editor** — Cmd/Ctrl+clicking a `file:` link now opens the target as an editor tab instead of launching the operating system's default application for it.
+- **`file:` links open inside the editor** — Cmd/Ctrl+clicking a `file:` link opens it as an editor tab instead of launching the operating system's default application.
+
+### Fixed
+
+- **Lists inside quotes render like lists outside them** — bullets, numbers, and checkboxes no longer overlap the quote's left border, and nested items step right instead of sitting flush with their parents.
 
 ### Security
 
-- **Link opening is restricted to safe address types** — Cmd/Ctrl+clicking a link now only opens web (`http`/`https`), email (`mailto`), and VS Code (`vscode`) addresses; a link with any other scheme (such as `javascript:` or `data:`) does nothing, so a malicious document can no longer hand dangerous addresses to the system opener.
+- **Link opening is restricted to safe address types** — Cmd/Ctrl+click now opens only web (`http`/`https`), email (`mailto`), and VS Code addresses; any other scheme, such as `javascript:` or `data:`, does nothing.
 
 ## [1.4.0] - 2026-07-19
 
