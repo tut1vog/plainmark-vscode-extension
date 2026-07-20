@@ -422,6 +422,54 @@ function make_view(initial_doc: string, anchor: number, head?: number): FakeView
   };
 }
 
+describe('list markers inside a blockquote', () => {
+  // The `> ` quote prefix must stay in flow: the transparent QuoteMark span
+  // draws the quote's nesting bar (blockquote.ts) and its advance backs the
+  // line's hanging indent. A marker hide anchored at line start swallows the
+  // prefix — the bar vanishes and the bullet paints at the border column.
+
+  it('(a) starts the bullet replace after the `> ` prefix, not at line start', () => {
+    // '> - b\nz\n' — QuoteMark[0,1); ListMark[2,3); bullet spans marker + trailing space
+    expect(snapshot(make_state('> - b\nz\n', 7))).toEqual([
+      line(0, 'plainmark-list-item'),
+      bullet(2, 4),
+    ]);
+  });
+
+  it('(b) starts the bullet replace after the innermost `> ` in a nested quote', () => {
+    // '> > - b\nz\n' — QuoteMark[0,1) and [2,3); ListMark[4,5)
+    expect(snapshot(make_state('> > - b\nz\n', 9))).toEqual([
+      line(0, 'plainmark-list-item'),
+      bullet(4, 6),
+    ]);
+  });
+
+  it('(c) does not hide the `> ` prefix before an ordered marker', () => {
+    // '> 1. a\nz\n' — ListMark[2,4); nothing between prefix end and marker to hide
+    expect(snapshot(make_state('> 1. a\nz\n', 8))).toEqual([
+      line(0, 'plainmark-list-item'),
+      mark(2, 4, 'plainmark-list-marker'),
+    ]);
+  });
+
+  it('(d) starts the task marker hide after the `> ` prefix', () => {
+    // '> - [ ] t\nz\n' — ListMark[2,3); TaskMarker[4,7)
+    expect(snapshot(make_state('> - [ ] t\nz\n', 11))).toEqual([
+      line(0, 'plainmark-list-item'),
+      mark(2, 4, 'plainmark-list-marker-hidden'),
+      widget(4, 7, false),
+    ]);
+  });
+
+  it('(e) keeps the bullet replace tight against a tight `>-` prefix', () => {
+    // '>- b\nz\n' — QuoteMark[0,1) with no trailing space; ListMark[1,2)
+    expect(snapshot(make_state('>- b\nz\n', 6))).toEqual([
+      line(0, 'plainmark-list-item'),
+      bullet(1, 3),
+    ]);
+  });
+});
+
 describe('toggle_task_marker LIST-I-10 LIST-SP-3', () => {
   it('(a) toggles unchecked `[ ]` to `[x]` with a single transaction', () => {
     // '- [ ] a\n' — TaskMarker at offset 2..5

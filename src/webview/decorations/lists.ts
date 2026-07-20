@@ -22,6 +22,26 @@ const list_marker_mark = Decoration.mark({ class: 'plainmark-list-marker' });
 const hide_marker = Decoration.replace({});
 const task_marker_hidden = Decoration.mark({ class: 'plainmark-list-marker-hidden' });
 
+// Where the line's blockquote prefix ends: past the last QuoteMark before the
+// ListMark, plus its one trailing space (mirroring blockquote.ts's hide range).
+// The marker hide below must start HERE, not at line start — the transparent
+// `> ` span stays in flow because it draws the quote's nesting bar (its
+// `::before`) and its advance backs the line's hanging indent; anchoring the
+// hide at line start swallows that span, so the bar vanishes and the bullet
+// paints at the border column. Returns line_from when the line is not quoted.
+function after_quote_prefix(state: EditorState, line_from: number, mark_from: number): number {
+  let end = line_from;
+  syntaxTree(state).iterate({
+    from: line_from,
+    to: mark_from,
+    enter(node) {
+      if (node.name === 'QuoteMark' && node.to <= mark_from && node.to > end) end = node.to;
+    },
+  });
+  if (end === line_from) return line_from;
+  return end < mark_from && state.doc.sliceString(end, end + 1) === ' ' ? end + 1 : end;
+}
+
 // Nesting depth = count of enclosing ListItem ancestors (0 at the top level).
 function list_depth(node: SyntaxNode): number {
   let depth = 0;
@@ -90,18 +110,20 @@ const list_item_handler: NodeHandler = {
       return decorations;
     }
 
-    // Off-line: hide the source's leading whitespace so nesting comes purely
-    // from the --plainmark-list-depth padding, not from the source space count.
+    // Off-line: hide the source's leading whitespace (after any blockquote
+    // prefix) so nesting comes purely from the --plainmark-list-depth padding,
+    // not from the source space count.
+    const hide_from = after_quote_prefix(state, line_from, mark.from);
     if (is_ordered) {
-      if (mark.from > line_from) decorations.push(hide_marker.range(line_from, mark.from));
+      if (mark.from > hide_from) decorations.push(hide_marker.range(hide_from, mark.from));
       decorations.push(list_marker_mark.range(mark.from, mark.to));
     } else if (is_task) {
       // Hide the raw "- " with a zero-font-size mark, not Decoration.replace — a line-leading replace widget flickers drawSelection.
       decorations.push(
-        task_marker_hidden.range(line_from, marker_replace_end(state, mark.to)),
+        task_marker_hidden.range(hide_from, marker_replace_end(state, mark.to)),
       );
     } else {
-      decorations.push(bullet_replace.range(line_from, marker_replace_end(state, mark.to)));
+      decorations.push(bullet_replace.range(hide_from, marker_replace_end(state, mark.to)));
     }
     return decorations;
   },
