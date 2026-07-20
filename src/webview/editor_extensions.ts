@@ -46,6 +46,8 @@ import { links_extension } from './decorations/links.js';
 import {
   list_dangling_indent_backspace,
   list_empty_bullet_backspace,
+  quoted_list_tab_dedent,
+  quoted_list_tab_indent,
 } from './decorations/list_keymap.js';
 import { lists_extension } from './decorations/lists.js';
 import {
@@ -200,6 +202,10 @@ const editor_extensions_core: Extension[] = [
     keymap.of([
       { key: 'Tab', run: accept_latex_completion_on_tab },
       { key: 'Tab', run: codeblock_tab_indent, shift: codeblock_tab_dedent },
+      // Before indentWithTab: its indentMore/indentLess act at line start,
+      // which on a quoted list line mutates the `>` prefix instead of the
+      // item's nesting spaces.
+      { key: 'Tab', run: quoted_list_tab_indent, shift: quoted_list_tab_dedent },
       { key: 'Enter', run: blockquote_empty_line_outdent },
       { key: 'Enter', run: block_delimiter_autoclose },
       { key: 'Backspace', run: blockquote_plain_backspace },

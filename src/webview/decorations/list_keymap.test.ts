@@ -1,4 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
+import { indentUnit } from '@codemirror/language';
 import { EditorState, type TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
@@ -6,6 +7,8 @@ import { describe, expect, it } from 'vitest';
 import {
   list_dangling_indent_backspace,
   list_empty_bullet_backspace,
+  quoted_list_tab_dedent,
+  quoted_list_tab_indent,
 } from './list_keymap.js';
 
 interface FakeView {
@@ -18,7 +21,7 @@ interface FakeView {
 function make_view(initial_doc: string, anchor: number, head?: number): FakeView {
   let state = EditorState.create({
     doc: initial_doc,
-    extensions: [markdown({ extensions: [GFM] })],
+    extensions: [markdown({ extensions: [GFM] }), indentUnit.of('  ')],
     selection: { anchor, head: head ?? anchor },
   });
   const applied: TransactionSpec[] = [];
@@ -198,5 +201,90 @@ describe('list_dangling_indent_backspace LIST-I-13 LIST-SP-2 LIST-SP-3', () => {
     expect(list_dangling_indent_backspace(view)).toBe(true);
     expect(doc()).toBe('- a');
     expect(head()).toBe(3);
+  });
+});
+
+describe('quoted_list_tab_indent', () => {
+  it('(a) inserts the indent unit after the quote prefix, not at line start', () => {
+    // '> - b' — caret in the item text; nesting spaces belong after '> '
+    const { view, applied, doc, head } = make_view('> - b', 5);
+    expect(quoted_list_tab_indent(view)).toBe(true);
+    expect(applied).toHaveLength(1);
+    expect(doc()).toBe('>   - b');
+    expect(head()).toBe(7);
+  });
+
+  it('(b) deepens an already-nested quoted item', () => {
+    // '> - a\n>   - n' — caret on the nested item
+    const { view, doc } = make_view('> - a\n>   - n', 13);
+    expect(quoted_list_tab_indent(view)).toBe(true);
+    expect(doc()).toBe('> - a\n>     - n');
+  });
+
+  it('(c) inserts after the innermost marker of a nested quote', () => {
+    const { view, doc } = make_view('> > - b', 7);
+    expect(quoted_list_tab_indent(view)).toBe(true);
+    expect(doc()).toBe('> >   - b');
+  });
+
+  it('(d) handles ordered items inside a quote', () => {
+    const { view, doc } = make_view('> 1. a', 6);
+    expect(quoted_list_tab_indent(view)).toBe(true);
+    expect(doc()).toBe('>   1. a');
+  });
+
+  it('(e) indents every quoted list line covered by a selection', () => {
+    // '> - a\n> - b' — selection spans both items
+    const { view, doc } = make_view('> - a\n> - b', 2, 11);
+    expect(quoted_list_tab_indent(view)).toBe(true);
+    expect(doc()).toBe('>   - a\n>   - b');
+  });
+
+  it('(f) yields on a plain (unquoted) list line', () => {
+    const { view, applied } = make_view('- b', 3);
+    expect(quoted_list_tab_indent(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(g) yields on a quote line that is not a list item', () => {
+    const { view, applied } = make_view('> text', 6);
+    expect(quoted_list_tab_indent(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(h) yields on a list lookalike inside fenced code within a quote', () => {
+    // '> ```\n> - x\n> ```' — the '- x' line is code, not a ListItem
+    const { view, applied } = make_view('> ```\n> - x\n> ```', 11);
+    expect(quoted_list_tab_indent(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+});
+
+describe('quoted_list_tab_dedent', () => {
+  it('(a) removes one indent unit of nesting spaces after the quote prefix', () => {
+    const { view, doc, head } = make_view('>   - n', 7);
+    expect(quoted_list_tab_dedent(view)).toBe(true);
+    expect(doc()).toBe('> - n');
+    expect(head()).toBe(5);
+  });
+
+  it('(b) removes at most the available nesting spaces', () => {
+    // one nesting space only — strip just that one
+    const { view, doc } = make_view('>  - n', 6);
+    expect(quoted_list_tab_dedent(view)).toBe(true);
+    expect(doc()).toBe('> - n');
+  });
+
+  it('(c) claims the key with no change on an unnested quoted item', () => {
+    // returning true (no-op) keeps indentLess from stripping before the '>'
+    const { view, applied } = make_view('> - b', 5);
+    expect(quoted_list_tab_dedent(view)).toBe(true);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(d) yields on a plain (unquoted) list line', () => {
+    const { view, applied } = make_view('  - b', 5);
+    expect(quoted_list_tab_dedent(view)).toBe(false);
+    expect(applied).toHaveLength(0);
   });
 });
