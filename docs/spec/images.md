@@ -57,6 +57,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-R-10** — Multiple qualifying image-only paragraphs in one document MUST each emit their own block widget.
   _Example:_ `![a](1.png)\n\n![b](2.png)\n` → two widgets, urls `1.png` and `2.png`.
 
+- **IMG-R-11** `[smoke]` — An image widget replacing any line other than doc line 1 MUST carry `plainmark-block-gap-above`, taking the paragraph gap (`var(--plainmark-paragraph-gap, 0.75em)`) as widget padding-top — the image container has no breathing of its own, so the gap is the whole padding (PARA-R-7 / ADR-0010; mirrors the table and block-math widgets). A doc-top image takes none. The in-flow preview (IMG-I-11) never takes it — the revealed source line above it carries its own gap. `gap_above` participates in `ImageWidget.eq`, so an edit moving the image across the doc-top boundary redraws the widget.
+  _Example:_ `hello\n![alt](cover.png)` → the rendered image sits one prose gap below `hello`; the same image as the document's first line sits flush at the top.
+
 ## I · Interaction
 
 - **IMG-I-1** — When the canonical reveal predicate (`should_reveal_for_selection`, MRS-R-2…R-5: any selection range touching the image's LINE range reveals, EXCEPT a non-empty selection strictly covering it on both sides; pointer-down evaluates the frozen pre-press selection) holds for the image line's range, the replace widget MUST NOT be emitted, revealing the raw `![alt](url)` source for editing — with an in-flow preview below it (IMG-I-11, ADR-0013). Reveal is keyed to the image's line, so a caret on a sibling line of the same merged paragraph keeps the widget rendered. Unified via DEF-7 (2026-06-12): select-all keeps the image rendered; a drag entering the image does not flash raw source mid-drag.

@@ -140,6 +140,25 @@ describe('image widget', () => {
     expect(container.querySelectorAll('.plainmark-image-block-preview img')).toHaveLength(1);
   });
 
+  it('IMG-R-11 (ADR-0010): a non-doc-top image widget takes the paragraph gap as padding-top', () => {
+    const doc = `hello\n![alt](${sample_data_url})\n\nworld`;
+    view = mount_editor(container, doc, 'https://example.test/');
+    move_cursor(view, 0);
+    const widget = container.querySelector('.plainmark-image-block')!;
+    expect(widget.classList.contains('plainmark-block-gap-above')).toBe(true);
+    // Pure gap, no stacking constant: 0.75em * 16px = 12px.
+    expect(parseFloat(getComputedStyle(widget).paddingTop)).toBeCloseTo(12, 0);
+  });
+
+  it('IMG-R-11 (ADR-0010): a doc-top image widget takes no gap', () => {
+    const doc = `![alt](${sample_data_url})\n\nworld`;
+    view = mount_editor(container, doc, 'https://example.test/');
+    move_cursor(view, view.state.doc.length);
+    const widget = container.querySelector('.plainmark-image-block')!;
+    expect(widget.classList.contains('plainmark-block-gap-above')).toBe(false);
+    expect(parseFloat(getComputedStyle(widget).paddingTop)).toBeCloseTo(0, 0);
+  });
+
   it('IMG-I-11: editing the path live-updates the preview', () => {
     const doc = `hello\n\n![alt](old.png)\n\nworld`;
     view = mount_editor(container, doc, 'https://example.test/');

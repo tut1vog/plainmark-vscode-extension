@@ -59,6 +59,11 @@ export class ImageWidget extends WidgetType {
     readonly alt: string,
     readonly url: string,
     readonly resolved_src: string,
+    // ADR-0010: an image below other content carries the paragraph gap as
+    // widget padding-top (`plainmark-block-gap-above`); a doc-top image does
+    // not. In eq() so an edit that moves the image across the doc-top
+    // boundary redraws the widget. Mirrors math/table.
+    readonly gap_above: boolean = false,
   ) {
     super();
   }
@@ -67,7 +72,8 @@ export class ImageWidget extends WidgetType {
     return (
       other.alt === this.alt &&
       other.url === this.url &&
-      other.resolved_src === this.resolved_src
+      other.resolved_src === this.resolved_src &&
+      other.gap_above === this.gap_above
     );
   }
 
@@ -77,7 +83,14 @@ export class ImageWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    return build_image_dom(this.alt, this.url, this.resolved_src, 'plainmark-image-block');
+    return build_image_dom(
+      this.alt,
+      this.url,
+      this.resolved_src,
+      this.gap_above
+        ? 'plainmark-image-block plainmark-block-gap-above'
+        : 'plainmark-image-block',
+    );
   }
 
   // WidgetType default swallows clicks; without this a click cannot place the caret inside to reveal source. Mirrors math/mermaid.
@@ -216,7 +229,12 @@ function build_decorations(state: EditorState): DecorationSet {
         ranges.push(
           Decoration.replace({
             block: true,
-            widget: new ImageWidget(info.alt, info.url, resolved),
+            widget: new ImageWidget(
+              info.alt,
+              info.url,
+              resolved,
+              state.doc.lineAt(info.from).number > 1,
+            ),
           }).range(info.from, info.to),
         );
       }
@@ -295,6 +313,13 @@ function broken_text(url: string): HTMLElement {
 
 const image_theme = EditorView.theme({
   '.plainmark-image-block, .plainmark-image-block-preview': { margin: '0' },
+  // ADR-0010: a non-doc-top image takes the paragraph gap as padding-top. The
+  // image container has no breathing of its own (margin 0), so the gap is the
+  // whole padding — nothing to stack, unlike math/table. The preview widget
+  // never takes it: the revealed source line above it carries its own gap.
+  '.plainmark-image-block.plainmark-block-gap-above': {
+    paddingTop: 'var(--plainmark-paragraph-gap, 0.75em)',
+  },
   '.plainmark-image-block img, .plainmark-image-block-preview img': {
     display: 'block',
     margin: '0 auto',

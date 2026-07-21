@@ -113,6 +113,12 @@ describe('ImageWidget.eq IMG-E-7', () => {
     const b = new ImageWidget('alt', 'cover.png', 'https://other.example/dir/cover.png');
     expect(a.eq(b)).toBe(false);
   });
+
+  it('IMG-R-11: returns false when gap_above differs (crossed the doc-top boundary)', () => {
+    const a = new ImageWidget('alt', 'cover.png', `${base}cover.png`, false);
+    const b = new ImageWidget('alt', 'cover.png', `${base}cover.png`, true);
+    expect(a.eq(b)).toBe(false);
+  });
 });
 
 describe('image_widgets_field — decoration emission', () => {
@@ -208,6 +214,14 @@ describe('image_widgets_field — decoration emission', () => {
     const state = make_state(doc).update({ selection: { anchor: 3 } }).state;
     expect(decorations(state)).toHaveLength(1);
     expect(previews(state)).toHaveLength(0);
+  });
+
+  it('IMG-R-11 (ADR-0010): a non-doc-top widget carries gap_above; a doc-top one does not', () => {
+    expect(decorations(make_state('![a](1.png)\n'))[0].widget.gap_above).toBe(false);
+    expect(decorations(make_state('para\n\n![a](1.png)\n'))[0].widget.gap_above).toBe(true);
+    // Line-scoped promotion: an image directly below a text line of the same
+    // merged paragraph is still a non-doc-top line — it gaps too.
+    expect(decorations(make_state('para\n![a](1.png)\n'))[0].widget.gap_above).toBe(true);
   });
 
   it('IMG-R-7 IMG-I-11: an unresolvable URL emits no preview either', () => {
