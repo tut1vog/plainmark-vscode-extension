@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Common code-fence language shorthands now highlight** — tags like ` ```asm `/` ```assembly `, ` ```wasm `, ` ```py `, ` ```rs `, ` ```golang `, ` ```docker `, ` ```matlab `, ` ```vb `, ` ```jsonc `, and some forty in total now get syntax colors from the grammars the extension already bundles, instead of rendering as plain monospace; the label in the block's corner still shows exactly what you typed. (Intel-syntax assembly is colored by a GNU-assembler grammar, so its coloring is approximate.)
+
 ### Fixed
 
 - **Links and images to paths containing spaces now open** — Markdown's two spellings for a spaced path, `[text](<my file.pdf>)` and `[text](my%20file.pdf)`, rendered as links but Cmd/Ctrl+click failed to find the file, and an image written with angle brackets did not display; both spellings now resolve to the actual file. A path with raw unencoded spaces is not a valid Markdown link and stays plain text, as on GitHub.
