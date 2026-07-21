@@ -55,8 +55,10 @@ const extra_aliases: ReadonlyArray<readonly [string, readonly string[]]> = [
 // grammar imports, zero bundle delta. A base name missing after a
 // language-data upgrade drops its wrapper (the tag degrades to unhighlighted)
 // rather than breaking the webview at module load; the unit test catches the
-// drift.
-const alias_wrappers = extra_aliases.flatMap(([name, alias]) => {
+// drift. Exported for the fence-tag autocomplete (CBLK-I-16): suggestions
+// enumerate the SURVIVING wrappers, so a wrapper dropped by an upgrade also
+// drops its suggestions.
+export const alias_wrappers = extra_aliases.flatMap(([name, alias]) => {
   const base = languages.find((l) => l.name === name);
   return base
     ? [LanguageDescription.of({ name, alias: [...alias], load: () => base.load() })]

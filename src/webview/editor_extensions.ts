@@ -22,6 +22,7 @@ import {
 import { callout_theme } from './decorations/callout.js';
 import { callout_completions } from './decorations/callout_autocomplete.js';
 import { clipped_selection_layer } from './decorations/clipped_selection.js';
+import { codeblock_completions } from './decorations/codeblock_autocomplete.js';
 import {
   code_block_extension,
   plainmark_highlight_style,
@@ -434,7 +435,9 @@ export const editor_extensions: Extension[] = [
   table_extension,
   table_undo_rebase,
   // Single autocompletion() call — CM6's completionConfig facet first-defined-wins on the `override` field, so a second autocompletion() would silently drop one source.
-  autocompletion({ override: [table_completions, callout_completions, latex_completions] }),
+  autocompletion({
+    override: [table_completions, callout_completions, latex_completions, codeblock_completions],
+  }),
   autocomplete_theme,
   // In-document find. Main view only — table cell subviews share no panel; a
   // cell's Ctrl+F bubbles to the main view's search, which scans the whole doc.
