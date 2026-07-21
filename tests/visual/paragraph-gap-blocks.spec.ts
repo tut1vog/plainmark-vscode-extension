@@ -96,17 +96,24 @@ describe('paragraph gap above block constructs (PARA-R-7 / ADR-0010)', () => {
   });
 
   describe('headings and horizontal rules (HEAD-R-9 HR-R-6)', () => {
-    it('a heading after a paragraph carries the gap, stacked on its own padding', async () => {
+    it('a heading after a paragraph carries exactly the base-size gap', async () => {
       expect(await gap_flags('para\n# h')).toEqual([false, true]);
       const lines = await mount('para\n# h');
-      // (0,5,0) heading stack (ADR-0011): the gap component holds at the base
-      // font (0.75em / 2 cancels the h1 em context), only the heading's own
-      // breathing scales: (0.75/2 + 0.4) * 32px = 12px + 12.8px = 24.8px.
-      expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(24.8, 0);
+      // (0,5,0) heading rule (ADR-0012): a gapped heading takes the base-size
+      // gap alone — no breathing stack; the per-level divisor cancels the em
+      // context: (0.75 / 2) * 32px = 12px, the same rhythm as every block.
+      expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(12, 0);
     });
 
     it('adjacent headings keep a single (gap-sourced) seam', async () => {
       expect(await gap_flags('# a\n## b')).toEqual([false, true]);
+    });
+
+    it('a non-gapped (doc-top) heading keeps its own scaled breathing', async () => {
+      const lines = await mount('# h');
+      // --plainmark-heading-padding-top still governs non-gapped headings
+      // (ADR-0012): 0.4em in the h1 context = 0.4 * 32px = 12.8px.
+      expect(parseFloat(getComputedStyle(lines[0]).paddingTop)).toBeCloseTo(12.8, 0);
     });
 
     it('an HR after a paragraph carries the gap and re-centres its bar', async () => {
