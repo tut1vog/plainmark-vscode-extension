@@ -17,6 +17,7 @@ to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Chinese punctuation typed after inline math now keeps the caret in place** — with a Chinese IME, typing a full-width mark like `：` on a line where rendered inline math sits earlier used to insert the character correctly but throw the caret to the end of the line; the caret now lands right after the inserted character, so typing continues where you meant it to.
 - **Links and images to paths containing spaces now open** — Markdown's two spellings for a spaced path, `[text](<my file.pdf>)` and `[text](my%20file.pdf)`, rendered as links but Cmd/Ctrl+click failed to find the file, and an image written with angle brackets did not display; both spellings now resolve to the actual file. A path with raw unencoded spaces is not a valid Markdown link and stays plain text, as on GitHub.
 
 ## [1.5.1] - 2026-07-20
