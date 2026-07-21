@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] - 2026-07-21
+
+### Fixed
+
+- **The gap above a heading is no longer oversized** — 1.6.0 gave every heading a gap that scaled with its own font size, so the space above a large heading ran to roughly three times the normal paragraph gap. The gap above a heading now matches the standard paragraph gap at every level; only the heading's own padding still grows with its size.
+
 ## [1.6.0] - 2026-07-21
 
 ### Added
