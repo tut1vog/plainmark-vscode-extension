@@ -83,6 +83,52 @@ describe('classify_link_click — document-relative hrefs SHELL-M-3 LINK-I-12', 
   });
 });
 
+// Markdown destinations are URI-shaped; `a%20b.pdf` names `a b.pdf` on disk.
+// joinPath treats its segment literally, so the classifier hands over the
+// decoded path (LINK-I-12, ADR-0008).
+describe('classify_link_click — percent-decoding of relative hrefs LINK-I-12', () => {
+  it('percent-decodes a relative href before resolution', () => {
+    expect(classify_link_click('a%20b.pdf', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'a b.pdf',
+    });
+    expect(classify_link_click('ref/Compilers%20-%20Principles/ch6.pdf', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'ref/Compilers - Principles/ch6.pdf',
+    });
+  });
+
+  it('falls back to the raw href on malformed escape sequences (literal %)', () => {
+    for (const href of ['100%.md', 'a%zzb.md']) {
+      expect(classify_link_click(href, WITH_DIR)).toEqual({
+        kind: 'open-workspace-relative',
+        href,
+      });
+    }
+  });
+
+  it('does NOT decode external or file: hrefs (URIs open verbatim)', () => {
+    expect(classify_link_click('https://example.com/a%20b', WITH_DIR)).toEqual({
+      kind: 'open-external',
+      href: 'https://example.com/a%20b',
+    });
+    expect(classify_link_click('file:///a/b%20c.md', WITH_DIR)).toEqual({
+      kind: 'open-file',
+      href: 'file:///a/b%20c.md',
+    });
+  });
+
+  it('an encoded scheme decodes AFTER classification — it stays workspace-relative', () => {
+    // `javascript%3Aalert(1)` is not scheme-shaped raw, so it classifies as
+    // relative; decoding then yields a harmless filename for vscode.open, never
+    // an openExternal candidate.
+    expect(classify_link_click('javascript%3Aalert(1)', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'javascript:alert(1)',
+    });
+  });
+});
+
 // Off-allowlist schemes are dropped outright (SHELL-M-3 / ADR-0004): VS Code's
 // trusted-domains prompt gates only http/https, so any other scheme handed to
 // openExternal would reach the OS shell handler unchecked (javascript:, data:,

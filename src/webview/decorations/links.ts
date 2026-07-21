@@ -4,6 +4,7 @@ import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef, Tree } from '@lezer/common';
 import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
+import { effective_destination } from '../link_destination.js';
 import { create_logger } from '../../log.js';
 
 const log = create_logger('widget');
@@ -72,7 +73,7 @@ function collect_definitions(state: EditorState): Map<string, string> {
       // LinkLabel spans `[label]`; strip the outer brackets before normalizing.
       const key = normalize_label(state.doc.sliceString(label.from + 1, label.to - 1));
       if (!key || map.has(key)) return; // first definition wins (CommonMark)
-      map.set(key, state.doc.sliceString(url.from, url.to));
+      map.set(key, effective_destination(state.doc.sliceString(url.from, url.to)));
     },
   });
   return map;
@@ -163,7 +164,12 @@ const link_handler: NodeHandler = {
     if (text_from >= text_to) return [];
 
     const url_node = find_first_child(n, 'URL');
-    const href = url_node ? state.doc.sliceString(url_node.from, url_node.to) : '';
+    // The URL slice includes the `<`/`>` delimiters when the destination is the
+    // CommonMark angle-bracket form — strip them so the href carries the
+    // effective destination (LINK-R-3).
+    const href = url_node
+      ? effective_destination(state.doc.sliceString(url_node.from, url_node.to))
+      : '';
 
     const decorations: Range<Decoration>[] = [link_mark(href).range(text_from, text_to)];
 

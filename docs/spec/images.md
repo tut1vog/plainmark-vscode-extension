@@ -41,8 +41,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-R-5** — The alt text MUST be parsed from the literal source between `![` and the closing `]` via the regex `/^!\[((?:[^\]\\]|\\.)*)\]/u`, supporting backslash escapes inside the brackets; when no match is found the alt MUST default to the empty string.
   _Example:_ `![a\]b](x.png)` → alt `a\]b`; `![](x.png)` → alt `""`.
 
-- **IMG-R-6** — The image URL MUST be read verbatim from the `Image` node's child `URL` node (the bytes between the `(` and `)`); a paragraph whose `Image` has no `URL` child MUST NOT promote.
-  _Example:_ `![alt](cover.png)` → url `cover.png`; an `Image` with an empty `()` and no `URL` node emits no widget.
+- **IMG-R-6** — The image URL MUST be the effective destination of the `Image` node's child `URL` node — same stripping rule as LINK-R-3 (ADR-0008); a paragraph whose `Image` has no `URL` child MUST NOT promote.
+  _Example:_ `![alt](cover.png)` → url `cover.png`; `![alt](<img a.png>)` → url `img a.png`; an `Image` with an empty `()` and no `URL` node emits no widget.
 
 - **IMG-R-7** — URL resolution MUST pass absolute `http://` / `https://` URLs through unchanged; a relative URL MUST resolve against the image base via `new URL(raw, base)`; a relative URL with a `null` base MUST resolve to `null`. A `null` resolution MUST suppress the widget (no broken `<img>` is emitted).
   _Example:_ base `https://example.com/notes/`: `./cover.png` → `https://example.com/notes/cover.png`; `https://cdn/x.png` → unchanged; `cover.png` with base `null` → no widget.

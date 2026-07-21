@@ -109,6 +109,18 @@ describe('image_widgets_field — decoration emission', () => {
     expect(decos[0].widget.resolved_src).toBe(`${base}cover.png`);
   });
 
+  it('IMG-R-6: strips the angle brackets from an `![alt](<a b.png>)` destination', () => {
+    // CommonMark angle-bracket destination — the only way to write a spaced
+    // path; the lezer URL node includes the `<`/`>`, the effective url must not.
+    const state = make_state('![alt](<img a.png>)\n');
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].widget.url).toBe('img a.png');
+    // `new URL` percent-encodes the space; the webview resource server decodes
+    // it back to the on-disk name.
+    expect(decos[0].widget.resolved_src).toBe(`${base}img%20a.png`);
+  });
+
   it('IMG-E-1: skips paragraphs that mix image with text', () => {
     expect(decorations(make_state('Hello ![alt](cover.png) world\n'))).toHaveLength(0);
   });

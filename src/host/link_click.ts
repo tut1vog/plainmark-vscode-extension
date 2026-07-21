@@ -11,8 +11,9 @@
 // resolve against the document dir + vscode.open; bare `#fragment` → ignore;
 // relative on a parentless document → drop), LINK-I-9 (empty href dropped before
 // it can reach openExternal), LINK-I-12 (an allowlisted scheme-bearing href
-// opens verbatim; a relative href resolves against the document URI's
-// directory). Allowlist rationale: ADR-0004.
+// opens verbatim; a relative href is percent-decoded and resolves against the
+// document URI's directory). Allowlist rationale: ADR-0004; percent-decoding
+// rationale: ADR-0008.
 
 // Matches any RFC-3986 scheme — non-scheme hrefs are treated as document-relative.
 // Anchored at the start with no allowance for leading whitespace, so a
@@ -57,6 +58,21 @@ export interface LinkClickContext {
   has_document_dir: boolean;
 }
 
+// Markdown destinations are URI-shaped: `a%20b.pdf` names `a b.pdf` on disk.
+// `vscode.Uri.joinPath` treats its segment argument literally (no decoding), so
+// the decode must happen before resolution. Malformed escape sequences (a
+// literal `%` in a filename, e.g. `100%.md`) fall back to the raw string.
+// Decoding runs strictly AFTER scheme classification, so an encoded scheme
+// (`javascript%3A…`) can never decode its way onto the openExternal path — it
+// stays a workspace-relative filename handed to vscode.open.
+function decode_relative_href(href: string): string {
+  try {
+    return decodeURIComponent(href);
+  } catch {
+    return href;
+  }
+}
+
 export function classify_link_click(href: unknown, ctx: LinkClickContext): LinkClickDecision {
   if (typeof href !== 'string' || href.length === 0) return { kind: 'ignore-empty' };
   if (href.startsWith('#')) return { kind: 'ignore-fragment' };
@@ -68,5 +84,5 @@ export function classify_link_click(href: unknown, ctx: LinkClickContext): LinkC
     return { kind: 'blocked-scheme', href, scheme };
   }
   if (!ctx.has_document_dir) return { kind: 'noop-untitled', href };
-  return { kind: 'open-workspace-relative', href };
+  return { kind: 'open-workspace-relative', href: decode_relative_href(href) };
 }

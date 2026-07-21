@@ -14,6 +14,7 @@ import {
   pointer_down_field,
 } from '../decorations/pointer_state.js';
 import { should_reveal_for_selection } from '../decorations/selection_reveal.js';
+import { effective_destination } from '../link_destination.js';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
 
 interface ImageInfo {
@@ -112,7 +113,9 @@ function find_image_only_paragraph(paragraph: SyntaxNode, doc: Text): ImageInfo 
     }
   }
   if (!url_node) return null;
-  const url = doc.sliceString(url_node.from, url_node.to);
+  // Angle-bracket destinations `![alt](<a b.png>)` include the `<`/`>` in the
+  // URL node slice — strip them to get the effective destination (IMG-R-6).
+  const url = effective_destination(doc.sliceString(url_node.from, url_node.to));
 
   const alt_match = /^!\[((?:[^\]\\]|\\.)*)\]/u.exec(doc.sliceString(image.from, image.to));
   const alt = alt_match ? alt_match[1] : '';

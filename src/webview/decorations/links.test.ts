@@ -205,6 +205,57 @@ describe('LINK-R-1 LINK-R-2 LINK-R-3 Link `[text](url)`', () => {
   });
 });
 
+describe('LINK-R-3 angle-bracket destinations `[text](<url>)`', () => {
+  // CommonMark's only way to write a destination containing spaces. The lezer
+  // URL node includes the `<`/`>` delimiters; the href must not.
+  // 'see [t](<a b.pdf>) end\nzz\n'
+  //  0123456789012345678901 2  3
+  // Link [4,18); '[' 4, ']' 6, '(' 7, URL '<a b.pdf>' [8,17), ')' 17.
+  const doc = 'see [t](<a b.pdf>) end\nzz\n';
+
+  it('strips the angle brackets from the href (spaces preserved)', () => {
+    const state = make_state(doc, 24); // off the link line
+    expect(snapshot(state)).toEqual([
+      hide(4, 5),
+      link(5, 6, 'a b.pdf'),
+      hide(6, 18),
+    ]);
+  });
+
+  it('reveal keeps the raw bytes (brackets included) visible as markers', () => {
+    const state = make_state(doc, 5); // caret inside the bracketed text
+    expect(snapshot(state)).toEqual([
+      marker(4, 5),
+      link(5, 6, 'a b.pdf'),
+      marker(6, 7),
+      marker(7, 8),
+      marker(17, 18),
+    ]);
+  });
+
+  it('strips the brackets from an external angle-bracket destination too', () => {
+    // 'go [x](<https://x.io/a b>) now\nzz\n' — URL '<https://x.io/a b>' [7,25).
+    const doc2 = 'go [x](<https://x.io/a b>) now\nzz\n';
+    const state = make_state(doc2, 32); // off the link line
+    const link_deco = snapshot(state).find((d) => d.kind === 'link');
+    expect(link_deco).toEqual(link(4, 5, 'https://x.io/a b'));
+  });
+
+  it('LINK-E-2: a reference definition with an angle-bracket destination resolves stripped', () => {
+    // 'see [t][r] end\n\n[r]: <a b.pdf>\n'
+    // Link [4,10): '[' 4, text [5,6)='t', ']' 6, LinkLabel [7,10)='[r]'.
+    // LinkReference [16,30); URL '<a b.pdf>' [21,30).
+    const ref_doc = 'see [t][r] end\n\n[r]: <a b.pdf>\n';
+    const state = make_state(ref_doc, 12); // inside 'end', outside the ref
+    expect(snapshot(state)).toEqual([
+      hide(4, 5),
+      link(5, 6, 'a b.pdf'),
+      hide(6, 10),
+      def(16, 30),
+    ]);
+  });
+});
+
 describe('AUTO-R-1 AUTO-R-2 Autolink `<url>`', () => {
   // 'see <https://x.io> end\nzz\n'
   //  0123456789012345678901
