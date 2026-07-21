@@ -70,6 +70,17 @@ for (const file of specFiles.sort()) {
 // (src|tests|scripts/** paths, bare *.ts/*.js filenames) nor docs outside spec/.
 const specDirNames = new Set(readdirSync(SPEC_DIR).filter((n) => n.endsWith('.md')));
 const CODE_REF_RE = /(?:\b(?:src|tests|scripts|patches|media|dist)\/[\w.@/-]+)|(?:\b[\w.-]+\.(?:ts|tsx|js|cjs|mjs|cts|mts)\b)/g;
+// A code reference points "outside" when it is a path under a source dir, or a
+// bare filename that resolves to a real repo source file. Bare names matching no
+// real file are prose, not references — third-party projects whose name ends in
+// a source extension (`highlight.js`) are named as documentation sources, not
+// linked to. Same resolve-against-reality rule DOC_REF_RE applies to bare .md.
+const sourceFiles = [];
+for (const dir of ['src', 'tests', 'scripts', 'patches', 'media']) {
+  const p = join(ROOT, dir);
+  if (existsSync(p)) walk(p, () => true, sourceFiles);
+}
+const sourceBaseNames = new Set(sourceFiles.map((p) => basename(p)));
 // A doc reference points "outside" when it is a path not under docs/spec/, or a
 // bare name that resolves to a real docs/ file outside spec/. Bare names that
 // match no real doc (illustrative user filenames like `notes.md`) are ignored.
@@ -80,7 +91,10 @@ for (const file of specFiles) {
   readFileSync(file, 'utf8').split('\n').forEach((text, i) => {
     let m;
     CODE_REF_RE.lastIndex = 0;
-    while ((m = CODE_REF_RE.exec(text))) outward.push({ file: rel, line: i + 1, ref: m[0] });
+    while ((m = CODE_REF_RE.exec(text))) {
+      const ref = m[0];
+      if (ref.includes('/') || sourceBaseNames.has(ref)) outward.push({ file: rel, line: i + 1, ref });
+    }
     DOC_REF_RE.lastIndex = 0;
     while ((m = DOC_REF_RE.exec(text))) {
       const ref = m[0];

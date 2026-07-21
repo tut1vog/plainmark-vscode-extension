@@ -194,13 +194,15 @@ states observable behavior; it does not name the code that implements it.
 - **Allowed**: sibling spec files (e.g. `blockquotes.md`), `[inherits:<ID>]`
   clause links, the public contract (`--plainmark-*` variables, `.plainmark-*`
   classes, `data-*` attributes), and library/symbol names where they define
-  observable structure (e.g. `Decoration.line`, `ROOT_DEFAULTS_CSS`).
+  observable structure (e.g. `Decoration.line`, `ROOT_DEFAULTS_CSS`) — including
+  third-party project names ending in a source extension (e.g. `highlight.js`
+  cited as a documentation source).
 - **Not allowed**: code paths (`src/**`, `tests/**`, `dist/**`), bare source
-  filenames (e.g. `provider.ts`), and docs outside this directory (e.g.
-  `docs/theming-guide.md`). Traceability runs one way — tests carry clause IDs in
-  their titles (§2 "Linking a clause to its tests"), so code points at the
-  spec, not the reverse. Front matter keeps `prefix`/`title`/`kind`; there is
-  **no `source:` key**.
+  filenames that name a real repo source file (e.g. `provider.ts`), and docs
+  outside this directory (e.g. `docs/theming-guide.md`). Traceability runs one
+  way — tests carry clause IDs in their titles (§2 "Linking a clause to its
+  tests"), so code points at the spec, not the reverse. Front matter keeps
+  `prefix`/`title`/`kind`; there is **no `source:` key**.
 - **Exempt**: `README.md` (this conventions/tooling doc) and the
   generated/authored `_*.md` artifacts (§1), whose job is to map clauses to code.
 
