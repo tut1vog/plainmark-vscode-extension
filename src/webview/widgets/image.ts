@@ -189,6 +189,8 @@ function image_only_lines(paragraph: SyntaxNode, doc: Text): ImageInfo[] {
   return out;
 }
 
+const IMAGE_CONTAINER_NODES = new Set(['Document', 'BulletList', 'OrderedList', 'ListItem']);
+
 export const set_image_base_effect = StateEffect.define<string | null>();
 
 export const image_base_field = StateField.define<string | null>({
@@ -205,9 +207,15 @@ function build_decorations(state: EditorState): DecorationSet {
 
   syntaxTree(state).iterate({
     enter(node) {
-      if (node.name === 'Document') return;
+      // Descend only through Document and list containers (ADR-0013 amended):
+      // any Paragraph reached has a pure Document/list ancestor chain, so
+      // lazy-continuation lines under a list item promote like top-level ones.
+      // Blockquotes/callouts are never entered — a block widget cannot carry
+      // the quote bar/tint chrome, so quoted images stay raw source. A list
+      // item's own marker line (`- ![](x)`) stays raw too: the `- ` marker
+      // occupies the line gap and fails the whitespace check.
+      if (IMAGE_CONTAINER_NODES.has(node.name)) return;
       if (node.name !== 'Paragraph') return false;
-      if (node.node.parent?.name !== 'Document') return false;
 
       for (const info of image_only_lines(node.node, state.doc)) {
         const resolved = resolve_image_url(info.url, base);

@@ -179,12 +179,29 @@ describe('image_widgets_field — decoration emission', () => {
     expect(decos[1].widget.url).toBe('2.png');
   });
 
-  it('IMG-R-3: skips images inside list items (paragraph not a direct child of Document)', () => {
+  it('IMG-R-3: a list item MARKER line stays raw (the `- ` occupies the line gap)', () => {
     expect(decorations(make_state('- ![alt](cover.png)\n'))).toHaveLength(0);
+  });
+
+  it('IMG-R-3 (ADR-0013 amended): a lazy-continuation line under a list item promotes', () => {
+    // The owner's repro: unindented lines below a bullet fold INTO the list
+    // item via lazy continuation — the image line still promotes.
+    const doc = '- item\nline 1\nline 2\n![alt](cover.png)\n';
+    const decos = decorations(make_state(doc));
+    expect(decos).toHaveLength(1);
+    expect(decos[0].from).toBe(doc.indexOf('!['));
+    expect(decos[0].widget.url).toBe('cover.png');
+  });
+
+  it('IMG-R-3 (ADR-0013 amended): an indented continuation line inside a nested list promotes', () => {
+    expect(decorations(make_state('- item\n  ![alt](cover.png)\n'))).toHaveLength(1);
+    expect(decorations(make_state('- a\n  - b\n    ![alt](cover.png)\n'))).toHaveLength(1);
   });
 
   it('IMG-R-3: skips images inside blockquotes', () => {
     expect(decorations(make_state('> ![alt](cover.png)\n'))).toHaveLength(0);
+    // A list nested in a quote is still quote territory — never entered.
+    expect(decorations(make_state('> - item\n>   ![alt](cover.png)\n'))).toHaveLength(0);
   });
 
   it('IMG-R-10: emits decorations for multiple image-only paragraphs', () => {

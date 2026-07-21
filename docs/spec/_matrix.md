@@ -423,7 +423,7 @@
 | IMG-I-11 | tier-a + tier-b + smoke | conforming | `image.test.ts`, `image.spec.ts` |
 | IMG-R-1 | UNCOVERED | conforming | — |
 | IMG-R-2 | tier-a | conforming | `image.test.ts` |
-| IMG-R-3 | tier-a | conforming | `image.test.ts` |
+| IMG-R-3 | tier-a + tier-b | conforming | `image.test.ts`, `image.spec.ts` |
 | IMG-R-4 | smoke | conforming | — |
 | IMG-R-5 | tier-a | conforming | `image.test.ts` |
 | IMG-R-6 | tier-a | conforming | `image.test.ts` |
