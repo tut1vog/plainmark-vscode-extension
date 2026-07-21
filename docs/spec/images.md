@@ -8,10 +8,11 @@ kind: construct
 
 Normative behavior for markdown image rendering, interaction, and byte
 guarantees. Covers the standalone inline-syntax image `![alt](url)` when it is
-the sole content of a top-level paragraph; that paragraph promotes to a block
-`Decoration.replace` widget (the lezer `Image` node lives inside the paragraph).
-Does NOT cover links `[text](url)` (`links.md`, prefix LINK) or autolinks
-(`autolinks.md`, prefix AUTO).
+the sole content of a LINE of a top-level paragraph; that line promotes to a
+block `Decoration.replace` widget (the lezer `Image` node lives inside the
+paragraph — line-scoped promotion, ADR-0013; an image-only paragraph is the
+single-line special case). Does NOT cover links `[text](url)` (`links.md`,
+prefix LINK) or autolinks (`autolinks.md`, prefix AUTO).
 
 Reference-style images (`![alt][ref]` + a link-reference definition) are NOT
 supported and are specified as an edge case (IMG-E-4).
@@ -29,8 +30,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-R-1** — The image extension (`image_extension` = `image_base_field` + `image_widgets_field` + `image_theme`) MUST be registered in the production editor's extension set. It is included in `editor_extensions_core`, so it runs in both the live webview and the Tier B harness.
   _Example:_ opening a document whose sole paragraph is `![alt](https://cdn/x.png)` renders an `<img>`, not the raw `![…]` source.
 
-- **IMG-R-2** — A top-level paragraph whose only inline child is a single `Image` node, with only whitespace in the gaps before and after it, MUST be replaced by a block widget spanning the whole paragraph range `[paragraph.from, paragraph.to)`. The replace decoration MUST carry `block: true`.
-  _Example:_ `![alt](cover.png)\n` → one `Decoration.replace({block:true})` over offsets `[0, 17)`.
+- **IMG-R-2** — Each doc line of a top-level paragraph whose only non-whitespace content is a single `Image` node confined to that line MUST be replaced by a block widget spanning the line range `[line.from, line.to)` (ADR-0013; CommonMark lazy continuation merges adjacent lines into one paragraph, so an image directly against a text line is a paragraph child — it still promotes, scoped to its own line). The replace decoration MUST carry `block: true`. An `Image` wrapping across lines MUST NOT promote.
+  _Example:_ `![alt](cover.png)\n` → one `Decoration.replace({block:true})` over offsets `[0, 17)`; `text\n![alt](cover.png)` (one merged paragraph) → the image line alone promotes, `text` stays an ordinary line.
 
 - **IMG-R-3** — The paragraph MUST be a direct child of the `Document` node to promote; an `Image` nested in any other block (list item, blockquote, …) MUST NOT promote.
   _Example:_ `- ![alt](cover.png)` and `> ![alt](cover.png)` each emit no image widget.
@@ -58,8 +59,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## I · Interaction
 
-- **IMG-I-1** — When the canonical reveal predicate (`should_reveal_for_selection`, MRS-R-2…R-5: any selection range touching the paragraph range reveals, EXCEPT a non-empty selection strictly covering it on both sides; pointer-down evaluates the frozen pre-press selection) holds for the image paragraph's range, the widget MUST NOT be emitted, revealing the raw `![alt](url)` source for editing. Unified via DEF-7 (2026-06-12): select-all keeps the image rendered; a drag entering the image does not flash raw source mid-drag.
-  _Example:_ `![alt](cover.png)` with the caret placed at offset 3 → the widget disappears and the raw source `![alt](cover.png)` is shown and editable; Ctrl+A keeps the image rendered.
+- **IMG-I-1** — When the canonical reveal predicate (`should_reveal_for_selection`, MRS-R-2…R-5: any selection range touching the image's LINE range reveals, EXCEPT a non-empty selection strictly covering it on both sides; pointer-down evaluates the frozen pre-press selection) holds for the image line's range, the replace widget MUST NOT be emitted, revealing the raw `![alt](url)` source for editing — with an in-flow preview below it (IMG-I-11, ADR-0013). Reveal is keyed to the image's line, so a caret on a sibling line of the same merged paragraph keeps the widget rendered. Unified via DEF-7 (2026-06-12): select-all keeps the image rendered; a drag entering the image does not flash raw source mid-drag.
+  _Example:_ `![alt](cover.png)` with the caret placed at offset 3 → the widget disappears and the raw source `![alt](cover.png)` is shown and editable (preview below); in `text\n![alt](cover.png)`, a caret inside `text` keeps the image widget; Ctrl+A keeps the image rendered.
 
 - **IMG-I-2** — Decorations MUST be rebuilt whenever the document changes, the selection changes, the image base changes (`set_image_base_effect`), or the pointer-freeze fields flip (MRS-R-7); otherwise the prior decoration set is reused.
   _Example:_ moving the caret off an image paragraph re-promotes it to a widget on the next transaction.
@@ -88,6 +89,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-I-10** — A single paste carrying multiple image blobs MUST save each blob to its own file and insert one `![](relative-path)` per line, in clipboard order.
   _Example:_ pasting two images at once writes two files and inserts two `![](…)` lines.
 
+- **IMG-I-11** `[smoke]` — Whenever IMG-I-1 reveals an image line's source, in place of the replace widget the field MUST emit a `block: true` in-flow preview widget (`div.plainmark-image-block-preview`, `side: 1`) anchored at the line's end, rendering the same resolved image below the editable source — the picture never disappears while the path or alt text is edited (ADR-0013; mirrors the block-math preview, MATH-I-6). The preview tracks edits live (each keystroke rebuilds it against the current path — no debounce), applies the same `<img>` styling as the replace widget (IMG-R-8), shows the broken-image placeholder on load failure (IMG-E-6), and is suppressed exactly when the replace widget would be (unresolvable URL, IMG-R-7).
+  _Example:_ caret inside `![alt](cover.png)` → the raw source renders with the image below it; editing `cover.png` → `cover2.png` swaps the preview to the new file; moving the caret off the line re-renders the replace widget.
+
 ## SP · Source preservation
 
 - **IMG-SP-1** `[inherits:INV-SP-1]` — Image rendering MUST be decoration-only: a view-layer `Decoration.replace` over the paragraph range with no document edit. The widget MUST NOT re-serialize, normalize, or rewrite any source byte (only the table widget may rewrite source). The `![alt](url)` source is preserved verbatim and re-exposed unchanged on cursor-on-line reveal.
@@ -101,13 +105,13 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## E · Edge cases
 
-- **IMG-E-1** — A paragraph mixing an image with surrounding text MUST NOT promote; it is left as raw source (only standalone image-only paragraphs become widgets).
-  _Example:_ `Hello ![alt](cover.png) world` → no widget; the whole line stays raw.
+- **IMG-E-1** — A line mixing an image with text on the SAME line MUST NOT promote; it is left as raw source. Text on OTHER lines of the same merged paragraph does not block promotion (ADR-0013, line-scoped — see IMG-R-2).
+  _Example:_ `Hello ![alt](cover.png) world` → no widget, the whole line stays raw; `Hello\n![alt](cover.png)` → the image line promotes.
 
-- **IMG-E-2** — A paragraph containing two or more images MUST NOT promote (the first non-first `Image` child aborts detection).
-  _Example:_ `![a](1.png) ![b](2.png)` → no widget.
+- **IMG-E-2** — A line containing two or more images MUST NOT promote (each image sees the other in its line gap — non-whitespace aborts). Image-only lines promote independently, so adjacent image-only lines in one merged paragraph each emit their own widget (ADR-0013).
+  _Example:_ `![a](1.png) ![b](2.png)` → no widget; `![a](1.png)\n![b](2.png)` → two widgets.
 
-- **IMG-E-3** — Leading or trailing non-whitespace around the image inside the paragraph MUST abort promotion; only whitespace gaps are tolerated (`sliceString(...).trim().length > 0` check).
+- **IMG-E-3** — Leading or trailing non-whitespace around the image on its line MUST abort promotion of that line; only whitespace gaps are tolerated (`sliceString(...).trim().length > 0` check against the line bounds).
   _Example:_ `x ![a](1.png)` and `![a](1.png) .` → no widget; `  ![a](1.png)  ` (whitespace only) → widget.
 
 - **IMG-E-4** `[accepted]` — Reference-style images (`![alt][ref]` with a separate link-reference definition) are NOT supported; detection requires a direct `URL` child of the `Image` node, which the reference form lacks, so it MUST NOT promote and is left as raw source.
@@ -116,7 +120,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-E-5** — An image whose alt text is empty MUST still promote (alt defaults to `""`); emptiness of alt MUST NOT block rendering.
   _Example:_ `![](https://cdn/x.png)` → widget with `alt=""`.
 
-- **IMG-E-6** — When the `<img>` fails to load (missing file, 404, or an undecodable source), the widget MUST replace it with a broken-image placeholder: the container gains the `plainmark-image-broken` class and holds a broken-image icon, an "Image not found" label, and the image's source path. A bare broken `<img>` — especially with the empty alt that pasted images carry — otherwise collapses to an invisible block in the webview. There is still no loading/spinner state, and a load failure MUST NOT alter source bytes.
+- **IMG-E-6** — When the `<img>` fails to load (missing file, 404, or an undecodable source), the widget (replace widget or in-flow preview, IMG-I-11) MUST replace it with a broken-image placeholder: the container gains the `plainmark-image-broken` class and holds a broken-image icon, an "Image not found" label, and the image's source path. A bare broken `<img>` — especially with the empty alt that pasted images carry — otherwise collapses to an invisible block in the webview. There is still no loading/spinner state, and a load failure MUST NOT alter source bytes.
   _Example:_ `![](missing.png)` whose file is absent renders the placeholder box showing `missing.png`, not an empty block; clicking it reveals the source for editing.
 
 - **IMG-E-7** — Changing the image base (`set_image_base_effect`) MUST re-resolve relative URLs and rebuild the affected widgets; `ImageWidget.eq` compares `alt`, `url`, and `resolved_src`, so a base change that alters `resolved_src` MUST produce a new widget instance.

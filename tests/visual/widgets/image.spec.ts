@@ -35,7 +35,7 @@ describe('image widget', () => {
     expect(imgs[0].getAttribute('src')).toBe(sample_data_url);
   });
 
-  it('reveals source when cursor enters the range', () => {
+  it('reveals source when cursor enters the range, keeping an in-flow preview (IMG-I-11)', () => {
     view = mount_editor(
       container,
       `![alt](${sample_data_url})\n\nworld`,
@@ -43,8 +43,25 @@ describe('image widget', () => {
     );
     move_cursor(view, view.state.doc.length);
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(1);
+    expect(container.querySelectorAll('.plainmark-image-block-preview')).toHaveLength(0);
     move_cursor(view, 1);
+    // Source is editable again…
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(0);
+    expect(view.contentDOM.textContent).toContain('![alt](');
+    // …and the image stays visible as a preview below the line.
+    const preview = container.querySelectorAll('.plainmark-image-block-preview img');
+    expect(preview).toHaveLength(1);
+    expect(preview[0].getAttribute('src')).toBe(sample_data_url);
+  });
+
+  it('ADR-0013: an image line directly below a non-empty text line still renders', () => {
+    const doc = `hello\n![alt](${sample_data_url})\nworld`;
+    view = mount_editor(container, doc, 'https://example.test/');
+    move_cursor(view, 0);
+    expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(1);
+    // The sibling text lines stay ordinary editable lines.
+    expect(view.contentDOM.textContent).toContain('hello');
+    expect(view.contentDOM.textContent).toContain('world');
   });
 
   it('re-renders when cursor leaves the range', () => {
@@ -86,9 +103,11 @@ describe('image widget', () => {
     view.dispatch({ selection: { anchor: 2, head: image_from + 3 } });
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(1);
 
-    // Release: live selection takes over — now touching, not covering → reveal.
+    // Release: live selection takes over — now touching, not covering → reveal
+    // (source shown, preview below).
     document.dispatchEvent(new MouseEvent('mouseup'));
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(0);
+    expect(container.querySelectorAll('.plainmark-image-block-preview img')).toHaveLength(1);
   });
 
   it('a click on the rendered image places the caret and reveals source (FIX-13)', async () => {
@@ -117,6 +136,28 @@ describe('image widget', () => {
     expect(head).toBeGreaterThanOrEqual(image_from);
     expect(head).toBeLessThanOrEqual(image_to + 1);
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(0);
+    // The image does not vanish under the click — the preview takes over.
+    expect(container.querySelectorAll('.plainmark-image-block-preview img')).toHaveLength(1);
+  });
+
+  it('IMG-I-11: editing the path live-updates the preview', () => {
+    const doc = `hello\n\n![alt](old.png)\n\nworld`;
+    view = mount_editor(container, doc, 'https://example.test/');
+    const close = doc.indexOf(')');
+    move_cursor(view, close);
+    expect(container.querySelectorAll('.plainmark-image-block-preview')).toHaveLength(1);
+    view.dispatch({
+      changes: { from: close, insert: 'x' },
+      selection: { anchor: close + 1 },
+      userEvent: 'input.type',
+    });
+    // The preview rebuilds against the edited path — whether the img is still
+    // loading (src) or already errored (broken placeholder shows the path),
+    // the new path is what it reflects.
+    const preview = container.querySelector('.plainmark-image-block-preview')!;
+    const img = preview.querySelector('img');
+    const shown = img ? img.getAttribute('src')! : (preview.textContent ?? '');
+    expect(shown).toContain('old.pngx');
   });
 
   it('IMG-E-6: a failed image load shows the broken-image placeholder', async () => {

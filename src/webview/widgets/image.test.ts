@@ -4,6 +4,7 @@ import { Decoration } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import {
+  ImagePreviewWidget,
   ImageWidget,
   image_base_field,
   image_widgets_field,
@@ -40,6 +41,24 @@ function decorations(state: EditorState): DecoSnapshot[] {
     const w = (deco.spec as { widget?: unknown }).widget;
     if (w instanceof ImageWidget) {
       out.push({ from, to, block: deco.spec.block === true, widget: w });
+    }
+  });
+  return out;
+}
+
+interface PreviewSnapshot {
+  from: number;
+  to: number;
+  side: number;
+  widget: ImagePreviewWidget;
+}
+
+function previews(state: EditorState): PreviewSnapshot[] {
+  const out: PreviewSnapshot[] = [];
+  state.field(image_widgets_field).between(0, state.doc.length, (from, to, deco) => {
+    const w = (deco.spec as { widget?: unknown }).widget;
+    if (w instanceof ImagePreviewWidget) {
+      out.push({ from, to, side: deco.spec.side as number, widget: w });
     }
   });
   return out;
@@ -121,12 +140,37 @@ describe('image_widgets_field — decoration emission', () => {
     expect(decos[0].widget.resolved_src).toBe(`${base}img%20a.png`);
   });
 
-  it('IMG-E-1: skips paragraphs that mix image with text', () => {
+  it('IMG-E-1: skips lines that mix image with text on the SAME line', () => {
     expect(decorations(make_state('Hello ![alt](cover.png) world\n'))).toHaveLength(0);
   });
 
-  it('IMG-E-2: skips paragraphs with multiple images', () => {
+  it('IMG-R-2 (ADR-0013): promotes an image line directly below a text line', () => {
+    // Lazy continuation: one Paragraph node — the image line still promotes,
+    // scoped to its own line range.
+    const doc = 'some text\n![alt](cover.png)\n';
+    const decos = decorations(make_state(doc));
+    expect(decos).toHaveLength(1);
+    expect(decos[0].from).toBe('some text\n'.length);
+    expect(decos[0].to).toBe(doc.length - 1);
+    expect(decos[0].widget.url).toBe('cover.png');
+  });
+
+  it('IMG-R-2 (ADR-0013): promotes an image line directly above a text line', () => {
+    const decos = decorations(make_state('![alt](cover.png)\nsome text\n'));
+    expect(decos).toHaveLength(1);
+    expect(decos[0].from).toBe(0);
+    expect(decos[0].to).toBe('![alt](cover.png)'.length);
+  });
+
+  it('IMG-E-2: skips lines with multiple images on the SAME line', () => {
     expect(decorations(make_state('![a](1.png) ![b](2.png)\n'))).toHaveLength(0);
+  });
+
+  it('IMG-E-2 (ADR-0013): adjacent image-only lines in one paragraph each promote', () => {
+    const decos = decorations(make_state('![a](1.png)\n![b](2.png)\n\nend'));
+    expect(decos).toHaveLength(2);
+    expect(decos[0].widget.url).toBe('1.png');
+    expect(decos[1].widget.url).toBe('2.png');
   });
 
   it('IMG-R-3: skips images inside list items (paragraph not a direct child of Document)', () => {
@@ -145,11 +189,33 @@ describe('image_widgets_field — decoration emission', () => {
     expect(decos[1].widget.url).toBe('2.png');
   });
 
-  it('IMG-I-1 IMG-I-2: omits decoration when the selection overlaps the image paragraph (cursor-on-line reveal)', () => {
+  it('IMG-I-1 IMG-I-2 IMG-I-11: swaps the replace widget for an in-flow preview on cursor-on-line reveal', () => {
     let state = make_state('![alt](cover.png)\n');
     expect(decorations(state)).toHaveLength(1);
+    expect(previews(state)).toHaveLength(0);
     state = state.update({ selection: { anchor: 3 } }).state;
     expect(decorations(state)).toHaveLength(0);
+    const p = previews(state);
+    expect(p).toHaveLength(1);
+    // Anchored at the image line's end, below the revealed source (side: 1).
+    expect(p[0].from).toBe('![alt](cover.png)'.length);
+    expect(p[0].side).toBe(1);
+    expect(p[0].widget.resolved_src).toBe(`${base}cover.png`);
+  });
+
+  it('IMG-I-1 (ADR-0013): reveal is keyed to the image LINE — caret on a sibling text line keeps the widget', () => {
+    const doc = 'some text\n![alt](cover.png)\n';
+    const state = make_state(doc).update({ selection: { anchor: 3 } }).state;
+    expect(decorations(state)).toHaveLength(1);
+    expect(previews(state)).toHaveLength(0);
+  });
+
+  it('IMG-R-7 IMG-I-11: an unresolvable URL emits no preview either', () => {
+    const state = make_state('![alt](cover.png)\n', null).update({
+      selection: { anchor: 3 },
+    }).state;
+    expect(decorations(state)).toHaveLength(0);
+    expect(previews(state)).toHaveLength(0);
   });
 
   it('IMG-E-9: omits decoration for relative URLs when the base is null', () => {

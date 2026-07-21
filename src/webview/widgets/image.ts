@@ -20,8 +20,38 @@ import { cached_block_height, remember_block_height } from './widget_height_cach
 interface ImageInfo {
   alt: string;
   url: string;
+  // The image's full doc-line range — the replace span and the reveal key
+  // (line-scoped promotion, ADR-0013).
   from: number;
   to: number;
+}
+
+function build_image_dom(
+  alt: string,
+  url: string,
+  resolved_src: string,
+  class_name: string,
+): HTMLElement {
+  const container = document.createElement('div');
+  container.className = class_name;
+  // Reserve a previously-measured height so a re-scrolled image lands without
+  // reflowing content below it while the browser re-decodes.
+  const cached = cached_block_height(resolved_src);
+  if (cached >= 0) container.style.minHeight = `${cached}px`;
+  const img = document.createElement('img');
+  img.src = resolved_src;
+  img.alt = alt;
+  // Height is unknown until the image decodes — cache once it lays out so the
+  // next off-screen render seeds the height map at the real size.
+  img.addEventListener('load', () => remember_block_height(resolved_src, container));
+  // A broken <img> (especially with empty alt) collapses to an empty block in the webview — show an explicit placeholder instead.
+  img.addEventListener('error', () => {
+    container.classList.add('plainmark-image-broken');
+    container.style.minHeight = '';
+    container.replaceChildren(broken_icon(), broken_text(url));
+  });
+  container.appendChild(img);
+  return container;
 }
 
 export class ImageWidget extends WidgetType {
@@ -47,31 +77,50 @@ export class ImageWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'plainmark-image-block';
-    // Reserve a previously-measured height so a re-scrolled image lands without
-    // reflowing content below it while the browser re-decodes.
-    const cached = cached_block_height(this.resolved_src);
-    if (cached >= 0) container.style.minHeight = `${cached}px`;
-    const img = document.createElement('img');
-    img.src = this.resolved_src;
-    img.alt = this.alt;
-    // Height is unknown until the image decodes — cache once it lays out so the
-    // next off-screen render seeds the height map at the real size.
-    img.addEventListener('load', () =>
-      remember_block_height(this.resolved_src, container),
-    );
-    // A broken <img> (especially with empty alt) collapses to an empty block in the webview — show an explicit placeholder instead.
-    img.addEventListener('error', () => {
-      container.classList.add('plainmark-image-broken');
-      container.style.minHeight = '';
-      container.replaceChildren(broken_icon(), broken_text(this.url));
-    });
-    container.appendChild(img);
-    return container;
+    return build_image_dom(this.alt, this.url, this.resolved_src, 'plainmark-image-block');
   }
 
   // WidgetType default swallows clicks; without this a click cannot place the caret inside to reveal source. Mirrors math/mermaid.
+  ignoreEvent(): boolean {
+    return false;
+  }
+}
+
+// Caret-on-line preview: the same image DOM rendered as an in-flow block
+// widget below the revealed source line, so the picture never disappears while
+// the path or alt text is being edited. Mirrors the block-math preview
+// (MATH-I-6). No debounce/stale-dim: an <img> swap is cheap, and the broken
+// placeholder plus the height cache cover mid-edit intermediate paths.
+export class ImagePreviewWidget extends WidgetType {
+  constructor(
+    readonly alt: string,
+    readonly url: string,
+    readonly resolved_src: string,
+  ) {
+    super();
+  }
+
+  eq(other: ImagePreviewWidget): boolean {
+    return (
+      other.alt === this.alt &&
+      other.url === this.url &&
+      other.resolved_src === this.resolved_src
+    );
+  }
+
+  get estimatedHeight(): number {
+    return cached_block_height(this.resolved_src);
+  }
+
+  toDOM(): HTMLElement {
+    return build_image_dom(
+      this.alt,
+      this.url,
+      this.resolved_src,
+      'plainmark-image-block-preview',
+    );
+  }
+
   ignoreEvent(): boolean {
     return false;
   }
@@ -87,40 +136,44 @@ export function resolve_image_url(raw: string, base: string | null): string | nu
   }
 }
 
-function find_image_only_paragraph(paragraph: SyntaxNode, doc: Text): ImageInfo | null {
-  // lezer-markdown does not emit Text nodes for plain prose inside a Paragraph;
-  // bare text shows up as gaps between explicit inline nodes. Detect "image-only"
-  // by checking the only inline child is Image AND surrounding gaps are whitespace.
-  let image: SyntaxNode | null = null;
+function image_only_lines(paragraph: SyntaxNode, doc: Text): ImageInfo[] {
+  // Line-scoped promotion (ADR-0013): CommonMark lazy continuation merges
+  // adjacent lines into one Paragraph, so an image directly below a text line
+  // is a paragraph CHILD, not a paragraph. Promote per LINE: a doc line whose
+  // only non-whitespace content is a single Image node. The image-only
+  // paragraph is the single-line special case. lezer-markdown does not emit
+  // Text nodes for plain prose inside a Paragraph; bare text shows up as gaps
+  // between explicit inline nodes — so "image-only" is detected by whitespace-
+  // only gaps between the line bounds and the image bounds (a second image or
+  // any prose on the line lands in a gap and aborts that line).
+  const out: ImageInfo[] = [];
   for (let child = paragraph.firstChild; child; child = child.nextSibling) {
-    if (child.name === 'Image') {
-      if (image) return null;
-      image = child;
-      continue;
+    if (child.name !== 'Image') continue;
+    const line = doc.lineAt(child.from);
+    // An image wrapping across lines (multi-line alt text) stays raw — a block
+    // replace must cover whole lines.
+    if (child.to > line.to) continue;
+    if (doc.sliceString(line.from, child.from).trim().length > 0) continue;
+    if (doc.sliceString(child.to, line.to).trim().length > 0) continue;
+
+    let url_node: SyntaxNode | null = null;
+    for (let c = child.firstChild; c; c = c.nextSibling) {
+      if (c.name === 'URL') {
+        url_node = c;
+        break;
+      }
     }
-    return null;
+    if (!url_node) continue;
+    // Angle-bracket destinations `![alt](<a b.png>)` include the `<`/`>` in the
+    // URL node slice — strip them to get the effective destination (IMG-R-6).
+    const url = effective_destination(doc.sliceString(url_node.from, url_node.to));
+
+    const alt_match = /^!\[((?:[^\]\\]|\\.)*)\]/u.exec(doc.sliceString(child.from, child.to));
+    const alt = alt_match ? alt_match[1] : '';
+
+    out.push({ alt, url, from: line.from, to: line.to });
   }
-  if (!image) return null;
-
-  if (doc.sliceString(paragraph.from, image.from).trim().length > 0) return null;
-  if (doc.sliceString(image.to, paragraph.to).trim().length > 0) return null;
-
-  let url_node: SyntaxNode | null = null;
-  for (let child = image.firstChild; child; child = child.nextSibling) {
-    if (child.name === 'URL') {
-      url_node = child;
-      break;
-    }
-  }
-  if (!url_node) return null;
-  // Angle-bracket destinations `![alt](<a b.png>)` include the `<`/`>` in the
-  // URL node slice — strip them to get the effective destination (IMG-R-6).
-  const url = effective_destination(doc.sliceString(url_node.from, url_node.to));
-
-  const alt_match = /^!\[((?:[^\]\\]|\\.)*)\]/u.exec(doc.sliceString(image.from, image.to));
-  const alt = alt_match ? alt_match[1] : '';
-
-  return { alt, url, from: paragraph.from, to: paragraph.to };
+  return out;
 }
 
 export const set_image_base_effect = StateEffect.define<string | null>();
@@ -143,20 +196,30 @@ function build_decorations(state: EditorState): DecorationSet {
       if (node.name !== 'Paragraph') return false;
       if (node.node.parent?.name !== 'Document') return false;
 
-      const info = find_image_only_paragraph(node.node, state.doc);
-      if (!info) return false;
+      for (const info of image_only_lines(node.node, state.doc)) {
+        const resolved = resolve_image_url(info.url, base);
+        if (!resolved) continue;
 
-      if (should_reveal_for_selection(state, info.from, info.to)) return false;
+        if (should_reveal_for_selection(state, info.from, info.to)) {
+          // Caret on the image's line: keep the source editable and render an
+          // in-flow preview below it (ADR-0013; mirrors MATH-I-6).
+          ranges.push(
+            Decoration.widget({
+              block: true,
+              side: 1,
+              widget: new ImagePreviewWidget(info.alt, info.url, resolved),
+            }).range(info.to),
+          );
+          continue;
+        }
 
-      const resolved = resolve_image_url(info.url, base);
-      if (!resolved) return false;
-
-      ranges.push(
-        Decoration.replace({
-          block: true,
-          widget: new ImageWidget(info.alt, info.url, resolved),
-        }).range(info.from, info.to),
-      );
+        ranges.push(
+          Decoration.replace({
+            block: true,
+            widget: new ImageWidget(info.alt, info.url, resolved),
+          }).range(info.from, info.to),
+        );
+      }
       return false;
     },
   });
@@ -231,8 +294,8 @@ function broken_text(url: string): HTMLElement {
 }
 
 const image_theme = EditorView.theme({
-  '.plainmark-image-block': { margin: '0' },
-  '.plainmark-image-block img': {
+  '.plainmark-image-block, .plainmark-image-block-preview': { margin: '0' },
+  '.plainmark-image-block img, .plainmark-image-block-preview img': {
     display: 'block',
     margin: '0 auto',
     maxWidth: 'var(--plainmark-image-max-width, 100%)',
