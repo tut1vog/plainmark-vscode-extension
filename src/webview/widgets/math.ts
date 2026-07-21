@@ -65,12 +65,18 @@ export class MathWidget extends WidgetType {
     readonly display: boolean,
     readonly src: string,
     readonly result: MathResult | null,
+    // ADR-0010, display widgets only: a block below other content carries the
+    // paragraph gap as extra widget padding-top (`plainmark-block-gap-above`);
+    // a doc-top block does not. In eq() so an edit that moves the block across
+    // the doc-top boundary redraws the widget.
+    readonly gap_above: boolean = false,
   ) {
     super();
   }
 
   eq(other: MathWidget): boolean {
     if (other.display !== this.display || other.src !== this.src) return false;
+    if (other.gap_above !== this.gap_above) return false;
     const a = this.result;
     const b = other.result;
     if (a === null || b === null) return a === b;
@@ -87,7 +93,9 @@ export class MathWidget extends WidgetType {
 
   toDOM(): HTMLElement {
     const el = document.createElement(this.display ? 'div' : 'span');
-    const base = this.display ? 'plainmark-math-block' : 'plainmark-math-inline';
+    const base = this.display
+      ? `plainmark-math-block${this.gap_above ? ' plainmark-block-gap-above' : ''}`
+      : 'plainmark-math-inline';
     if (this.display) {
       // Reserve a previously-measured height so the async typeset lands without
       // reflowing content below it; fall back to one line when cold.
@@ -356,7 +364,7 @@ function build_decorations(state: EditorState): {
         ranges.push(
           Decoration.replace({
             block: true,
-            widget: new MathWidget(true, src, result),
+            widget: new MathWidget(true, src, result, state.doc.lineAt(from).number > 1),
           }).range(from, to),
         );
         return;
@@ -503,6 +511,13 @@ const math_theme = EditorView.theme({
     color: 'var(--plainmark-math-color, inherit)',
     fontSize: 'var(--plainmark-math-size, 1.21em)',
     overflowX: 'auto',
+  },
+  // ADR-0010: a non-doc-top math block stacks the paragraph gap on its own
+  // top breathing room. The 0.25em literal mirrors --plainmark-math-padding's
+  // default top component (a shorthand var's component can't be referenced);
+  // the gap resolves in the block's em context (--plainmark-math-size).
+  '.plainmark-math-block.plainmark-block-gap-above': {
+    paddingTop: 'calc(var(--plainmark-paragraph-gap, 0.75em) + 0.25em)',
   },
   '.plainmark-math-inline': {
     color: 'var(--plainmark-math-color, inherit)',

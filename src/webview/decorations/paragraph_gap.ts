@@ -10,19 +10,20 @@ import {
 import type { SyntaxNode } from '@lezer/common';
 import { detect_callout } from './callout_detect.js';
 
-// Constructs that own their spacing (or where a newline is content, not a
-// paragraph break) — no line of these ever carries the gap. Setext headings
-// are deliberately absent: Plainmark renders them as plain prose, and typing
-// `-` under a paragraph transiently parses as a setext underline — excluding
-// it here would flash the layout mid-bullet-typing. Blockquote is also absent
-// (ADR-0007): quote and callout interiors share the prose paragraph rhythm —
-// only the first line of the outermost quote is excluded (see gap_eligible) —
-// and inner non-prose constructs still bail here because the ancestor walk
-// runs inner→outer, hitting e.g. a quoted FencedCode before the Blockquote.
+// Constructs whose INTERIOR lines own their spacing (or where a newline is
+// content, not a paragraph break) — only the line a construct STARTS on joins
+// the paragraph rhythm (ADR-0010); every later line of it stays gap-free.
+// Setext headings are deliberately absent: Plainmark renders them as plain
+// prose, and typing `-` under a paragraph transiently parses as a setext
+// underline — excluding it here would flash the layout mid-bullet-typing.
+// Blockquote is also absent (ADR-0007): quote and callout interiors share the
+// prose paragraph rhythm, and quoted non-prose constructs stay gap-free via
+// the construct-start check in gap_eligible (BQ-R-13). FrontMatter is not
+// here — it is excluded unconditionally (it can only sit at the doc top, and
+// its opening `---` must never take a gap when an edit transiently reparses).
 const NON_PROSE_CONTEXTS = new Set([
   'FencedCode',
   'CodeBlock',
-  'FrontMatter',
   'BlockMath',
   'HTMLBlock',
   'CommentBlock',
@@ -78,22 +79,28 @@ function gap_eligible(
   let outermost_list: { from: number } | null = null;
   let innermost_item: { from: number } | null = null;
   let outermost_quote: SyntaxNode | null = null;
+  let construct_start = false;
   for (let n = tree.resolveInner(probe, side); n; n = n.parent!) {
-    if (NON_PROSE_CONTEXTS.has(n.name)) return false;
+    if (n.name === 'FrontMatter') return false;
+    if (NON_PROSE_CONTEXTS.has(n.name)) {
+      // Interior lines of a non-prose construct own their spacing; the line
+      // the construct STARTS on joins the paragraph rhythm (ADR-0010), so the
+      // block as a whole separates from what precedes it. Each construct's
+      // theme renders that gap as clear space (background skips the padded
+      // band; see the per-construct `.plainmark-paragraph-gap` rules).
+      if (n.from < line.from) return false;
+      construct_start = true;
+    }
     if (n.name === 'ListItem' && innermost_item === null) innermost_item = n;
     if (LIST_CONTEXTS.has(n.name)) outermost_list = n;
     if (n.name === 'Blockquote') outermost_quote = n;
     if (!n.parent) break;
   }
-  if (outermost_quote !== null) {
-    // First line of the outermost quote (plain or callout): the block's outer
-    // breathing room stays --plainmark-blockquote-padding-y / the callout
-    // header padding — gap padding here would render as a fat tinted band
-    // above the quote's first paragraph, since .cm-line padding sits inside
-    // the background and margins are banned (height-map rule). Interior lines
-    // (any depth, quoted blanks) fall through to the prose/list rules, so
-    // deepening an interior line with another `>` never moves the layout.
-    if (outermost_quote.from >= line.from) return false;
+  if (outermost_quote !== null && outermost_quote.from < line.from) {
+    // Interior quote line. A quoted non-prose construct stays gap-free at any
+    // depth (BQ-R-13): the in-quote rhythm belongs to quoted prose, and the
+    // construct's own start-line gap applies only at the document level.
+    if (construct_start) return false;
     // First BODY line of a callout (the line right under the header): the
     // title→content seam stays the header's title-padding-bottom alone —
     // owner smoke rejected gap-sized spacing under the icon line (CALL-R-11).
@@ -102,6 +109,13 @@ function gap_eligible(
     if (line.from === header_line.to + 1 && detect_callout(state, outermost_quote) !== null)
       return false;
   }
+  // The FIRST line of the outermost quote (plain or callout header) is
+  // eligible like any construct start (ADR-0010, reversing ADR-0007's
+  // first-line exclusion): the gap renders as clear space above the block —
+  // the tint is bottom-anchored past the gap and the bars start below it
+  // (blockquote.ts / callout.ts), so no tinted band appears. It still
+  // composes with the list rules below (a quote opening inside a list item
+  // reads as that item's continuation).
   if (outermost_list === null || outermost_list.from >= line.from) return true;
   return innermost_item !== null && innermost_item.from < line.from;
 }
@@ -156,6 +170,12 @@ const paragraph_gap_theme = EditorView.theme({
   // tint and nesting bars span the padded box (bars are top:0/bottom:0 on the
   // line; the callout accent is a background gradient), so the gap renders as
   // in-quote space with unbroken chrome.
+  //
+  // Construct START lines (ADR-0010) take this same padding as their default;
+  // constructs that stack the gap on their own breathing room (quote first
+  // line, callout header, indented-code first, headings, HR) override it with
+  // (0,5,0) rules in their own themes — deliberately ABOVE this (0,4,0) so the
+  // stack never depends on theme source order.
   '.cm-line.plainmark-paragraph-gap.plainmark-paragraph-gap.plainmark-paragraph-gap': {
     paddingTop: 'var(--plainmark-paragraph-gap, 0.75em)',
   },

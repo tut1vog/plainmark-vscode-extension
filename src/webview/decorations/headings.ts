@@ -67,6 +67,16 @@ const headings_theme = EditorView.theme({
     paddingTop: 'var(--plainmark-heading-padding-top, 0.4em)',
     paddingBottom: 'var(--plainmark-heading-padding-bottom, 0.3em)',
   },
+  // ADR-0010: a gapped heading stacks the paragraph gap on its own padding.
+  // Both values resolve in the heading's em context, so larger headings
+  // breathe more — deliberate, matching rendered-markdown proportions.
+  // (0,5,0) beats the tripled paragraph-gap rule at (0,4,0) independent of
+  // theme source order.
+  '.cm-line.cm-line.cm-line.plainmark-h1.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h2.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h3.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h4.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h5.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h6.plainmark-paragraph-gap':
+    {
+      paddingTop:
+        'calc(var(--plainmark-paragraph-gap, 0.75em) + var(--plainmark-heading-padding-top, 0.4em))',
+    },
   // GitHub-style separator on h1 / h2 only.
   '.plainmark-h1, .plainmark-h2': {
     borderBottom:

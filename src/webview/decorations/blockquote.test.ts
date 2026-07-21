@@ -66,11 +66,15 @@ function snapshot(state: EditorState): DecoSnapshot[] {
   return out;
 }
 
-const line = (from: number, depth = 1): DecoSnapshot => ({
+// `first` — the OUTERMOST quote's first line carries plainmark-blockquote-first
+// (ADR-0010: the theme keys the block's paragraph-gap rendering on it). Every
+// doc in this file starts its (first) quote at offset 0, so it defaults from
+// that; a second quote's first line passes `true` explicitly.
+const line = (from: number, depth = 1, first = from === 0): DecoSnapshot => ({
   from,
   to: from,
   kind: 'line',
-  class: 'plainmark-blockquote plainmark-collapse-adjacent',
+  class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}`,
   depth,
 });
 const hide = (from: number, to: number): DecoSnapshot => ({
@@ -265,7 +269,7 @@ describe('BQ-E-5: two adjacent blockquotes separated by blank line', () => {
     expect(snapshot(make_state(doc, 4))).toEqual([
       line(0, 1),
       hide(0, 2),
-      line(5, 1),
+      line(5, 1, true),
       hide(5, 7),
     ]);
   });

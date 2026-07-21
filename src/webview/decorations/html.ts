@@ -80,6 +80,15 @@ function build_html_theme(): Record<string, Record<string, string>> {
       'font-family': inline_font,
       'font-size': inline_size,
     },
+    // ADR-0010: an HTML block's first line carries the paragraph gap above the
+    // block (padding-top from the tripled paragraph-gap rule; no competing
+    // padding here). The background bottom-anchors and stops short of the gap
+    // so it renders as clear space. Only the block's FIRST line can carry the
+    // gap class (interior lines are ineligible), so no marker class is needed.
+    '.plainmark-html-block.plainmark-paragraph-gap': {
+      'background-size': `calc(100% - ${margin_x}) calc(100% - var(--plainmark-paragraph-gap, 0.75em))`,
+      'background-position': `${margin_x} bottom`,
+    },
   };
 
   // Syntax-token color rules scoped under HTML chrome contexts — mirrors the

@@ -32,6 +32,18 @@ const horizontal_rule_theme = EditorView.theme({
     borderTop:
       'var(--plainmark-hr-width, 1px) solid var(--plainmark-hr-color, var(--vscode-textSeparator-foreground, var(--vscode-contrastBorder, currentColor)))',
   },
+  // ADR-0010: a gapped HR stacks the paragraph gap on its own padding
+  // ((0,5,0) beats the tripled paragraph-gap rule at (0,4,0) independent of
+  // source order) …
+  '.cm-line.cm-line.cm-line.plainmark-hr.plainmark-paragraph-gap': {
+    padding:
+      'calc(var(--plainmark-paragraph-gap, 0.75em) + var(--plainmark-hr-padding-y, 0.4em)) 0 var(--plainmark-hr-padding-y, 0.4em)',
+  },
+  // … and the drawn bar re-centres on the source glyph line: 50% of the now
+  // top-heavy padded box sits gap/2 above the content centre.
+  '.plainmark-hr.plainmark-paragraph-gap::before': {
+    top: 'calc(50% + var(--plainmark-paragraph-gap, 0.75em) / 2)',
+  },
 });
 
 export const horizontal_rule_extension = [

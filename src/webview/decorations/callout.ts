@@ -227,6 +227,21 @@ function build_callout_theme(): Record<string, Record<string, string>> {
       'margin-left': '0.25em',
       opacity: '0.6',
     },
+    // ADR-0010: a callout header (the block's first line) carries the
+    // paragraph gap above the box. The gap stacks on the header's own
+    // padding-y ((0,5,0) so it beats the tripled paragraph-gap rule at
+    // (0,4,0) independent of source order); both background layers (accent
+    // bar + tint, per-type rules below) anchor to the box bottom and stop
+    // short of the gap so it renders as clear space, not accent-tinted band.
+    '.cm-line.cm-line.plainmark-callout.plainmark-callout-header.plainmark-paragraph-gap': {
+      'padding-top': `calc(var(--plainmark-paragraph-gap, 0.75em) + ${padding_y})`,
+    },
+    // Geometry only — layer images stay with the per-type rules; sizes and
+    // positions are type-independent. (0,3,0) beats the per-type (0,2,0).
+    '.cm-line.plainmark-callout-header.plainmark-paragraph-gap': {
+      'background-size': `${border_width} calc(100% - var(--plainmark-paragraph-gap, 0.75em)), calc(100% - ${margin_x}) calc(100% - var(--plainmark-paragraph-gap, 0.75em))`,
+      'background-position': `${margin_x} bottom, ${margin_x} bottom`,
+    },
   };
 
   const chart_color_by_type: Record<CalloutType, string> = {

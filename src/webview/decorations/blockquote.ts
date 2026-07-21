@@ -57,15 +57,21 @@ export function quote_prefix_counts(line_text: string): { gt: number; ws: number
   return { gt, ws };
 }
 
-const depth_line_decorations = new Map<number, Decoration>();
+// Keyed `depth:first` — the outermost quote's FIRST line carries
+// `plainmark-blockquote-first` so the theme can render its paragraph gap
+// (ADR-0010) as clear space above the block: bottom-anchored tint, bars
+// starting below the gap. Interior lines keep the full-box tint.
+const depth_line_decorations = new Map<string, Decoration>();
 for (let d = 1; d <= MAX_DEPTH; d++) {
-  depth_line_decorations.set(
-    d,
-    Decoration.line({
-      class: 'plainmark-blockquote plainmark-collapse-adjacent',
-      attributes: { 'data-blockquote-depth': d.toString() },
-    }),
-  );
+  for (const first of [false, true]) {
+    depth_line_decorations.set(
+      `${d}:${first}`,
+      Decoration.line({
+        class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}`,
+        attributes: { 'data-blockquote-depth': d.toString() },
+      }),
+    );
+  }
 }
 
 // Per-line hanging-indent px: the line's literal `>`/whitespace prefix advance,
@@ -114,8 +120,13 @@ function quoted_list_indent_units(state: EditorState, line_from: number, line_te
 // a list line the indent adds `units` list-indent steps on top of the prefix
 // px (see quoted_list_indent_units). Cached per (depth, px, units).
 const indent_line_cache = new Map<string, Decoration>();
-function indent_line_decoration(depth: number, px: number, units: number): Decoration {
-  const key = `${depth}:${px}:${units}`;
+function indent_line_decoration(
+  depth: number,
+  px: number,
+  units: number,
+  first: boolean,
+): Decoration {
+  const key = `${depth}:${px}:${units}:${first}`;
   let deco = indent_line_cache.get(key);
   if (!deco) {
     const expr =
@@ -127,7 +138,7 @@ function indent_line_decoration(depth: number, px: number, units: number): Decor
         ? `padding-left:${expr};text-indent:calc(-1 * ${expr})`
         : `padding-left:${px}px;text-indent:-${px}px`;
     deco = Decoration.line({
-      class: 'plainmark-blockquote plainmark-collapse-adjacent',
+      class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}`,
       attributes: {
         'data-blockquote-depth': depth.toString(),
         style,
@@ -201,11 +212,19 @@ const blockquote_handler: NodeHandler = {
         units > 0 ? (quote_only_prefix_re.exec(line.text)?.[0] ?? line.text) : line.text,
       );
       // Inline measured indent once the probe has run; the class-only decoration
-      // (theme em fallback) covers the first frame before measurement.
+      // (theme em fallback) covers the first frame before measurement. `first`
+      // is safe to key on the handled node: the handler only runs for the
+      // OUTERMOST Blockquote (nested ones bail above).
+      const first = i === start_line;
       const deco =
         metrics.gt > 0
-          ? indent_line_decoration(clamped, hanging_indent_px(counts.gt, counts.ws, metrics), units)
-          : depth_line_decorations.get(clamped);
+          ? indent_line_decoration(
+              clamped,
+              hanging_indent_px(counts.gt, counts.ws, metrics),
+              units,
+              first,
+            )
+          : depth_line_decorations.get(`${clamped}:${first}`);
       if (deco) decorations.push(deco.range(line.from));
     }
 
@@ -244,13 +263,15 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
   const bar_width = 'var(--plainmark-blockquote-border-width, 4px)';
   const padding_y = 'var(--plainmark-blockquote-padding-y, 0.25em)';
   const text_gap = 'var(--plainmark-blockquote-text-gap, 0.5em)';
+  const gap = 'var(--plainmark-paragraph-gap, 0.75em)';
+  const tint =
+    'var(--plainmark-blockquote-background, color-mix(in srgb, var(--vscode-foreground) 5%, transparent))';
 
   const rules: Record<string, Record<string, string>> = {
     '.plainmark-blockquote': {
       color:
         'var(--plainmark-blockquote-color, color-mix(in srgb, var(--vscode-foreground, currentColor) 70%, transparent))',
-      'background-color':
-        'var(--plainmark-blockquote-background, color-mix(in srgb, var(--vscode-foreground) 5%, transparent))',
+      'background-color': tint,
       'font-style': 'var(--plainmark-blockquote-style, normal)' as 'normal',
       // Containing block for the per-marker bars: anchoring them to the LINE (not
       // the inline marker, whose box is one visual row) lets each bar span the
@@ -315,6 +336,31 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
       'padding-bottom': padding_y,
     };
   }
+
+  // ADR-0010: the outermost quote's first line carries the paragraph gap ABOVE
+  // the block. Because .cm-line padding sits inside the background (and margins
+  // are banned by the height-map rule), the gap must not paint as a tinted
+  // band: the tint moves from background-color to a bottom-anchored gradient
+  // that stops short of the gap, and the per-marker bars start below it. The
+  // quote's own padding-y stays stacked UNDER the gap so the block box keeps
+  // its symmetric breathing room (0.75em clear + 0.25em tinted).
+  // (0,5,0) — must beat the tripled gap rule (0,4,0) for padding-top and the
+  // per-depth rule (0,3,0) for padding-top, independent of source order.
+  rules['.cm-line.cm-line.plainmark-blockquote.plainmark-blockquote-first.plainmark-paragraph-gap'] =
+    {
+      'padding-top': `calc(${gap} + ${padding_y})`,
+      'background-color': 'transparent',
+      'background-image': `linear-gradient(${tint}, ${tint})`,
+      'background-size': `100% calc(100% - ${gap})`,
+      'background-position': '0 bottom',
+      'background-repeat': 'no-repeat',
+    };
+  rules[
+    '.plainmark-blockquote-first.plainmark-paragraph-gap .plainmark-quote-marker::before, .plainmark-blockquote-first.plainmark-paragraph-gap .plainmark-quote-marker-revealed::before'
+  ] = {
+    // Bars meet the tint edge exactly — top:0 would poke into the clear gap.
+    top: gap,
+  };
 
   return rules;
 }

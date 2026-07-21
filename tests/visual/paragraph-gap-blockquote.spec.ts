@@ -3,16 +3,18 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
-// Guards PARA-R-7 as amended by ADR-0007, and its construct mirrors BQ-R-13
-// (quote interiors) and CALL-R-11 (callout bodies): quote and callout
+// Guards PARA-R-7 as amended by ADR-0007/ADR-0010, and its construct mirrors
+// BQ-R-13 (quote interiors) and CALL-R-11 (callout bodies): quote and callout
 // interiors share the prose paragraph rhythm. Interior blockquote lines (any
 // depth), quoted blank lines, callout body lines (minus the first, under the
 // header), and quoted list continuations carry the paragraph gap; the first
-// line of the outermost quote keeps only the block's own padding (no tinted
-// band above the first paragraph), quoted list marker lines keep tight item
-// spacing, and quoted non-prose constructs stay excluded. The
+// line of the outermost quote ALSO carries it when the block is below other
+// content (ADR-0010 — rendered as clear space above the block, tint and bars
+// anchored past it), but never on doc line 1. Quoted list marker lines keep
+// tight item spacing, and quoted non-prose constructs stay excluded. The
 // computed-padding cases pin the (0,4,0) tripled-class cascade win over the
-// blockquote per-depth and callout-body padding rules.
+// blockquote per-depth and callout-body padding rules, and the (0,5,0)
+// first-line stack over the tripled rule.
 
 const GAP_CLASS = 'plainmark-paragraph-gap';
 
@@ -60,8 +62,53 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7 / ADR-0007)', 
     expect(await gap_flags('> a\n>\n> b')).toEqual([false, true, true]);
   });
 
-  it('a quote after a paragraph keeps its first line gap-free (block padding only)', async () => {
-    expect(await gap_flags('para\n> a')).toEqual([false, false]);
+  it('a quote after a paragraph carries the gap on its first line (ADR-0010)', async () => {
+    expect(await gap_flags('para\n> a')).toEqual([false, true]);
+  });
+
+  it('a gapped quote first line stacks gap + padding-y and bottom-anchors the tint', async () => {
+    const lines = await mount('para\n> a');
+    // (0,5,0) first-line rule: 12px gap + 4px padding-y = 16px.
+    expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(16, 0);
+    // The tint skips the gap: bottom-anchored, sized short of the box. The
+    // tint COLOR can't be asserted headlessly (the --vscode-* vars the
+    // color-mix reads exist only in the real webview), so pin the geometry.
+    const style = getComputedStyle(lines[1]);
+    expect(style.backgroundPosition.split(' ')[1]).toBe('100%');
+    expect(style.backgroundSize).toContain('calc');
+  });
+
+  it('a callout after a paragraph carries the gap on its header (ADR-0010)', async () => {
+    expect(await gap_flags('para\n> [!note] t\n> body')).toEqual([false, true, false]);
+  });
+
+  it('a gapped callout header stacks gap + padding-y', async () => {
+    const lines = await mount('para\n> [!note] t\n> body');
+    // (0,5,0) header rule: 12px gap + 8px callout padding-y = 20px.
+    expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(20, 0);
+  });
+
+  it('adjacent quote/callout lines stay one merged block: no first-line class inside', async () => {
+    // `[!note]` mid-quote is body text, not a new callout — the block must not
+    // split: line 2 takes the interior (tinted) gap, and only line 1 carries
+    // plainmark-blockquote-first.
+    const lines = await mount('> a\n> [!note] x');
+    expect(lines[0].classList.contains('plainmark-blockquote-first')).toBe(true);
+    expect(lines[1].classList.contains('plainmark-blockquote-first')).toBe(false);
+    expect(lines[1].classList.contains(GAP_CLASS)).toBe(true);
+    // Interior line keeps the full-box tint: the interior gap is the plain
+    // tripled-rule 12px, not the first-line 16px stack, and no bottom-anchor
+    // applies (background-position keeps its default 0%).
+    expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(12, 0);
+    expect(getComputedStyle(lines[1]).backgroundPosition.split(' ')[1]).toBe('0%');
+  });
+
+  it('stacked callout headers do not split the block either', async () => {
+    // Only a quote's FIRST line is callout-detected; a second `[!type]` line
+    // renders as body of the first callout, merged.
+    const lines = await mount('> [!note] a\n> [!tip] b');
+    expect(lines[1].classList.contains('plainmark-callout-header')).toBe(false);
+    expect(lines[1].classList.contains('plainmark-callout-body')).toBe(true);
   });
 
   it('quoted lists follow the unquoted rules: marker lines tight, continuation gapped', async () => {

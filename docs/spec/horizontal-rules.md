@@ -29,8 +29,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **HR-R-5** — Rendering MUST be reveal-agnostic: there is no caret-on-line vs caret-off-line axis. The decoration and `::before` bar are emitted identically regardless of caret position.
   _Example:_ `---` renders the same bar whether the caret is elsewhere or sitting inside the `---` line.
 
-- **HR-R-6** `[smoke]` — Vertical spacing around the rule MUST be applied as `padding` (not `margin`) on the `plainmark-hr` line, driven by `--plainmark-hr-padding-y` (default `0.4em`) on the block axis with zero inline padding, so CM6's `.cm-line` height map measures the spacing.
-  _Example:_ `text\n---\ntext` shows even gaps above and below the bar; the gap is part of the rule's measured line height, not collapsing margin.
+- **HR-R-6** `[smoke]` — Vertical spacing around the rule MUST be applied as `padding` (not `margin`) on the `plainmark-hr` line, driven by `--plainmark-hr-padding-y` (default `0.4em`) on the block axis with zero inline padding, so CM6's `.cm-line` height map measures the spacing. A non-doc-top rule additionally stacks the paragraph gap on its padding-top (PARA-R-7, ADR-0010; (0,5,0) over the tripled gap rule), and the drawn bar re-centres on the source glyph line via `top: calc(50% + gap / 2)` — plain `top: 50%` of the now top-heavy padded box would sit the bar `gap / 2` above the hidden `---` bytes.
+  _Example:_ `text\n***\ntext` shows a paragraph gap plus `padding-y` above the bar and `padding-y` below it; the bar stays centred on its own source line.
 
 - **HR-R-7** — The bar's thickness MUST come from `--plainmark-hr-width` (default `1px`) and its colour from `--plainmark-hr-color`, which defaults through `--vscode-textSeparator-foreground` → `--vscode-contrastBorder` → `currentColor`.
   _Example:_ overriding `--plainmark-hr-color: red` repaints the bar red; with no override it follows the active VS Code theme's separator colour.
@@ -69,7 +69,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
   _Example:_ `-----` and `**********` each render the same single rule as `---`.
 
 - **HR-E-5** `[smoke]` — An empty line immediately adjacent to the rule MUST collapse via the shared `plainmark-collapse-adjacent` class (the same trap-line collapse used by blockquotes), so the rule does not accrue a doubled vertical gap from a neighbouring blank line.
-  _Example:_ `text\n\n---\n` — the blank line above the rule collapses to ~0px when the caret is off it, leaving the rule's own `padding-y` as the sole gap.
+  _Example:_ `text\n\n---\n` — the blank line above the rule collapses to ~0px when the caret is off it, leaving the rule's own padding (paragraph gap + `padding-y`, HR-R-6) as the sole gap.
 
 - **HR-E-6** — The rule line decoration MUST be anchored at the line start derived from the node's `from` (`doc.lineAt(node.from).from`), so leading-whitespace variants still decorate the whole line.
   _Example:_ a thematic break parsed with a small leading indent still receives the `plainmark-hr` line decoration on its line.

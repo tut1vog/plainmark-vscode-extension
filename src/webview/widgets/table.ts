@@ -494,6 +494,11 @@ export class TableWidget extends WidgetType {
     readonly image_base: string | null,
     readonly math_fingerprint: string,
     readonly content_signature: string,
+    // ADR-0010: a table below other content carries the paragraph gap as extra
+    // widget padding-top (class `plainmark-block-gap-above`); a doc-top table
+    // does not. In eq() so an edit that moves the table across the doc-top
+    // boundary redraws the widget.
+    readonly gap_above: boolean = false,
   ) {
     super();
   }
@@ -505,7 +510,8 @@ export class TableWidget extends WidgetType {
       other.table.col_count === this.table.col_count &&
       alignment_signature(other.table.alignment) === alignment_signature(this.table.alignment) &&
       other.math_fingerprint === this.math_fingerprint &&
-      other.content_signature === this.content_signature
+      other.content_signature === this.content_signature &&
+      other.gap_above === this.gap_above
     );
   }
 
@@ -517,7 +523,9 @@ export class TableWidget extends WidgetType {
 
   toDOM(view: EditorView): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'plainmark-table-block';
+    container.className = this.gap_above
+      ? 'plainmark-table-block plainmark-block-gap-above'
+      : 'plainmark-table-block';
     container.dataset.tableFrom = String(this.table.from);
     set_container_widget(container, this);
     try {
@@ -1058,10 +1066,11 @@ function build_table_decorations(state: EditorState): DecorationSet {
             info.to,
           );
           const csig = content_signature(info.cells, state.doc);
+          const gap_above = state.doc.lineAt(info.from).number > 1;
           ranges.push(
             Decoration.replace({
               block: true,
-              widget: new TableWidget(info, cache, image_base, fingerprint, csig),
+              widget: new TableWidget(info, cache, image_base, fingerprint, csig, gap_above),
             }).range(info.from, info.to),
           );
         } catch (reason) {
@@ -1100,6 +1109,12 @@ const table_theme = EditorView.theme({
     width: '100%',
     maxWidth: '100%',
     padding: 'var(--plainmark-table-margin, 0.5em 0)',
+  },
+  // ADR-0010: a non-doc-top table stacks the paragraph gap on its own top
+  // breathing room. The 0.5em literal mirrors --plainmark-table-margin's
+  // default top component (a shorthand var's component can't be referenced).
+  '.plainmark-table-block.plainmark-block-gap-above': {
+    paddingTop: 'calc(var(--plainmark-paragraph-gap, 0.75em) + 0.5em)',
   },
   '.plainmark-table-block table': {
     borderCollapse: 'collapse',

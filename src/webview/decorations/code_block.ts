@@ -246,6 +246,29 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
     '.plainmark-indented-code-last': {
       'padding-bottom': padding_y,
     },
+    // ADR-0010: the opening fence line carries the paragraph gap above the
+    // block (padding-top from the tripled paragraph-gap rule — the header has
+    // no competing padding). The code background bottom-anchors and stops
+    // short of the gap so it renders as clear space; the reserved fence line
+    // stays the block's tinted top band below it. Only a fence's FIRST line
+    // can carry the gap class (interior lines are ineligible), so no extra
+    // marker class is needed.
+    '.plainmark-fenced-code-header.plainmark-paragraph-gap': {
+      'background-size': `calc(100% - ${margin_x}) calc(100% - var(--plainmark-paragraph-gap, 0.75em))`,
+      'background-position': `${margin_x} bottom`,
+    },
+    // The language label pins to the top of the TINTED band, not the padded box.
+    '.plainmark-fenced-code-header.plainmark-paragraph-gap::before': {
+      top: 'calc(0.25em + var(--plainmark-paragraph-gap, 0.75em))',
+    },
+    // Indented code: gap stacks on the block's own tinted top padding
+    // ((0,5,0) beats the tripled gap rule at (0,4,0) independent of source
+    // order); background skips the gap like the fenced header.
+    '.cm-line.cm-line.cm-line.plainmark-indented-code-first.plainmark-paragraph-gap': {
+      'padding-top': `calc(var(--plainmark-paragraph-gap, 0.75em) + ${padding_y})`,
+      'background-size': `calc(100% - ${margin_x}) calc(100% - var(--plainmark-paragraph-gap, 0.75em))`,
+      'background-position': `${margin_x} bottom`,
+    },
     '.plainmark-fenced-code-header::before': {
       content: 'attr(data-language)',
       position: 'absolute',
