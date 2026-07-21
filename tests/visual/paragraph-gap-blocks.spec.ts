@@ -99,9 +99,10 @@ describe('paragraph gap above block constructs (PARA-R-7 / ADR-0010)', () => {
     it('a heading after a paragraph carries the gap, stacked on its own padding', async () => {
       expect(await gap_flags('para\n# h')).toEqual([false, true]);
       const lines = await mount('para\n# h');
-      // (0,5,0) heading stack, resolved in the h1 em context (32px font):
-      // (0.75em + 0.4em) * 32px = 36.8px.
-      expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(36.8, 0);
+      // (0,5,0) heading stack (ADR-0011): the gap component holds at the base
+      // font (0.75em / 2 cancels the h1 em context), only the heading's own
+      // breathing scales: (0.75/2 + 0.4) * 32px = 12px + 12.8px = 24.8px.
+      expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(24.8, 0);
     });
 
     it('adjacent headings keep a single (gap-sourced) seam', async () => {

@@ -67,16 +67,40 @@ const headings_theme = EditorView.theme({
     paddingTop: 'var(--plainmark-heading-padding-top, 0.4em)',
     paddingBottom: 'var(--plainmark-heading-padding-bottom, 0.3em)',
   },
-  // ADR-0010: a gapped heading stacks the paragraph gap on its own padding.
-  // Both values resolve in the heading's em context, so larger headings
-  // breathe more — deliberate, matching rendered-markdown proportions.
-  // (0,5,0) beats the tripled paragraph-gap rule at (0,4,0) independent of
-  // theme source order.
-  '.cm-line.cm-line.cm-line.plainmark-h1.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h2.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h3.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h4.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h5.plainmark-paragraph-gap, .cm-line.cm-line.cm-line.plainmark-h6.plainmark-paragraph-gap':
-    {
-      paddingTop:
-        'calc(var(--plainmark-paragraph-gap, 0.75em) + var(--plainmark-heading-padding-top, 0.4em))',
-    },
+  // ADR-0011 (amending ADR-0010): a gapped heading stacks the paragraph gap
+  // on its own padding, but the GAP component holds at the base font size —
+  // each level divides the gap by its default size scale to cancel the
+  // heading's em context (owner rejected the proportional stack: 2.3em of
+  // base on h1 read as an extremely wide top band). Only the heading's own
+  // breathing (--plainmark-heading-padding-top) still scales. The divisors
+  // hard-code the default --plainmark-h<n>-size scales; a themed size
+  // diverges from the gap — accepted, same class as ADR-0010's table/math
+  // shorthand hard-coding. (0,5,0) beats the tripled paragraph-gap rule at
+  // (0,4,0) independent of theme source order.
+  '.cm-line.cm-line.cm-line.plainmark-h1.plainmark-paragraph-gap': {
+    paddingTop:
+      'calc(var(--plainmark-paragraph-gap, 0.75em) / 2 + var(--plainmark-heading-padding-top, 0.4em))',
+  },
+  '.cm-line.cm-line.cm-line.plainmark-h2.plainmark-paragraph-gap': {
+    paddingTop:
+      'calc(var(--plainmark-paragraph-gap, 0.75em) / 1.5 + var(--plainmark-heading-padding-top, 0.4em))',
+  },
+  '.cm-line.cm-line.cm-line.plainmark-h3.plainmark-paragraph-gap': {
+    paddingTop:
+      'calc(var(--plainmark-paragraph-gap, 0.75em) / 1.25 + var(--plainmark-heading-padding-top, 0.4em))',
+  },
+  '.cm-line.cm-line.cm-line.plainmark-h4.plainmark-paragraph-gap': {
+    paddingTop:
+      'calc(var(--plainmark-paragraph-gap, 0.75em) + var(--plainmark-heading-padding-top, 0.4em))',
+  },
+  '.cm-line.cm-line.cm-line.plainmark-h5.plainmark-paragraph-gap': {
+    paddingTop:
+      'calc(var(--plainmark-paragraph-gap, 0.75em) / 0.875 + var(--plainmark-heading-padding-top, 0.4em))',
+  },
+  '.cm-line.cm-line.cm-line.plainmark-h6.plainmark-paragraph-gap': {
+    paddingTop:
+      'calc(var(--plainmark-paragraph-gap, 0.75em) / 0.85 + var(--plainmark-heading-padding-top, 0.4em))',
+  },
   // GitHub-style separator on h1 / h2 only.
   '.plainmark-h1, .plainmark-h2': {
     borderBottom:
