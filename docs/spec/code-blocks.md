@@ -18,8 +18,9 @@ in monospace with background chrome; syntax coloring layers on top via the
 `HighlightStyle`. No widget replaces the block; no source byte is rewritten. The
 fence lines themselves hide by default (Typora-style) and reveal when the caret
 or selection enters the block (MRS-R-2/MRS-R-4). A language label is painted
-top-right from the raw info string. There is no copy button. Two editing affordances (Enter auto-close,
-Backspace delete-empty-block) are provided.
+top-right from the raw info string. There is no copy button. Editing affordances:
+a type-triggered fence auto-pair, Enter auto-close, Backspace delete-empty-block,
+and a fence-tag autocomplete.
 
 Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README §2).
 

@@ -8,6 +8,7 @@ to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Language suggestions when typing a code fence** — typing a language after ` ``` ` or `~~~` now pops an autocomplete list of every language the editor can highlight, filtered as you type, including shorthands like `py`, `wasm`, and `assembly`, plus `mermaid` for diagrams. A bare ` ``` ` stays quiet so Enter still drops you straight into the block; press Ctrl+Space there to browse the full list.
 - **Common code-fence language shorthands now highlight** — tags like ` ```asm `/` ```assembly `, ` ```wasm `, ` ```py `, ` ```rs `, ` ```golang `, ` ```docker `, ` ```matlab `, ` ```vb `, ` ```jsonc `, and some forty in total now get syntax colors from the grammars the extension already bundles, instead of rendering as plain monospace; the label in the block's corner still shows exactly what you typed. (Intel-syntax assembly is colored by a GNU-assembler grammar, so its coloring is approximate.)
 
 ### Fixed
