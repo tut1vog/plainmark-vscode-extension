@@ -4,6 +4,18 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [1.6.2] - 2026-07-21
+
+### Added
+
+- **Images render beside text** — an image on a line directly above or below text now renders, instead of staying raw `![...](...)` markup; previously it displayed only when alone in its own paragraph. Images inside bullet, numbered, and task lists render too, unless the image shares a line with the list marker. Images in quotes and callouts stay as source.
+- **Images stay visible while you edit the path** — clicking into an image line still reveals its source for editing, but now shows a live preview directly below it instead of hiding the picture.
+
+### Fixed
+
+- **The gap above a heading is no longer oversized** — 1.6.0 scaled each heading's top gap with its own font size, running to roughly three times the normal paragraph gap; it now matches the standard gap at every level. (1.6.1 announced this fix but did not contain it.)
+- **Images take the normal paragraph gap above them** — a rendered image sat flush against the line above instead of using the same block spacing as code blocks, tables, and math.
+
 ## [1.6.1] - 2026-07-21
 
 ### Fixed
