@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
+import { ime_commit, ime_insert_text } from './tests/visual/commands/ime.js';
 
 export default defineConfig({
   publicDir: 'node_modules/@mathjax/mathjax-newcm-font/chtml',
@@ -24,6 +25,7 @@ export default defineConfig({
       provider: playwright(),
       instances: [{ browser: 'chromium' }],
       headless: true,
+      commands: { ime_commit, ime_insert_text },
     },
   },
 });
