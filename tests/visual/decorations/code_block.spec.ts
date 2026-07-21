@@ -150,4 +150,22 @@ describe('fenced code block — syntax highlighting CBLK-R-10 CBLK-R-12', () => 
 
     expect(getComputedStyle(keyword).color).toBe('rgb(86, 156, 214)');
   });
+
+  it('resolves an aliased fence tag through the alias layer CBLK-R-16', async () => {
+    // ```asm has no @codemirror/language-data entry of its own; the alias
+    // layer maps it onto the bundled Gas grammar. The `# exit` comment can
+    // only be tokenized by that nested grammar (markdown's own fence/info
+    // tokens are tagged meta), so its appearance proves the end-to-end
+    // wiring: info string → match_code_language → wrapper load → overlay.
+    const doc = '```asm\nmovl $1, %eax  # exit\n```';
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 0);
+    let span = h.container.querySelector('.plainmark-syntax-comment');
+    for (let i = 0; i < 200 && !span; i++) {
+      await wait_frames(1);
+      span = h.container.querySelector('.plainmark-syntax-comment');
+    }
+    expect(span, 'aliased-grammar comment token never appeared').not.toBeNull();
+    expect(span!.textContent).toContain('# exit');
+  });
 });

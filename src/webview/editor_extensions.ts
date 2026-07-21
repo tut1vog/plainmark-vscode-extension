@@ -1,13 +1,13 @@
 import { autocompletion } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab, redo } from '@codemirror/commands';
 import { indentUnit, syntaxHighlighting } from '@codemirror/language';
-import { languages } from '@codemirror/language-data';
 import { insertNewlineContinueMarkupCommand, markdown } from '@codemirror/lang-markdown';
 import { GFM } from '@lezer/markdown';
 import { type Extension, Prec } from '@codemirror/state';
 import { EditorView, drawSelection, keymap } from '@codemirror/view';
 import { search, searchKeymap } from '@codemirror/search';
 import { oracle_line_height_pin } from './oracle_line_height_pin.js';
+import { match_code_language } from './language_aliases.js';
 import { image_paste_extension } from './image_paste.js';
 import {
   block_delimiter_autoclose,
@@ -249,7 +249,7 @@ const editor_extensions_core: Extension[] = [
     ]),
   ),
   markdown({
-    codeLanguages: languages,
+    codeLanguages: match_code_language,
     extensions: [GFM, math_grammar_extension, footnote_grammar_extension, frontmatter_grammar_extension],
   }),
   syntaxHighlighting(plainmark_highlight_style),
