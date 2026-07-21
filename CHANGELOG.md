@@ -4,6 +4,12 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Links and images to paths containing spaces now open** — Markdown's two spellings for a spaced path, `[text](<my file.pdf>)` and `[text](my%20file.pdf)`, rendered as links but Cmd/Ctrl+click failed to find the file, and an image written with angle brackets did not display; both spellings now resolve to the actual file. A path with raw unencoded spaces is not a valid Markdown link and stays plain text, as on GitHub.
+
 ## [1.5.1] - 2026-07-20
 
 ### Changed
