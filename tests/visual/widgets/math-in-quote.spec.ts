@@ -55,6 +55,39 @@ describe('quote-nested block math — rendered widget, byte safety', () => {
     // No residual stub: the quote line must not be a bare `> ` next to an
     // out-of-quote widget (the pre-fix breakage).
     expect((quote_line?.textContent ?? '').trim()).not.toBe('>');
+    // VISIBLE, not merely present: the zero-width regression rendered the
+    // widget at 0px (marker-metrics poisoning collapsed the line content box).
+    const widget = container.querySelector<HTMLElement>('.plainmark-math-block')!;
+    expect(widget.getBoundingClientRect().width).toBeGreaterThan(100);
+    // The line-level quote bar substitutes for the per-marker bar (which
+    // cannot draw — the marker is inside the replaced range). The bar color
+    // chain resolves only where --vscode-foreground exists (production), so
+    // assert the pseudo-element's existence and bar-width geometry instead.
+    const before = getComputedStyle(quote_line as HTMLElement, '::before');
+    expect(before.content).toBe('""');
+    expect(parseFloat(before.width)).toBeGreaterThan(0);
+  });
+
+  it('marker-metrics poisoning regression: prose above, math line is the only quote', async () => {
+    // The probe's first-in-viewport QuoteMark sits INSIDE the replaced range;
+    // measuring it via coordsAtPos returned the widget's box edges (~the full
+    // line width) as the `>` advance, which became the line's padding-left
+    // and collapsed the widget to width 0.
+    const doc = 'before math in blockquote\n> $$\\frac{a}{b}$$\nafter math';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await expect
+      .poll(() => container.querySelectorAll('.plainmark-math-block mjx-container').length, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBeGreaterThan(0);
+    // Let the probe's retry/measure cycles settle before judging.
+    await frames(12);
+    const widget = container.querySelector<HTMLElement>('.plainmark-math-block')!;
+    expect(widget.getBoundingClientRect().width).toBeGreaterThan(100);
+    const line = widget.parentElement as HTMLElement;
+    expect(parseFloat(getComputedStyle(line).paddingLeft)).toBeLessThan(100);
   });
 
   it('renders with the caret parked at offset 0 — the file-open state', async () => {

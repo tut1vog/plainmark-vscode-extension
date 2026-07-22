@@ -337,6 +337,34 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
     };
   }
 
+  // A quote line whose content is a quote-nested math widget (MATH-E-13) has
+  // its `>` markers inside the replaced range — the per-marker bars above
+  // cannot draw. The LINE's own ::before carries the bars instead: one bar
+  // per depth on the em-fallback grid (the true per-marker x positions do not
+  // exist — no markers are rendered). `:has()` is supported by both hosts
+  // (Electron / evergreen browsers).
+  for (let n = 1; n <= MAX_DEPTH; n++) {
+    rules[
+      `.plainmark-blockquote[data-blockquote-depth="${n}"]:has(> .plainmark-math-block)::before`
+    ] = {
+      content: '""',
+      position: 'absolute',
+      top: '0',
+      bottom: '0',
+      left: '0',
+      width: `calc(${n - 1} * ${indent} + ${bar_width})`,
+      background: `repeating-linear-gradient(to right, ${bar_color} 0, ${bar_color} ${bar_width}, transparent ${bar_width}, transparent ${indent})`,
+      'pointer-events': 'none',
+    };
+  }
+  // First-line paragraph gap (ADR-0010): the widget-line bar starts below the
+  // clear gap, mirroring the per-marker rule further down.
+  rules[
+    '.plainmark-blockquote-first.plainmark-paragraph-gap:has(> .plainmark-math-block)::before'
+  ] = {
+    top: gap,
+  };
+
   // ADR-0010: the outermost quote's first line carries the paragraph gap ABOVE
   // the block. Because .cm-line padding sits inside the background (and margins
   // are banned by the height-map rule), the gap must not paint as a tinted
@@ -418,26 +446,41 @@ const blockquote_caret_remeasure = ViewPlugin.fromClass(
 // what stops a tight `>text` first line — whose marker has no trailing space — from
 // poisoning the metric (which previously zeroed the space advance for every line).
 
-// The first `>` marker in the viewport: `from`/`gt_to` bound the `>` glyph.
+// True when the marker position maps to a literal `>` text node in the DOM.
+// A QuoteMark covered by a replace decoration (the quote-nested math widget,
+// MATH-E-13) maps to the widget element instead, and coordsAtPos across it
+// returns the WIDGET's box edges — the probe would record the widget's full
+// width as the "glyph advance", the line's padding-left would swallow the
+// content box, and the widget would lay out at width 0 (invisible math, no
+// quote chrome). Only text-backed markers are measurable.
+function marker_is_text(view: EditorView, from: number): boolean {
+  const dom = view.domAtPos(from);
+  if (dom.node.nodeType !== Node.TEXT_NODE) return false;
+  const text = (dom.node as Text).data;
+  return text.charAt(dom.offset) === '>' || text.charAt(Math.max(0, dom.offset - 1)) === '>';
+}
+
+// The first MEASURABLE `>` marker in the viewport: `from`/`gt_to` bound the
+// `>` glyph; markers hidden inside replaced ranges are skipped.
 function first_quote_mark(view: EditorView): { from: number; gt_to: number } | null {
   const tree = syntaxTree(view.state);
   for (const { from: vf, to: vt } of view.visibleRanges) {
-    let mark_from = -1;
-    let mark_to = -1;
+    let found: { from: number; gt_to: number } | null = null;
     tree.iterate({
       from: vf,
       to: vt,
       enter(node) {
-        if (mark_from >= 0) return false;
+        if (found) return false;
         if (node.name === 'QuoteMark') {
-          mark_from = node.from;
-          mark_to = node.to;
+          if (marker_is_text(view, node.from)) {
+            found = { from: node.from, gt_to: node.to };
+          }
           return false;
         }
         return undefined;
       },
     });
-    if (mark_from >= 0) return { from: mark_from, gt_to: mark_to };
+    if (found) return found;
   }
   return null;
 }
@@ -470,6 +513,13 @@ const blockquote_marker_width_probe = ViewPlugin.fromClass(
           const x0 = view.coordsAtPos(qm.from);
           const x1 = view.coordsAtPos(qm.gt_to);
           if (!x0 || !x1) return { gt: 0, space: 0 };
+          // Sanity bound: a `>` glyph or space advance is at most a few
+          // character widths. Anything larger means the coords straddled a
+          // widget or wrapped-row boundary — poisoned, treat as unmeasured
+          // rather than letting it become every quote line's padding-left.
+          const max_advance = view.defaultCharacterWidth * 4;
+          const gt = x1.left - x0.left;
+          if (gt <= 0 || gt > max_advance) return { gt: 0, space: 0 };
           const line = view.state.doc.lineAt(qm.from);
           const space_idx = line.text.indexOf(' ', qm.gt_to - line.from);
           let space = 0;
@@ -478,8 +528,9 @@ const blockquote_marker_width_probe = ViewPlugin.fromClass(
             const a = view.coordsAtPos(sp);
             const b = view.coordsAtPos(sp + 1);
             if (a && b) space = b.left - a.left;
+            if (space < 0 || space > max_advance) space = 0;
           }
-          return { gt: x1.left - x0.left, space };
+          return { gt, space };
         },
         write: (m: MarkerMetrics) => {
           if (m.gt <= 0) {
