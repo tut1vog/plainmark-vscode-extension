@@ -109,8 +109,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **BQ-E-8** — Tight nesting (`>>foo`, `>>> a`) MUST parse and render identically to its spaced equivalent.
   _Example:_ `>>foo` renders like `> > foo` (depth 2); `>>> a` like `> > > a` (depth 3).
 
-- **BQ-E-9** `[smoke]` — A list or code fence inside a blockquote MUST compose: blockquote chrome wraps the inner construct's rendering. For lists the composed geometry contract is LIST-R-11 (depth-driven marker step, quote bar and hanging indent intact) plus BQ-R-12's list-marker-line branch; Tab nesting inside the quote is LIST-I-14. Display math (`$$…$$`) is the known exception — it does NOT render inside a blockquote (cross-ref `math.md` MATH-E-13); inline math (`$…$`) does.
-  _Example:_ `> - item` → blockquote chrome with a rendered bullet inside, the bullet at the quote text column; `> $$\na\n> $$` → no typeset block (MATH-E-13); `> $x$` → inline math renders.
+- **BQ-E-9** `[smoke]` — A list, code fence, or math block inside a blockquote MUST compose: blockquote chrome wraps the inner construct's rendering. For lists the composed geometry contract is LIST-R-11 (depth-driven marker step, quote bar and hanging indent intact) plus BQ-R-12's list-marker-line branch; Tab nesting inside the quote is LIST-I-14. Display math (`$$…$$`) renders inside the quote chrome as a non-block whole-line replace with quote-stripped TeX (cross-ref `math.md` MATH-E-13, ADR-0014); inline math (`$…$`) renders as usual.
+  _Example:_ `> - item` → blockquote chrome with a rendered bullet inside, the bullet at the quote text column; `> $$\n> a\n> $$` → typeset `a` inside the quote chrome (MATH-E-13); `> $x$` → inline math renders.
 
 - **BQ-E-10** — On a `> [!TYPE]` line the callout decoration MUST take over the header chrome and suppress `data-blockquote-depth`; plain blockquotes MUST still receive multi-bar chrome (cross-ref `callouts.md`).
   _Example:_ `> [!NOTE]` → callout header (no `data-blockquote-depth`); `> plain` → normal depth-1 bar chrome.

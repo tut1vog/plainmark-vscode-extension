@@ -233,14 +233,71 @@ describe('math_widgets_field — block decoration emission MATH-R-2 MATH-I-2 MAT
     expect(decos[0].widget.src).toBe('x = y');
   });
 
-  it('emits NO replace widget for a single-line block nested in a blockquote (MATH-E-13)', () => {
-    const state = make_state('> $$x = y$$\n\ntail');
+  it('emits a NON-block whole-line replace for a single-line block in a blockquote (MATH-E-13)', () => {
+    const doc = '> $$x = y$$\n\ntail';
+    const state = make_state(doc);
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].block).toBe(false);
+    expect(decos[0].from).toBe(0);
+    expect(decos[0].to).toBe(doc.indexOf('\n'));
+    expect(decos[0].widget.display).toBe(true);
+    expect(decos[0].widget.src).toBe('x = y');
+    // The quote's own first-line logic carries the gap (ADR-0010), not the widget.
+    expect(decos[0].widget.gap_above).toBe(false);
+  });
+
+  it('emits a NON-block replace with `> `-stripped source for a multi-line quoted block (MATH-E-13)', () => {
+    const doc = '> $$\n> a = b\n> $$\n\ntail';
+    const state = make_state(doc);
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].block).toBe(false);
+    expect(decos[0].from).toBe(0);
+    expect(decos[0].to).toBe(doc.indexOf('\n\ntail'));
+    expect(decos[0].widget.src).toBe('a = b');
+  });
+
+  it('strips every level of a nested-quote block source (MATH-E-13)', () => {
+    const state = make_state('> > $$\n> > a = b\n> > $$\n\ntail');
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].widget.src).toBe('a = b');
+  });
+
+  it('renders a lazy-continuation quoted block (prefix on the opener line only)', () => {
+    const state = make_state('> $$\na = b\n$$\n\ntail');
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].block).toBe(false);
+    expect(decos[0].widget.src).toBe('a = b');
+  });
+
+  it('emits the caret-inside preview with `> `-stripped source for a quoted block (MATH-I-6)', () => {
+    const state = make_state('> $$\n> a = b\n> $$\n\ntail', 8);
+    expect(decorations(state)).toHaveLength(0);
+    let preview: MathBlockPreviewWidget | null = null;
+    state.field(math_widgets_field).between(0, state.doc.length, (_from, _to, deco) => {
+      const w = (deco.spec as { widget?: unknown }).widget;
+      if (w instanceof MathBlockPreviewWidget) preview = w;
+    });
+    expect(preview).not.toBeNull();
+    expect((preview as unknown as MathBlockPreviewWidget).src).toBe('a = b');
+  });
+
+  it('reveals when the caret sits on the quote prefix of a replaced line (widget-range overlap)', () => {
+    // Caret at offset 1 — inside the `> ` prefix, outside the node range but
+    // inside the whole-line widget range: the source must reveal (preview mode).
+    const state = make_state('> $$x = y$$\n\ntail', 1);
     expect(decorations(state)).toHaveLength(0);
   });
 
-  it('emits NO replace widget for a multi-line block nested in a blockquote (MATH-E-13)', () => {
-    const state = make_state('> $$\n> a = b\n> $$\n\ntail');
-    expect(decorations(state)).toHaveLength(0);
+  it('renders a block in a callout body (quote margins, MATH-E-13)', () => {
+    const state = make_state('> [!NOTE]\n> $$x = y$$\n\ntail');
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].block).toBe(false);
+    expect(decos[0].widget.src).toBe('x = y');
   });
 
   it('emits NO replace widget for a block nested in a list item (partial-line range)', () => {

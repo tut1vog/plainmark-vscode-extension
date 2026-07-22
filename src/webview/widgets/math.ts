@@ -1,4 +1,5 @@
 import { syntaxTree } from '@codemirror/language';
+import type { SyntaxNode } from '@lezer/common';
 import {
   type EditorState,
   type Range,
@@ -313,6 +314,55 @@ export function find_block_math_source(
   return state.doc.sliceString(r.from, r.to);
 }
 
+// The whole-line span a BlockMath widget replaces: the node's [from, to)
+// extended to its first line's start and last line's end (MATH-R-2). Also the
+// range the reveal/preview overlap test and click-select use, so a caret or
+// click on the line margins (indent, quote prefix) behaves as being on the block.
+export function block_math_widget_range(
+  state: EditorState,
+  from: number,
+  to: number,
+): OffsetRange {
+  return { from: state.doc.lineAt(from).from, to: state.doc.lineAt(to).to };
+}
+
+const block_lead_re = /^\$\$\s*\n?/;
+// Optional close-line group: `\n` plus that line's quote prefix (`> ` runs)
+// before the closing `$$`. The closing line's QuoteMark is NOT injected into
+// the node (the leaf parser claims the line before its markers reach
+// leaf.marks), so the prefix is stripped textually here.
+const block_trail_re = /(?:\n[ \t>]*)?\$\$\s*$/;
+
+// The LaTeX source of a BlockMath for typesetting, with quote markup removed
+// (MATH-E-13): interior-line `>` markers are stripped via the node's own
+// injected QuoteMark children (each plus its one following space, mirroring
+// the parser's skipContextMarkup consumption), and the closing line's prefix
+// via block_trail_re. Without this the literal `>` bytes reach MathJax and
+// typeset as relational operators — the mis-render Obsidian still ships
+// natively. Read-only (MATH-SP-2); unquoted blocks pass through unchanged.
+export function find_block_math_source_stripped(
+  state: EditorState,
+  node: SyntaxNode,
+): string {
+  const raw = state.doc.sliceString(node.from, node.to);
+  const lead = raw.match(block_lead_re)?.[0].length ?? 0;
+  const trail = raw.match(block_trail_re)?.[0].length ?? 0;
+  const content_from = node.from + lead;
+  const content_to = Math.max(content_from, node.to - trail);
+  let out = '';
+  let pos = content_from;
+  for (const mark of node.getChildren('QuoteMark')) {
+    if (mark.from < content_from || mark.from >= content_to) continue;
+    out += state.doc.sliceString(pos, mark.from);
+    pos =
+      mark.to < content_to && state.doc.sliceString(mark.to, mark.to + 1) === ' '
+        ? mark.to + 1
+        : mark.to;
+  }
+  out += state.doc.sliceString(pos, content_to);
+  return out;
+}
+
 // Inline math range covers both dollar marks; the inner TeX is one `$` in from each end.
 export function inline_math_content_range(from: number, to: number): OffsetRange {
   return { from: from + 1, to: to - 1 };
@@ -346,42 +396,59 @@ function build_decorations(state: EditorState): {
       if (node.name === 'BlockMath') {
         const from = node.from;
         const to = node.to;
-        if (ranges_overlap(sel, { from, to })) {
+        const first_line = state.doc.lineAt(from);
+        const last_line = state.doc.lineAt(to);
+        const widget_range = block_math_widget_range(state, from, to);
+        if (ranges_overlap(sel, widget_range)) {
           ranges.push(
             Decoration.widget({
               block: true,
               side: 1,
               widget: new MathBlockPreviewWidget(
-                find_block_math_source(state, from, to),
+                find_block_math_source_stripped(state, node.node),
               ),
             }).range(to),
           );
           return;
         }
-        // CM6 supports a `block: true` replace only over whole lines. A
+        // CM6 supports a `block: true` replace only over whole lines, and a
         // BlockMath node starts after any leading indent (and inside quotes,
-        // after the `> ` prefix), so extend the replaced range over pure-
-        // whitespace margins (MATH-E-5 indent / trailing spaces) to reach the
-        // line boundaries. When NON-whitespace shares a line with the node
-        // (quote `> `, list `- `), a legal range does not exist: emitting the
-        // partial-line widget makes CM6 split the line into a stub and mis-map
-        // DOM-side edits around the widget into document edits (observed:
-        // whole-block deletion, widget unicode text written into the source —
-        // INV-SP-1 violations). Emit no replace widget instead; the raw
-        // source stays visible and byte-safe (MATH-E-13).
-        const first_line = state.doc.lineAt(from);
-        const last_line = state.doc.lineAt(to);
+        // after the `> ` prefix) — emitting a partial-line block widget makes
+        // CM6 split the line into a stub and mis-map DOM-side edits around
+        // the widget into document edits (observed: whole-block deletion,
+        // widget unicode text written into the source — INV-SP-1 violations).
+        // Classify the node's line margins (the bytes outside [from, to) on
+        // its first/last lines) to pick a legal shape (MATH-R-2, MATH-E-13):
+        // - whitespace-only → block: true replace over the whole-line span
+        //   (MATH-E-5 indent / trailing-space forms);
+        // - quote markup only (`>` runs + whitespace before, whitespace
+        //   after) → non-block replace over the same span, Obsidian's own
+        //   widget shape and CM6 code-folding's — legal mid-line and across
+        //   line breaks; the widget div reads as a block while the quote
+        //   line's chrome (bar, tint) stays on the .cm-line;
+        // - anything else (list `- ` marker) → no legal shape; emit nothing
+        //   and leave the raw source visible and byte-safe.
         const before_node = state.doc.sliceString(first_line.from, from);
         const after_node = state.doc.sliceString(to, last_line.to);
-        if (/\S/.test(before_node) || /\S/.test(after_node)) return;
-        const src = find_block_math_source(state, from, to);
+        const ws_margins = !/\S/.test(before_node) && !/\S/.test(after_node);
+        const quote_margins =
+          !ws_margins && /^[ \t>]*$/.test(before_node) && !/\S/.test(after_node);
+        if (!ws_margins && !quote_margins) return;
+        const src = find_block_math_source_stripped(state, node.node);
         const result = cache.get(math_cache_key(true, src)) ?? null;
         if (!result) pending.push({ display: true, src, from, to });
         ranges.push(
           Decoration.replace({
-            block: true,
-            widget: new MathWidget(true, src, result, first_line.number > 1),
-          }).range(first_line.from, last_line.to),
+            block: ws_margins,
+            // The quote's own first-line logic carries the paragraph gap
+            // (ADR-0010) for quote-nested blocks — no widget gap there.
+            widget: new MathWidget(
+              true,
+              src,
+              result,
+              ws_margins && first_line.number > 1,
+            ),
+          }).range(widget_range.from, widget_range.to),
         );
         return;
       }

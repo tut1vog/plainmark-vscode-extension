@@ -53,4 +53,28 @@ describe('math_content_select_range MATH-I-15', () => {
       expect(math_content_select_range(make_state(doc, 6), 6)).toBeNull();
     });
   });
+
+  describe('quote-nested block math (MATH-E-13)', () => {
+    it('resolves a click on the quote prefix of a replaced line to the block content', () => {
+      const doc = 'x\n\n> $$a=b$$'; // BlockMath at [5, 12); widget replaces [3, 12)
+      // pos 3 sits on the `> ` prefix — outside the node, inside the widget range.
+      const range = math_content_select_range(make_state(doc, 0), 3);
+      expect(range).toEqual({ from: 7, to: 10 });
+      expect(doc.slice(7, 10)).toBe('a=b');
+    });
+
+    it('returns null when the quoted block is revealed (caret on the quote prefix)', () => {
+      // Caret at 4 — on the prefix, within the widget range: source is revealed,
+      // so a click places an ordinary caret instead of selecting.
+      const doc = 'x\n\n> $$a=b$$';
+      expect(math_content_select_range(make_state(doc, 4), 6)).toBeNull();
+    });
+
+    it('does not select math from the prefix of a non-replaced quote line', () => {
+      // Inline math in a quote: the line is not widget-replaced, so a click on
+      // its `> ` prefix must fall through to ordinary caret placement.
+      const doc = '> $x$ words';
+      expect(math_content_select_range(make_state(doc, 8), 0)).toBeNull();
+    });
+  });
 });
