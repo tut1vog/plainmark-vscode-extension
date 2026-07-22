@@ -10,7 +10,7 @@ Normative behavior for markdown image rendering, interaction, and byte
 guarantees. Covers the standalone inline-syntax image `![alt](url)` when it is
 the sole content of a LINE of a top-level paragraph; that line promotes to a
 block `Decoration.replace` widget (the lezer `Image` node lives inside the
-paragraph — line-scoped promotion, ADR-0013; an image-only paragraph is the
+paragraph — line-scoped promotion; an image-only paragraph is the
 single-line special case). Does NOT cover links `[text](url)` (`links.md`,
 prefix LINK) or autolinks (`autolinks.md`, prefix AUTO).
 
@@ -30,10 +30,10 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-R-1** — The image extension (`image_extension` = `image_base_field` + `image_widgets_field` + `image_theme`) MUST be registered in the production editor's extension set. It is included in `editor_extensions_core`, so it runs in both the live webview and the Tier B harness.
   _Example:_ opening a document whose sole paragraph is `![alt](https://cdn/x.png)` renders an `<img>`, not the raw `![…]` source.
 
-- **IMG-R-2** — Each doc line of a top-level paragraph whose only non-whitespace content is a single `Image` node confined to that line MUST be replaced by a block widget spanning the line range `[line.from, line.to)` (ADR-0013; CommonMark lazy continuation merges adjacent lines into one paragraph, so an image directly against a text line is a paragraph child — it still promotes, scoped to its own line). The replace decoration MUST carry `block: true`. An `Image` wrapping across lines MUST NOT promote.
+- **IMG-R-2** — Each doc line of a top-level paragraph whose only non-whitespace content is a single `Image` node confined to that line MUST be replaced by a block widget spanning the line range `[line.from, line.to)` (CommonMark lazy continuation merges adjacent lines into one paragraph, so an image directly against a text line is a paragraph child — it still promotes, scoped to its own line). The replace decoration MUST carry `block: true`. An `Image` wrapping across lines MUST NOT promote.
   _Example:_ `![alt](cover.png)\n` → one `Decoration.replace({block:true})` over offsets `[0, 17)`; `text\n![alt](cover.png)` (one merged paragraph) → the image line alone promotes, `text` stays an ordinary line.
 
-- **IMG-R-3** — The paragraph's ancestor chain up to `Document` MUST consist only of list containers (`BulletList`, `OrderedList`, `ListItem`) for its lines to promote (ADR-0013 amended by owner election: lazy-continuation lines under a list item promote like top-level ones). An `Image` inside a blockquote or callout MUST NOT promote — a block widget cannot carry the quote bar/tint chrome. A list item's own marker line stays raw without a dedicated check: the `- ` / `1. ` marker occupies the line gap and fails the IMG-E-3 whitespace test. A promoted list-nested widget renders at full content width (image centered) — item indent is not reflected; accepted.
+- **IMG-R-3** — The paragraph's ancestor chain up to `Document` MUST consist only of list containers (`BulletList`, `OrderedList`, `ListItem`) for its lines to promote (lazy-continuation lines under a list item promote like top-level ones). An `Image` inside a blockquote or callout MUST NOT promote — a block widget cannot carry the quote bar/tint chrome. A list item's own marker line stays raw without a dedicated check: the `- ` / `1. ` marker occupies the line gap and fails the IMG-E-3 whitespace test. A promoted list-nested widget renders at full content width (image centered) — item indent is not reflected; accepted.
   _Example:_ `- item\nline 1\n![alt](cover.png)` → the image line widgetizes; `- ![alt](cover.png)` and `> ![alt](cover.png)` each emit no image widget.
 
 - **IMG-R-4** `[smoke]` — The widget DOM MUST be a `div.plainmark-image-block` containing a single `<img>` whose `src` is the resolved URL and whose `alt` is the parsed alt text.
@@ -42,7 +42,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-R-5** — The alt text MUST be parsed from the literal source between `![` and the closing `]` via the regex `/^!\[((?:[^\]\\]|\\.)*)\]/u`, supporting backslash escapes inside the brackets; when no match is found the alt MUST default to the empty string.
   _Example:_ `![a\]b](x.png)` → alt `a\]b`; `![](x.png)` → alt `""`.
 
-- **IMG-R-6** — The image URL MUST be the effective destination of the `Image` node's child `URL` node — same stripping rule as LINK-R-3 (ADR-0008); a paragraph whose `Image` has no `URL` child MUST NOT promote.
+- **IMG-R-6** — The image URL MUST be the effective destination of the `Image` node's child `URL` node — same stripping rule as LINK-R-3; a paragraph whose `Image` has no `URL` child MUST NOT promote.
   _Example:_ `![alt](cover.png)` → url `cover.png`; `![alt](<img a.png>)` → url `img a.png`; an `Image` with an empty `()` and no `URL` node emits no widget.
 
 - **IMG-R-7** — URL resolution MUST pass absolute `http://` / `https://` URLs through unchanged; a relative URL MUST resolve against the image base via `new URL(raw, base)`; a relative URL with a `null` base MUST resolve to `null`. A `null` resolution MUST suppress the widget (no broken `<img>` is emitted).
@@ -57,12 +57,12 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-R-10** — Multiple qualifying image-only paragraphs in one document MUST each emit their own block widget.
   _Example:_ `![a](1.png)\n\n![b](2.png)\n` → two widgets, urls `1.png` and `2.png`.
 
-- **IMG-R-11** `[smoke]` — An image widget replacing any line other than doc line 1 MUST carry `plainmark-block-gap-above`, taking the paragraph gap (`var(--plainmark-paragraph-gap, 0.75em)`) as widget padding-top — the image container has no breathing of its own, so the gap is the whole padding (PARA-R-7 / ADR-0010; mirrors the table and block-math widgets). A doc-top image takes none. The in-flow preview (IMG-I-11) never takes it — the revealed source line above it carries its own gap. `gap_above` participates in `ImageWidget.eq`, so an edit moving the image across the doc-top boundary redraws the widget.
+- **IMG-R-11** `[smoke]` — An image widget replacing any line other than doc line 1 MUST carry `plainmark-block-gap-above`, taking the paragraph gap (`var(--plainmark-paragraph-gap, 0.75em)`) as widget padding-top — the image container has no breathing of its own, so the gap is the whole padding (PARA-R-7; mirrors the table and block-math widgets). A doc-top image takes none. The in-flow preview (IMG-I-11) never takes it — the revealed source line above it carries its own gap. `gap_above` participates in `ImageWidget.eq`, so an edit moving the image across the doc-top boundary redraws the widget.
   _Example:_ `hello\n![alt](cover.png)` → the rendered image sits one prose gap below `hello`; the same image as the document's first line sits flush at the top.
 
 ## I · Interaction
 
-- **IMG-I-1** — When the canonical reveal predicate (`should_reveal_for_selection`, MRS-R-2…R-5: any selection range touching the image's LINE range reveals, EXCEPT a non-empty selection strictly covering it on both sides; pointer-down evaluates the frozen pre-press selection) holds for the image line's range, the replace widget MUST NOT be emitted, revealing the raw `![alt](url)` source for editing — with an in-flow preview below it (IMG-I-11, ADR-0013). Reveal is keyed to the image's line, so a caret on a sibling line of the same merged paragraph keeps the widget rendered. Unified via DEF-7 (2026-06-12): select-all keeps the image rendered; a drag entering the image does not flash raw source mid-drag.
+- **IMG-I-1** — When the canonical reveal predicate (`should_reveal_for_selection`, MRS-R-2…R-5: any selection range touching the image's LINE range reveals, EXCEPT a non-empty selection strictly covering it on both sides; pointer-down evaluates the frozen pre-press selection) holds for the image line's range, the replace widget MUST NOT be emitted, revealing the raw `![alt](url)` source for editing — with an in-flow preview below it (IMG-I-11). Reveal is keyed to the image's line, so a caret on a sibling line of the same merged paragraph keeps the widget rendered. Unified via DEF-7 (2026-06-12): select-all keeps the image rendered; a drag entering the image does not flash raw source mid-drag.
   _Example:_ `![alt](cover.png)` with the caret placed at offset 3 → the widget disappears and the raw source `![alt](cover.png)` is shown and editable (preview below); in `text\n![alt](cover.png)`, a caret inside `text` keeps the image widget; Ctrl+A keeps the image rendered.
 
 - **IMG-I-2** — Decorations MUST be rebuilt whenever the document changes, the selection changes, the image base changes (`set_image_base_effect`), or the pointer-freeze fields flip (MRS-R-7); otherwise the prior decoration set is reused.
@@ -92,7 +92,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-I-10** — A single paste carrying multiple image blobs MUST save each blob to its own file and insert one `![](relative-path)` per line, in clipboard order.
   _Example:_ pasting two images at once writes two files and inserts two `![](…)` lines.
 
-- **IMG-I-11** `[smoke]` — Whenever IMG-I-1 reveals an image line's source, in place of the replace widget the field MUST emit a `block: true` in-flow preview widget (`div.plainmark-image-block-preview`, `side: 1`) anchored at the line's end, rendering the same resolved image below the editable source — the picture never disappears while the path or alt text is edited (ADR-0013; mirrors the block-math preview, MATH-I-6). The preview tracks edits live (each keystroke rebuilds it against the current path — no debounce), applies the same `<img>` styling as the replace widget (IMG-R-8), shows the broken-image placeholder on load failure (IMG-E-6), and is suppressed exactly when the replace widget would be (unresolvable URL, IMG-R-7).
+- **IMG-I-11** `[smoke]` — Whenever IMG-I-1 reveals an image line's source, in place of the replace widget the field MUST emit a `block: true` in-flow preview widget (`div.plainmark-image-block-preview`, `side: 1`) anchored at the line's end, rendering the same resolved image below the editable source — the picture never disappears while the path or alt text is edited (mirrors the block-math preview, MATH-I-6). The preview tracks edits live (each keystroke rebuilds it against the current path — no debounce), applies the same `<img>` styling as the replace widget (IMG-R-8), shows the broken-image placeholder on load failure (IMG-E-6), and is suppressed exactly when the replace widget would be (unresolvable URL, IMG-R-7).
   _Example:_ caret inside `![alt](cover.png)` → the raw source renders with the image below it; editing `cover.png` → `cover2.png` swaps the preview to the new file; moving the caret off the line re-renders the replace widget.
 
 ## SP · Source preservation
@@ -108,10 +108,10 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## E · Edge cases
 
-- **IMG-E-1** — A line mixing an image with text on the SAME line MUST NOT promote; it is left as raw source. Text on OTHER lines of the same merged paragraph does not block promotion (ADR-0013, line-scoped — see IMG-R-2).
+- **IMG-E-1** — A line mixing an image with text on the SAME line MUST NOT promote; it is left as raw source. Text on OTHER lines of the same merged paragraph does not block promotion (line-scoped — see IMG-R-2).
   _Example:_ `Hello ![alt](cover.png) world` → no widget, the whole line stays raw; `Hello\n![alt](cover.png)` → the image line promotes.
 
-- **IMG-E-2** — A line containing two or more images MUST NOT promote (each image sees the other in its line gap — non-whitespace aborts). Image-only lines promote independently, so adjacent image-only lines in one merged paragraph each emit their own widget (ADR-0013).
+- **IMG-E-2** — A line containing two or more images MUST NOT promote (each image sees the other in its line gap — non-whitespace aborts). Image-only lines promote independently, so adjacent image-only lines in one merged paragraph each emit their own widget.
   _Example:_ `![a](1.png) ![b](2.png)` → no widget; `![a](1.png)\n![b](2.png)` → two widgets.
 
 - **IMG-E-3** — Leading or trailing non-whitespace around the image on its line MUST abort promotion of that line; only whitespace gaps are tolerated (`sliceString(...).trim().length > 0` check against the line bounds).

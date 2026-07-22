@@ -246,7 +246,7 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
     '.plainmark-indented-code-last': {
       'padding-bottom': padding_y,
     },
-    // ADR-0010: the opening fence line carries the paragraph gap above the
+    // PARA-R-7: the opening fence line carries the paragraph gap above the
     // block (padding-top from the tripled paragraph-gap rule — the header has
     // no competing padding). The code background bottom-anchors and stops
     // short of the gap so it renders as clear space; the reserved fence line

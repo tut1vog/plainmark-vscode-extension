@@ -730,7 +730,7 @@ function try_handle_link_click(msg: WebviewToHostMessage | null, doc_uri: vscode
       }
       return true;
     case 'open-file':
-      // file: opens in-editor, never via the OS default-app handler (ADR-0004).
+      // file: opens in-editor, never via the OS default-app handler (SHELL-M-3).
       widget_log.debug('link_click ipc: file scheme via vscode.open', {
         href_len: decision.href.length,
       });
@@ -741,7 +741,7 @@ function try_handle_link_click(msg: WebviewToHostMessage | null, doc_uri: vscode
       }
       return true;
     case 'blocked-scheme':
-      // Off-allowlist scheme — silent drop (ADR-0004); breadcrumb only.
+      // Off-allowlist scheme — silent drop (SHELL-M-3); breadcrumb only.
       widget_log.debug('link_click ipc: blocked scheme', { scheme: decision.scheme });
       return true;
     case 'noop-untitled':

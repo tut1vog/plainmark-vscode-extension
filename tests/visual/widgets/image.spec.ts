@@ -54,7 +54,7 @@ describe('image widget', () => {
     expect(preview[0].getAttribute('src')).toBe(sample_data_url);
   });
 
-  it('ADR-0013: an image line directly below a non-empty text line still renders', () => {
+  it('IMG-R-2: an image line directly below a non-empty text line still renders', () => {
     const doc = `hello\n![alt](${sample_data_url})\nworld`;
     view = mount_editor(container, doc, 'https://example.test/');
     move_cursor(view, 0);
@@ -140,7 +140,7 @@ describe('image widget', () => {
     expect(container.querySelectorAll('.plainmark-image-block-preview img')).toHaveLength(1);
   });
 
-  it('IMG-R-3 (ADR-0013 amended): an image on a lazy-continuation line under a list renders', () => {
+  it('IMG-R-3: an image on a lazy-continuation line under a list renders', () => {
     // Owner repro: a bullet above folds the following unindented lines into
     // the list item — the image line must still widgetize.
     const doc = `- list\nline 1\nline 2\n![alt](${sample_data_url})`;
@@ -149,7 +149,7 @@ describe('image widget', () => {
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(1);
   });
 
-  it('IMG-R-11 (ADR-0010): a non-doc-top image widget takes the paragraph gap as padding-top', () => {
+  it('IMG-R-11: a non-doc-top image widget takes the paragraph gap as padding-top', () => {
     const doc = `hello\n![alt](${sample_data_url})\n\nworld`;
     view = mount_editor(container, doc, 'https://example.test/');
     move_cursor(view, 0);
@@ -159,7 +159,7 @@ describe('image widget', () => {
     expect(parseFloat(getComputedStyle(widget).paddingTop)).toBeCloseTo(12, 0);
   });
 
-  it('IMG-R-11 (ADR-0010): a doc-top image widget takes no gap', () => {
+  it('IMG-R-11: a doc-top image widget takes no gap', () => {
     const doc = `![alt](${sample_data_url})\n\nworld`;
     view = mount_editor(container, doc, 'https://example.test/');
     move_cursor(view, view.state.doc.length);

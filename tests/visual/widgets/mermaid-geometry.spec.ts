@@ -1,4 +1,4 @@
-// DOM-geometry oracles for the mermaid block widget (ADR-0002): normalize.ts
+// DOM-geometry oracles for the mermaid block widget: normalize.ts
 // strips styles, so an SVG that overflowed its container or an error box that
 // collapsed still passes every snapshot. These relational assertions
 // (nonzero rects, contained-within, fits-content-width) fail on gross layout

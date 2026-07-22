@@ -12,8 +12,7 @@
 // - synthetic CompositionEvents + direct text-node mutation + observer flush
 //   (CM6 webtest-composition.ts technique), with the mutation record arriving
 //   before vs after `compositionend` (pinyin IMEs commonly deliver it a few
-//   ms after compositionend, inside CM6's 50ms grace window; see
-//   docs/research/cm6-cjk-ime-composition.md §3).
+//   ms after compositionend, inside CM6's 50ms grace window).
 //
 // None of these reproduced the smoke bug on @codemirror/view 6.42.1 — the
 // live OS-IME path goes through Chromium input machinery CDP cannot emulate —

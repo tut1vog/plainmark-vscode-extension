@@ -227,7 +227,7 @@ function build_callout_theme(): Record<string, Record<string, string>> {
       'margin-left': '0.25em',
       opacity: '0.6',
     },
-    // ADR-0010: a callout header (the block's first line) carries the
+    // PARA-R-7: a callout header (the block's first line) carries the
     // paragraph gap above the box. The gap stacks on the header's own
     // padding-y ((0,5,0) so it beats the tripled paragraph-gap rule at
     // (0,4,0) independent of source order); both background layers (accent

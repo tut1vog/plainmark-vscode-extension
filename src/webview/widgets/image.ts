@@ -21,7 +21,7 @@ interface ImageInfo {
   alt: string;
   url: string;
   // The image's full doc-line range — the replace span and the reveal key
-  // (line-scoped promotion, ADR-0013).
+  // (line-scoped promotion, IMG-R-2).
   from: number;
   to: number;
 }
@@ -59,7 +59,7 @@ export class ImageWidget extends WidgetType {
     readonly alt: string,
     readonly url: string,
     readonly resolved_src: string,
-    // ADR-0010: an image below other content carries the paragraph gap as
+    // IMG-R-11: an image below other content carries the paragraph gap as
     // widget padding-top (`plainmark-block-gap-above`); a doc-top image does
     // not. In eq() so an edit that moves the image across the doc-top
     // boundary redraws the widget. Mirrors math/table.
@@ -150,7 +150,7 @@ export function resolve_image_url(raw: string, base: string | null): string | nu
 }
 
 function image_only_lines(paragraph: SyntaxNode, doc: Text): ImageInfo[] {
-  // Line-scoped promotion (ADR-0013): CommonMark lazy continuation merges
+  // Line-scoped promotion (IMG-R-2): CommonMark lazy continuation merges
   // adjacent lines into one Paragraph, so an image directly below a text line
   // is a paragraph CHILD, not a paragraph. Promote per LINE: a doc line whose
   // only non-whitespace content is a single Image node. The image-only
@@ -207,7 +207,7 @@ function build_decorations(state: EditorState): DecorationSet {
 
   syntaxTree(state).iterate({
     enter(node) {
-      // Descend only through Document and list containers (ADR-0013 amended):
+      // Descend only through Document and list containers (IMG-R-3):
       // any Paragraph reached has a pure Document/list ancestor chain, so
       // lazy-continuation lines under a list item promote like top-level ones.
       // Blockquotes/callouts are never entered — a block widget cannot carry
@@ -223,7 +223,7 @@ function build_decorations(state: EditorState): DecorationSet {
 
         if (should_reveal_for_selection(state, info.from, info.to)) {
           // Caret on the image's line: keep the source editable and render an
-          // in-flow preview below it (ADR-0013; mirrors MATH-I-6).
+          // in-flow preview below it (IMG-I-1; mirrors MATH-I-6).
           ranges.push(
             Decoration.widget({
               block: true,
@@ -321,7 +321,7 @@ function broken_text(url: string): HTMLElement {
 
 const image_theme = EditorView.theme({
   '.plainmark-image-block, .plainmark-image-block-preview': { margin: '0' },
-  // ADR-0010: a non-doc-top image takes the paragraph gap as padding-top. The
+  // IMG-R-11: a non-doc-top image takes the paragraph gap as padding-top. The
   // image container has no breathing of its own (margin 0), so the gap is the
   // whole padding — nothing to stack, unlike math/table. The preview widget
   // never takes it: the revealed source line above it carries its own gap.

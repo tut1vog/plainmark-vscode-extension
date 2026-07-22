@@ -3,14 +3,14 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
-// Guards PARA-R-7 as amended by ADR-0007/ADR-0010, and its construct mirrors
+// Guards PARA-R-7, and its construct mirrors
 // BQ-R-13 (quote interiors) and CALL-R-11 (callout bodies): quote and callout
 // interiors share the prose paragraph rhythm. Interior blockquote lines (any
 // depth), quoted blank lines, callout body lines (minus the first, under the
 // header), and quoted list continuations carry the paragraph gap; the first
 // line of the outermost quote ALSO carries it when the block is below other
-// content (ADR-0010 — rendered as clear space above the block, tint and bars
-// anchored past it), but never on doc line 1. Quoted list marker lines keep
+// content (rendered as clear space above the block, tint and bars anchored
+// past it), but never on doc line 1. Quoted list marker lines keep
 // tight item spacing, and quoted non-prose constructs stay excluded. The
 // computed-padding cases pin the (0,4,0) tripled-class cascade win over the
 // blockquote per-depth and callout-body padding rules, and the (0,5,0)
@@ -25,7 +25,7 @@ async function frames(n: number): Promise<void> {
   for (let i = 0; i < n; i++) await next_frame();
 }
 
-describe('paragraph gap inside blockquotes and callouts (PARA-R-7 / ADR-0007)', () => {
+describe('paragraph gap inside blockquotes and callouts (PARA-R-7)', () => {
   let host: HTMLElement;
   let view: EditorView | undefined;
 
@@ -62,7 +62,7 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7 / ADR-0007)', 
     expect(await gap_flags('> a\n>\n> b')).toEqual([false, true, true]);
   });
 
-  it('a quote after a paragraph carries the gap on its first line (ADR-0010)', async () => {
+  it('a quote after a paragraph carries the gap on its first line', async () => {
     expect(await gap_flags('para\n> a')).toEqual([false, true]);
   });
 
@@ -78,7 +78,7 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7 / ADR-0007)', 
     expect(style.backgroundSize).toContain('calc');
   });
 
-  it('a callout after a paragraph carries the gap on its header (ADR-0010)', async () => {
+  it('a callout after a paragraph carries the gap on its header', async () => {
     expect(await gap_flags('para\n> [!note] t\n> body')).toEqual([false, true, false]);
   });
 

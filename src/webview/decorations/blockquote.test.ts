@@ -67,7 +67,7 @@ function snapshot(state: EditorState): DecoSnapshot[] {
 }
 
 // `first` — the OUTERMOST quote's first line carries plainmark-blockquote-first
-// (ADR-0010: the theme keys the block's paragraph-gap rendering on it). Every
+// (PARA-R-7: the theme keys the block's paragraph-gap rendering on it). Every
 // doc in this file starts its (first) quote at offset 0, so it defaults from
 // that; a second quote's first line passes `true` explicitly.
 const line = (from: number, depth = 1, first = from === 0): DecoSnapshot => ({

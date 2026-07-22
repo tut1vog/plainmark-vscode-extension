@@ -1,7 +1,7 @@
 // Anthropic-inspired warm "cream + terracotta" palette. Source hexes from
 // Anthropic's official brand guidelines (Clay #d97757, Slate #141413, warm
 // neutrals Oat/Pampas/Cloud) plus a contrast-validated warm syntax set anchored
-// to Solarized Light / GitHub Light: docs/research/anthropic-brand-palette-2026.md.
+// to Solarized Light / GitHub Light.
 // Fixed appearance: no --vscode-* chains, palette holds in any VS Code color mode.
 // Anthropic's display typefaces (Copernicus/Tiempos serif, Styrene sans) cannot be
 // bundled, so headings fall back to a Palatino-led serif and body to a system sans.

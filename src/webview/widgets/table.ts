@@ -494,7 +494,7 @@ export class TableWidget extends WidgetType {
     readonly image_base: string | null,
     readonly math_fingerprint: string,
     readonly content_signature: string,
-    // ADR-0010: a table below other content carries the paragraph gap as extra
+    // TBL-R-10: a table below other content carries the paragraph gap as extra
     // widget padding-top (class `plainmark-block-gap-above`); a doc-top table
     // does not. In eq() so an edit that moves the table across the doc-top
     // boundary redraws the widget.
@@ -1110,7 +1110,7 @@ const table_theme = EditorView.theme({
     maxWidth: '100%',
     padding: 'var(--plainmark-table-margin, 0.5em 0)',
   },
-  // ADR-0010: a non-doc-top table stacks the paragraph gap on its own top
+  // TBL-R-10: a non-doc-top table stacks the paragraph gap on its own top
   // breathing room. The 0.5em literal mirrors --plainmark-table-margin's
   // default top component (a shorthand var's component can't be referenced).
   '.plainmark-table-block.plainmark-block-gap-above': {

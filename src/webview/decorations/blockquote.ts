@@ -59,7 +59,7 @@ export function quote_prefix_counts(line_text: string): { gt: number; ws: number
 
 // Keyed `depth:first` — the outermost quote's FIRST line carries
 // `plainmark-blockquote-first` so the theme can render its paragraph gap
-// (ADR-0010) as clear space above the block: bottom-anchored tint, bars
+// (PARA-R-7) as clear space above the block: bottom-anchored tint, bars
 // starting below the gap. Interior lines keep the full-box tint.
 const depth_line_decorations = new Map<string, Decoration>();
 for (let d = 1; d <= MAX_DEPTH; d++) {
@@ -369,7 +369,7 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
       'pointer-events': 'none',
     };
   }
-  // First-line paragraph gap (ADR-0010): the widget-line bar starts below the
+  // First-line paragraph gap (PARA-R-7): the widget-line bar starts below the
   // clear gap, mirroring the per-marker rule further down.
   rules[
     '.plainmark-blockquote-first.plainmark-paragraph-gap:has(> .plainmark-math-block)::before'
@@ -377,7 +377,7 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
     top: gap,
   };
 
-  // ADR-0010: the outermost quote's first line carries the paragraph gap ABOVE
+  // PARA-R-7: the outermost quote's first line carries the paragraph gap ABOVE
   // the block. Because .cm-line padding sits inside the background (and margins
   // are banned by the height-map rule), the gap must not paint as a tinted
   // band: the tint moves from background-color to a bottom-anchored gradient

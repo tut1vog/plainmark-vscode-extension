@@ -4,9 +4,9 @@ import { classify_link_click } from './link_click.js';
 // Encodes the link-routing contract (editor-shell.md SHELL-M-3, links.md
 // LINK-I-9 / LINK-I-12) against the vscode-free classifier extracted from
 // provider.try_handle_link_click. The vscode wiring (openExternal / vscode.open)
-// switches on the returned decision. Security intent (per the T3 brief, closed
-// by ADR-0004): nothing user-controlled reaches openExternal unless its scheme
-// is on the external allowlist; `file:` opens in-editor via vscode.open.
+// switches on the returned decision. Security intent (SHELL-M-3): nothing
+// user-controlled reaches openExternal unless its scheme is on the external
+// allowlist; `file:` opens in-editor via vscode.open.
 
 const WITH_DIR = { has_document_dir: true };
 const NO_DIR = { has_document_dir: false };
@@ -54,7 +54,7 @@ describe('classify_link_click — allowlisted external schemes SHELL-M-3 LINK-I-
   });
 });
 
-describe('classify_link_click — file: opens in-editor SHELL-M-3 ADR-0004', () => {
+describe('classify_link_click — file: opens in-editor SHELL-M-3', () => {
   it('routes file: to open-file (vscode.open), never open-external', () => {
     for (const href of ['file:///Users/me/x.md', 'FILE:///Users/me/x.md']) {
       expect(classify_link_click(href, WITH_DIR)).toEqual({ kind: 'open-file', href });
@@ -85,7 +85,7 @@ describe('classify_link_click — document-relative hrefs SHELL-M-3 LINK-I-12', 
 
 // Markdown destinations are URI-shaped; `a%20b.pdf` names `a b.pdf` on disk.
 // joinPath treats its segment literally, so the classifier hands over the
-// decoded path (LINK-I-12, ADR-0008).
+// decoded path (LINK-I-12).
 describe('classify_link_click — percent-decoding of relative hrefs LINK-I-12', () => {
   it('percent-decodes a relative href before resolution', () => {
     expect(classify_link_click('a%20b.pdf', WITH_DIR)).toEqual({
@@ -129,11 +129,11 @@ describe('classify_link_click — percent-decoding of relative hrefs LINK-I-12',
   });
 });
 
-// Off-allowlist schemes are dropped outright (SHELL-M-3 / ADR-0004): VS Code's
+// Off-allowlist schemes are dropped outright (SHELL-M-3): VS Code's
 // trusted-domains prompt gates only http/https, so any other scheme handed to
 // openExternal would reach the OS shell handler unchecked (javascript:, data:,
 // the Joplin CVE-2022-40277 .desktop vector, UNC credential leaks, …).
-describe('classify_link_click — off-allowlist schemes are blocked SHELL-M-3 ADR-0004', () => {
+describe('classify_link_click — off-allowlist schemes are blocked SHELL-M-3', () => {
   it('drops javascript:/data:/vbscript:/command: with the offending scheme reported', () => {
     for (const [href, scheme] of [
       ['javascript:alert(1)', 'javascript'],

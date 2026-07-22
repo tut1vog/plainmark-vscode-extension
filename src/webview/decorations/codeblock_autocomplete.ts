@@ -11,7 +11,7 @@ const FENCE_BEFORE_RE = /^((?:\s*>\s?)*\s{0,3}(?:`{3,}|~{3,}))([^\s`~]*)$/;
 
 // CBLK-I-16 — the suggestion list is DERIVED from the registries the
 // CBLK-R-12/R-16 matcher resolves, never separately curated: every stock
-// @codemirror/language-data name and alias, plus every surviving ADR-0009
+// @codemirror/language-data name and alias, plus every surviving CBLK-R-16
 // alias-layer tag, lower-cased and deduplicated (first entry wins). `mermaid`
 // is added first: whatever the registry says, Plainmark cedes that fence to
 // the diagram widget (CBLK-E-3).

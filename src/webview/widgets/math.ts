@@ -66,7 +66,7 @@ export class MathWidget extends WidgetType {
     readonly display: boolean,
     readonly src: string,
     readonly result: MathResult | null,
-    // ADR-0010, display widgets only: a block below other content carries the
+    // MATH-R-7, display widgets only: a block below other content carries the
     // paragraph gap as extra widget padding-top (`plainmark-block-gap-above`);
     // a doc-top block does not. In eq() so an edit that moves the block across
     // the doc-top boundary redraws the widget.
@@ -457,7 +457,7 @@ function build_decorations(state: EditorState): {
           Decoration.replace({
             block: ws_margins,
             // The quote's own first-line logic carries the paragraph gap
-            // (ADR-0010) for quote-nested blocks — no widget gap there.
+            // (PARA-R-7) for quote-nested blocks — no widget gap there.
             widget: new MathWidget(
               true,
               src,
@@ -611,7 +611,7 @@ const math_theme = EditorView.theme({
     fontSize: 'var(--plainmark-math-size, 1.21em)',
     overflowX: 'auto',
   },
-  // ADR-0010: a non-doc-top math block stacks the paragraph gap on its own
+  // MATH-R-7: a non-doc-top math block stacks the paragraph gap on its own
   // top breathing room. The 0.25em literal mirrors --plainmark-math-padding's
   // default top component (a shorthand var's component can't be referenced);
   // the gap resolves in the block's em context (--plainmark-math-size).
@@ -623,7 +623,7 @@ const math_theme = EditorView.theme({
   },
   // MathJax v4's CHTML stylesheet gives display containers a default vertical
   // margin (`mjx-container[display] { margin: .7em 0 }`) that stacks on the
-  // widget's own padding (MATH-R-7 + the ADR-0010 gap), roughly doubling the
+  // widget's own padding (MATH-R-7 + the PARA-R-7 gap), roughly doubling the
   // whitespace around every display block. The widget padding is the single
   // spacing authority — zero the inner container's margin in both the replace
   // widget and the in-flow preview. MathJax's small internal `.3em 2px`

@@ -32,7 +32,7 @@ const horizontal_rule_theme = EditorView.theme({
     borderTop:
       'var(--plainmark-hr-width, 1px) solid var(--plainmark-hr-color, var(--vscode-textSeparator-foreground, var(--vscode-contrastBorder, currentColor)))',
   },
-  // ADR-0010: a gapped HR stacks the paragraph gap on its own padding
+  // PARA-R-7: a gapped HR stacks the paragraph gap on its own padding
   // ((0,5,0) beats the tripled paragraph-gap rule at (0,4,0) independent of
   // source order) …
   '.cm-line.cm-line.cm-line.plainmark-hr.plainmark-paragraph-gap': {

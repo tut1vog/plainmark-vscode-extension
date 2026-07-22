@@ -67,19 +67,14 @@ const headings_theme = EditorView.theme({
     paddingTop: 'var(--plainmark-heading-padding-top, 0.4em)',
     paddingBottom: 'var(--plainmark-heading-padding-bottom, 0.3em)',
   },
-  // ADR-0012 (amending ADR-0011): a gapped heading takes EXACTLY the base-
-  // size paragraph gap — no breathing stack. Owner walked back the stack in
-  // two steps: first the gap's proportional scaling (ADR-0011: 2.3em of base
-  // on h1 read as an extremely wide top band), then the remaining scaled
-  // breathing term (still 1.55em of base on h1) — headings join the uniform
-  // block rhythm like every other construct. Each level still divides the
-  // gap by its default size scale to cancel the heading's em context; the
-  // divisors hard-code the default --plainmark-h<n>-size scales, so a themed
-  // size diverges from the gap — accepted, same class as ADR-0010's
-  // table/math shorthand hard-coding. --plainmark-heading-padding-top now
-  // governs only NON-gapped headings (doc line 1, quoted headings). (0,5,0)
-  // beats the tripled paragraph-gap rule at (0,4,0) independent of theme
-  // source order.
+  // HEAD-R-9: a gapped heading takes EXACTLY the base-size paragraph gap — no
+  // breathing stack — so headings join the uniform block rhythm like every
+  // other construct. Each level divides the gap by its default size scale to
+  // cancel the heading's em context; the divisors hard-code the default
+  // --plainmark-h<n>-size scales, so a themed size diverges from the gap —
+  // accepted. --plainmark-heading-padding-top governs only NON-gapped
+  // headings (doc line 1, quoted headings). (0,5,0) beats the tripled
+  // paragraph-gap rule at (0,4,0) independent of theme source order.
   '.cm-line.cm-line.cm-line.plainmark-h1.plainmark-paragraph-gap': {
     paddingTop: 'calc(var(--plainmark-paragraph-gap, 0.75em) / 2)',
   },

@@ -1,4 +1,4 @@
-// DOM-geometry oracles for the table widget (ADR-0002): normalize.ts strips
+// DOM-geometry oracles for the table widget: normalize.ts strips
 // styles, so a table whose columns lost their alignment, whose grid overlapped,
 // or that overflowed the editor still passes every snapshot. These relational
 // assertions (shared edges within a tolerance band, monotonic non-overlapping

@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
-// Guards PARA-R-7 as amended by ADR-0006: an item continuation line (lazy or
+// Guards PARA-R-7: an item continuation line (lazy or
 // indented — a line inside a list on which no ListItem starts) carries the
 // paragraph gap, so a hard `\n` after the last bullet reads as a paragraph
 // break instead of a soft wrap. Marker lines and blank lines between loose
@@ -18,7 +18,7 @@ async function frames(n: number): Promise<void> {
   for (let i = 0; i < n; i++) await next_frame();
 }
 
-describe('paragraph gap on list continuation lines (PARA-R-7 / ADR-0006)', () => {
+describe('paragraph gap on list continuation lines (PARA-R-7)', () => {
   let host: HTMLElement;
   let view: EditorView | undefined;
 

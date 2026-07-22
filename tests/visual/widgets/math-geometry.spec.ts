@@ -1,4 +1,4 @@
-// DOM-geometry oracles for the math widgets (ADR-0002): tests/visual/normalize.ts
+// DOM-geometry oracles for the math widgets: tests/visual/normalize.ts
 // elides every mjx-container to a placeholder and strips styles, so a visually
 // collapsed / mispositioned formula still passes every snapshot. These relational
 // assertions (nonzero rects, contained-within, above/below ordering, ratio bands)

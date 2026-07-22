@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
-// Guards PARA-R-7 as amended by ADR-0010: the FIRST line of every non-prose
+// Guards PARA-R-7: the FIRST line of every non-prose
 // block construct (fenced/indented code, HTML blocks, headings, HR, tables,
 // block math) joins the paragraph rhythm when the block sits below other
 // content — never on doc line 1, never inside a quote (BQ-R-13). Interior
@@ -22,7 +22,7 @@ async function frames(n: number): Promise<void> {
   for (let i = 0; i < n; i++) await next_frame();
 }
 
-describe('paragraph gap above block constructs (PARA-R-7 / ADR-0010)', () => {
+describe('paragraph gap above block constructs (PARA-R-7)', () => {
   let host: HTMLElement;
   let view: EditorView | undefined;
 
@@ -99,7 +99,7 @@ describe('paragraph gap above block constructs (PARA-R-7 / ADR-0010)', () => {
     it('a heading after a paragraph carries exactly the base-size gap', async () => {
       expect(await gap_flags('para\n# h')).toEqual([false, true]);
       const lines = await mount('para\n# h');
-      // (0,5,0) heading rule (ADR-0012): a gapped heading takes the base-size
+      // (0,5,0) heading rule (HEAD-R-9): a gapped heading takes the base-size
       // gap alone — no breathing stack; the per-level divisor cancels the em
       // context: (0.75 / 2) * 32px = 12px, the same rhythm as every block.
       expect(parseFloat(getComputedStyle(lines[1]).paddingTop)).toBeCloseTo(12, 0);
@@ -112,7 +112,7 @@ describe('paragraph gap above block constructs (PARA-R-7 / ADR-0010)', () => {
     it('a non-gapped (doc-top) heading keeps its own scaled breathing', async () => {
       const lines = await mount('# h');
       // --plainmark-heading-padding-top still governs non-gapped headings
-      // (ADR-0012): 0.4em in the h1 context = 0.4 * 32px = 12.8px.
+      // (HEAD-R-9): 0.4em in the h1 context = 0.4 * 32px = 12.8px.
       expect(parseFloat(getComputedStyle(lines[0]).paddingTop)).toBeCloseTo(12.8, 0);
     });
 

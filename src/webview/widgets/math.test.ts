@@ -243,7 +243,7 @@ describe('math_widgets_field — block decoration emission MATH-R-2 MATH-I-2 MAT
     expect(decos[0].to).toBe(doc.indexOf('\n'));
     expect(decos[0].widget.display).toBe(true);
     expect(decos[0].widget.src).toBe('x = y');
-    // The quote's own first-line logic carries the gap (ADR-0010), not the widget.
+    // The quote's own first-line logic carries the gap (PARA-R-7), not the widget.
     expect(decos[0].widget.gap_above).toBe(false);
   });
 

@@ -80,7 +80,7 @@ function build_html_theme(): Record<string, Record<string, string>> {
       'font-family': inline_font,
       'font-size': inline_size,
     },
-    // ADR-0010: an HTML block's first line carries the paragraph gap above the
+    // PARA-R-7: an HTML block's first line carries the paragraph gap above the
     // block (padding-top from the tripled paragraph-gap rule; no competing
     // padding here). The background bottom-anchors and stops short of the gap
     // so it renders as clear space. Only the block's FIRST line can carry the

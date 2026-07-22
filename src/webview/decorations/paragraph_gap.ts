@@ -12,11 +12,11 @@ import { detect_callout } from './callout_detect.js';
 
 // Constructs whose INTERIOR lines own their spacing (or where a newline is
 // content, not a paragraph break) — only the line a construct STARTS on joins
-// the paragraph rhythm (ADR-0010); every later line of it stays gap-free.
+// the paragraph rhythm (PARA-R-7); every later line of it stays gap-free.
 // Setext headings are deliberately absent: Plainmark renders them as plain
 // prose, and typing `-` under a paragraph transiently parses as a setext
 // underline — excluding it here would flash the layout mid-bullet-typing.
-// Blockquote is also absent (ADR-0007): quote and callout interiors share the
+// Blockquote is also absent (PARA-R-7): quote and callout interiors share the
 // prose paragraph rhythm, and quoted non-prose constructs stay gap-free via
 // the construct-start check in gap_eligible (BQ-R-13). FrontMatter is not
 // here — it is excluded unconditionally (it can only sit at the doc top, and
@@ -52,7 +52,7 @@ const gap_line = Decoration.line({ class: 'plainmark-paragraph-gap' });
 //
 // Item continuation lines — lazy (`- a\nb`) or indented (`- a\n  b`), i.e.
 // lines inside an item begun on an earlier line — keep the gap: under the
-// hard-newline break model (PARA-R-7, amended per ADR-0006) they read as
+// hard-newline break model (PARA-R-7) they read as
 // paragraphs, not soft wraps. Marker typing on one stays a single jump: `-`
 // prepended to existing text is still continuation prose (`-next`), and the
 // space keystroke completes a real item (`- next`) in the same instant the
@@ -84,7 +84,7 @@ function gap_eligible(
     if (n.name === 'FrontMatter') return false;
     if (NON_PROSE_CONTEXTS.has(n.name)) {
       // Interior lines of a non-prose construct own their spacing; the line
-      // the construct STARTS on joins the paragraph rhythm (ADR-0010), so the
+      // the construct STARTS on joins the paragraph rhythm (PARA-R-7), so the
       // block as a whole separates from what precedes it. Each construct's
       // theme renders that gap as clear space (background skips the padded
       // band; see the per-construct `.plainmark-paragraph-gap` rules).
@@ -110,12 +110,11 @@ function gap_eligible(
       return false;
   }
   // The FIRST line of the outermost quote (plain or callout header) is
-  // eligible like any construct start (ADR-0010, reversing ADR-0007's
-  // first-line exclusion): the gap renders as clear space above the block —
-  // the tint is bottom-anchored past the gap and the bars start below it
-  // (blockquote.ts / callout.ts), so no tinted band appears. It still
-  // composes with the list rules below (a quote opening inside a list item
-  // reads as that item's continuation).
+  // eligible like any construct start (PARA-R-7): the gap renders as clear
+  // space above the block — the tint is bottom-anchored past the gap and the
+  // bars start below it (blockquote.ts / callout.ts), so no tinted band
+  // appears. It still composes with the list rules below (a quote opening
+  // inside a list item reads as that item's continuation).
   if (outermost_list === null || outermost_list.from >= line.from) return true;
   return innermost_item !== null && innermost_item.from < line.from;
 }
@@ -165,13 +164,13 @@ const paragraph_gap_theme = EditorView.theme({
   // form already beat `.plainmark-list-item + .plainmark-list-item` item
   // spacing, but tied with the blockquote per-depth rule
   // (`.plainmark-blockquote[data-blockquote-depth]:not(.plainmark-callout)`),
-  // leaving quote-interior gaps (ADR-0007) to source order; the third class
+  // leaving quote-interior gaps (PARA-R-7) to source order; the third class
   // also outranks `.plainmark-callout-body`'s padding-top reset. The quote
   // tint and nesting bars span the padded box (bars are top:0/bottom:0 on the
   // line; the callout accent is a background gradient), so the gap renders as
   // in-quote space with unbroken chrome.
   //
-  // Construct START lines (ADR-0010) take this same padding as their default;
+  // Construct START lines (PARA-R-7) take this same padding as their default;
   // constructs that stack the gap on their own breathing room (quote first
   // line, callout header, indented-code first, headings, HR) override it with
   // (0,5,0) rules in their own themes — deliberately ABOVE this (0,4,0) so the

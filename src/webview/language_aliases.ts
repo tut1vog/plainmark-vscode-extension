@@ -9,10 +9,9 @@ import { languages } from '@codemirror/language-data';
 // below maps a base registry language (by exact name) to additional fence
 // tags, every one documented by highlight.js SUPPORTED_LANGUAGES.md, GitHub
 // Linguist languages.yml, or Typora's supported-language list — or, for
-// `cljs`, naming a dedicated grammar the registry already ships. Reference:
-// code-fence-language-aliases-2026 (research); ADR-0009 (entry bar, and the
-// deliberate exclusions: `ml` ambiguous, `armasm`/`mips`/`riscv` different
-// instruction sets, `racket` an unsourced cross-language mapping).
+// `cljs`, naming a dedicated grammar the registry already ships. Deliberate
+// exclusions (CBLK-R-16): `ml` ambiguous, `armasm`/`mips`/`riscv` different
+// instruction sets, `racket` an unsourced cross-language mapping.
 //
 // Cross-language approximations follow shipped precedent in those sources:
 // asm/nasm/x86asm → Gas highlights Intel-syntax source with an AT&T-syntax
@@ -68,7 +67,7 @@ export const alias_wrappers = extra_aliases.flatMap(([name, alias]) => {
 // Passed to markdown({ codeLanguages }) as a FUNCTION, not a merged array: an
 // array is always matched with fuzzy=true, whose substring pass would let the
 // new `asm` alias capture unrelated tags like ```armasm (a different
-// instruction set — see ADR-0009). The alias layer therefore participates in
+// instruction set — CBLK-R-16). The alias layer therefore participates in
 // EXACT name/alias matching only; the stock registry keeps its unmodified
 // behavior, including its own fuzzy pass (e.g. ```elisp already resolves to
 // Common Lisp via the substring alias `lisp`).

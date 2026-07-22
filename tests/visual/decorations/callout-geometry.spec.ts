@@ -1,4 +1,4 @@
-// DOM-geometry oracles for the callout construct (ADR-0002): normalize.ts strips
+// DOM-geometry oracles for the callout construct: normalize.ts strips
 // styles and the per-line measured hanging indent, so a callout whose title
 // collapsed onto its frame, whose body no longer hugged the accent, or whose
 // title/body stacking inverted still passes every snapshot. These relational
