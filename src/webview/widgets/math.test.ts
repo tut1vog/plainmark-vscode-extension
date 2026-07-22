@@ -285,10 +285,18 @@ describe('math_widgets_field — block decoration emission MATH-R-2 MATH-I-2 MAT
     expect((preview as unknown as MathBlockPreviewWidget).src).toBe('a = b');
   });
 
-  it('reveals when the caret sits on the quote prefix of a replaced line (widget-range overlap)', () => {
-    // Caret at offset 1 — inside the `> ` prefix, outside the node range but
-    // inside the whole-line widget range: the source must reveal (preview mode).
-    const state = make_state('> $$x = y$$\n\ntail', 1);
+  it('renders (does NOT reveal) with the caret at offset 0 — the freshly-opened-document state', () => {
+    // The webview parks the caret at 0 on open; the `> ` prefix before the
+    // node must not count as inside, or a doc-start quoted block opens
+    // permanently revealed (MATH-I-2 reveal range starts at node.from).
+    const state = make_state('> $$x = y$$\n\ntail', 0);
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].widget.src).toBe('x = y');
+  });
+
+  it('reveals when the caret touches the node start of a quoted block (MATH-I-2)', () => {
+    const state = make_state('> $$x = y$$\n\ntail', 2);
     expect(decorations(state)).toHaveLength(0);
   });
 

@@ -97,9 +97,15 @@ export class MathWidget extends WidgetType {
     const base = this.display
       ? `plainmark-math-block${this.gap_above ? ' plainmark-block-gap-above' : ''}`
       : 'plainmark-math-inline';
-    if (this.display) {
-      // Reserve a previously-measured height so the async typeset lands without
-      // reflowing content below it; fall back to one line when cold.
+    if (this.display && this.result === null) {
+      // PENDING ONLY: reserve a previously-measured height so the async
+      // typeset lands without reflowing content below it; fall back to one
+      // line when cold. A RESOLVED widget must take its natural height — a
+      // min-height there turns the cache into a ratchet (remember_block_height
+      // measures the same element, so measured ≥ min-height and the cache can
+      // never shrink), locking in any transient over-measurement (e.g. a first
+      // typeset measured before the math fonts load) as a session-wide
+      // oversized box with the formula top-anchored inside it.
       const cached = cached_block_height(math_cache_key(true, this.src));
       el.style.minHeight = cached >= 0 ? `${cached}px` : '1.5em';
     }
@@ -315,15 +321,28 @@ export function find_block_math_source(
 }
 
 // The whole-line span a BlockMath widget replaces: the node's [from, to)
-// extended to its first line's start and last line's end (MATH-R-2). Also the
-// range the reveal/preview overlap test and click-select use, so a caret or
-// click on the line margins (indent, quote prefix) behaves as being on the block.
+// extended to its first line's start and last line's end (MATH-R-2).
 export function block_math_widget_range(
   state: EditorState,
   from: number,
   to: number,
 ): OffsetRange {
   return { from: state.doc.lineAt(from).from, to: state.doc.lineAt(to).to };
+}
+
+// The span whose selection overlap reveals a BlockMath's raw source (MATH-I-2):
+// from the NODE's start (not the widget's line start) to the last line's end.
+// The line-start margin before the node — the `> ` quote prefix, leading
+// indent — must NOT reveal: a freshly opened document parks the caret at
+// offset 0, and a doc-start `> $$…$$` would open permanently revealed if the
+// prefix counted as inside. The end extends to the line end so a caret in the
+// closing line's trailing bytes still reveals.
+export function block_math_reveal_range(
+  state: EditorState,
+  from: number,
+  to: number,
+): OffsetRange {
+  return { from, to: state.doc.lineAt(to).to };
 }
 
 const block_lead_re = /^\$\$\s*\n?/;
@@ -399,7 +418,7 @@ function build_decorations(state: EditorState): {
         const first_line = state.doc.lineAt(from);
         const last_line = state.doc.lineAt(to);
         const widget_range = block_math_widget_range(state, from, to);
-        if (ranges_overlap(sel, widget_range)) {
+        if (ranges_overlap(sel, block_math_reveal_range(state, from, to))) {
           ranges.push(
             Decoration.widget({
               block: true,

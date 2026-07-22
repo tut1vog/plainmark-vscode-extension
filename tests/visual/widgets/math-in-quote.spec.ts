@@ -57,6 +57,38 @@ describe('quote-nested block math — rendered widget, byte safety', () => {
     expect((quote_line?.textContent ?? '').trim()).not.toBe('>');
   });
 
+  it('renders with the caret parked at offset 0 — the file-open state', async () => {
+    // The production webview opens documents with the caret at 0 (no
+    // initial_cursor on a plain open). The `> ` prefix must not count as
+    // caret-inside, or a doc-start quoted block opens permanently revealed.
+    view = mount_editor(container, QUOTED);
+    view.dispatch({ selection: { anchor: 0 } });
+    await expect
+      .poll(() => container.querySelectorAll('.plainmark-math-block mjx-container').length, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBeGreaterThan(0);
+  });
+
+  it('a resolved widget carries no min-height — natural height only (cache ratchet regression)', async () => {
+    view = mount_editor(container, QUOTED);
+    move_cursor(view, QUOTED.length);
+    await expect
+      .poll(() => container.querySelectorAll('.plainmark-math-block mjx-container').length, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBeGreaterThan(0);
+    await frames(5);
+    // A min-height on the RESOLVED widget makes remember_block_height measure
+    // its own floor (measured >= min-height), so a transient over-measurement
+    // (e.g. pre-font-load typeset) would lock in an oversized box for the
+    // session. Only the pending placeholder reserves height.
+    const widget = container.querySelector<HTMLElement>('.plainmark-math-block')!;
+    expect(widget.style.minHeight).toBe('');
+  });
+
   it('strips `> ` markup from a multi-line quoted block before typesetting', async () => {
     const doc = '> $$\n> \\frac{c}{d}\n> $$\n\ntail';
     view = mount_editor(container, doc);

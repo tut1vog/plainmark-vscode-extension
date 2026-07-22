@@ -7,6 +7,7 @@ import { frozen_reveal_selection_field } from '../decorations/pointer_state.js';
 import { should_reveal_for_selection } from '../decorations/selection_reveal.js';
 import {
   block_math_content_range,
+  block_math_reveal_range,
   block_math_widget_range,
   inline_math_content_range,
 } from './math.js';
@@ -54,10 +55,10 @@ export function math_content_select_range(
     return inline_math_content_range(node.from, node.to);
   }
   // Block reveal is the plain main-range overlap test (MATH-I-2) against the
-  // widget's whole-line span, read through the same frozen-selection lens the
-  // widget field uses while a press is held.
+  // reveal span, read through the same frozen-selection lens the widget field
+  // uses while a press is held.
   const sel = (state.field(frozen_reveal_selection_field, false) ?? state.selection).main;
-  if (ranges_overlap(sel, block_math_widget_range(state, node.from, node.to))) return null;
+  if (ranges_overlap(sel, block_math_reveal_range(state, node.from, node.to))) return null;
   return block_math_content_range(state, node.from, node.to);
 }
 

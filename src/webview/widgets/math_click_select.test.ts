@@ -63,11 +63,11 @@ describe('math_content_select_range MATH-I-15', () => {
       expect(doc.slice(7, 10)).toBe('a=b');
     });
 
-    it('returns null when the quoted block is revealed (caret on the quote prefix)', () => {
-      // Caret at 4 — on the prefix, within the widget range: source is revealed,
-      // so a click places an ordinary caret instead of selecting.
+    it('returns null when the quoted block is revealed (caret inside the node)', () => {
+      // Caret at 6 — inside the node: source is revealed, so a click places
+      // an ordinary caret instead of selecting.
       const doc = 'x\n\n> $$a=b$$';
-      expect(math_content_select_range(make_state(doc, 4), 6)).toBeNull();
+      expect(math_content_select_range(make_state(doc, 6), 6)).toBeNull();
     });
 
     it('does not select math from the prefix of a non-replaced quote line', () => {
