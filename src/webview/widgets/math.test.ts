@@ -222,6 +222,32 @@ describe('math_widgets_field — block decoration emission MATH-R-2 MATH-I-2 MAT
     expect((preview as unknown as MathBlockPreviewWidget).src).toBe('a = b');
   });
 
+  it('extends the replaced range to full lines over leading indent and trailing spaces (MATH-E-5)', () => {
+    const doc = '  $$x = y$$   \ntail';
+    const state = make_state(doc, doc.length);
+    const decos = decorations(state);
+    expect(decos).toHaveLength(1);
+    expect(decos[0].block).toBe(true);
+    expect(decos[0].from).toBe(0);
+    expect(decos[0].to).toBe(doc.indexOf('\n'));
+    expect(decos[0].widget.src).toBe('x = y');
+  });
+
+  it('emits NO replace widget for a single-line block nested in a blockquote (MATH-E-13)', () => {
+    const state = make_state('> $$x = y$$\n\ntail');
+    expect(decorations(state)).toHaveLength(0);
+  });
+
+  it('emits NO replace widget for a multi-line block nested in a blockquote (MATH-E-13)', () => {
+    const state = make_state('> $$\n> a = b\n> $$\n\ntail');
+    expect(decorations(state)).toHaveLength(0);
+  });
+
+  it('emits NO replace widget for a block nested in a list item (partial-line range)', () => {
+    const state = make_state('- $$x = y$$\n\ntail');
+    expect(decorations(state)).toHaveLength(0);
+  });
+
   it('emits decorations for multiple $$...$$ blocks in one document', () => {
     const doc = '$$\na\n$$\n\n$$\nb\n$$\n';
     const state = make_state(doc);

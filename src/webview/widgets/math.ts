@@ -358,14 +358,30 @@ function build_decorations(state: EditorState): {
           );
           return;
         }
+        // CM6 supports a `block: true` replace only over whole lines. A
+        // BlockMath node starts after any leading indent (and inside quotes,
+        // after the `> ` prefix), so extend the replaced range over pure-
+        // whitespace margins (MATH-E-5 indent / trailing spaces) to reach the
+        // line boundaries. When NON-whitespace shares a line with the node
+        // (quote `> `, list `- `), a legal range does not exist: emitting the
+        // partial-line widget makes CM6 split the line into a stub and mis-map
+        // DOM-side edits around the widget into document edits (observed:
+        // whole-block deletion, widget unicode text written into the source —
+        // INV-SP-1 violations). Emit no replace widget instead; the raw
+        // source stays visible and byte-safe (MATH-E-13).
+        const first_line = state.doc.lineAt(from);
+        const last_line = state.doc.lineAt(to);
+        const before_node = state.doc.sliceString(first_line.from, from);
+        const after_node = state.doc.sliceString(to, last_line.to);
+        if (/\S/.test(before_node) || /\S/.test(after_node)) return;
         const src = find_block_math_source(state, from, to);
         const result = cache.get(math_cache_key(true, src)) ?? null;
         if (!result) pending.push({ display: true, src, from, to });
         ranges.push(
           Decoration.replace({
             block: true,
-            widget: new MathWidget(true, src, result, state.doc.lineAt(from).number > 1),
-          }).range(from, to),
+            widget: new MathWidget(true, src, result, first_line.number > 1),
+          }).range(first_line.from, last_line.to),
         );
         return;
       }
