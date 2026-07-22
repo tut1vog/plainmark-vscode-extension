@@ -20,7 +20,7 @@ text to CM6 as a minimal-range change — the shared prefix and suffix are trimm
 to the smallest replaced span (`compute_min_diff`) so an external or escaped-echo
 `sync` preserves the caret instead of collapsing it to the document start.
 There is no `applyEdit` on this direction, so the
-2026-05-11 divergence concern does not apply. The webview's CM6 doc is the
+echo-divergence concern does not apply. The webview's CM6 doc is the
 LF-normalized form; EOL/BOM translation happens at the host boundary.
 
 Source-preservation, undo, and host-code-separation guarantees are owned by

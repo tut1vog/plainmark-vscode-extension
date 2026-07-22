@@ -1,4 +1,4 @@
-// FIX-5 (review 2026-06-10): lone-`\r` (classic-Mac) EOLs and INV-SP-1 scope.
+// Lone-`\r` (classic-Mac) EOLs and INV-SP-1 scope.
 // Before the fix, `native_to_lf` kept lone `\r` while CM6 normalized it, so
 // the host and webview LF views diverged on open and the FIRST keystroke
 // rewrote every EOL file-wide as an undeclared whole-doc diff. The declared

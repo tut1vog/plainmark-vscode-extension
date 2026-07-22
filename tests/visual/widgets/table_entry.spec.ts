@@ -132,7 +132,7 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (Fix 2)', () =
     expect(idx!.col).toBe(max_col);
   });
 
-  it('DEF-3: ArrowUp from below a table with an underfilled MIDDLE row targets the true last cell, not the placeholder', async () => {
+  it('ArrowUp from below a table with an underfilled MIDDLE row targets the true last cell, not the placeholder', async () => {
     // Row 1 is underfilled: its (1,1)/(1,2) placeholders are appended after
     // all real cells in info.cells, so a plain "last array element" pick
     // lands on the middle row's placeholder instead of (2,2).

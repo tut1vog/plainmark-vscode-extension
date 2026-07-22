@@ -139,7 +139,7 @@ Section code `D`.
 - **THEME-D-5** — The default heading scale MUST follow a GitHub-like ramp (`--plainmark-h1-size` 2em down to `--plainmark-h6-size` 0.85em) with weight 600, and headings MUST default to the inherited body color/font rather than a distinct heading color.
   _Example:_ `# A` renders at 2em/600; `###### F` at 0.85em/600.
 
-- **THEME-D-6** — `ROOT_DEFAULTS_CSS` MUST evaluate to a single string of valid CSS: balanced braces/parens/comments and NO backtick characters. The export is a TypeScript template literal, so a stray backtick (e.g. a markdown-style code span in a CSS comment) splits it into a string comparison that compiles cleanly, evaluates to a boolean, and makes the host inject `<style>true</style>` — silently killing every root default (the 2026-05-31 regression whose visible symptom was dead syntax highlighting).
+- **THEME-D-6** — `ROOT_DEFAULTS_CSS` MUST evaluate to a single string of valid CSS: balanced braces/parens/comments and NO backtick characters. The export is a TypeScript template literal, so a stray backtick (e.g. a markdown-style code span in a CSS comment) splits it into a string comparison that compiles cleanly, evaluates to a boolean, and makes the host inject `<style>true</style>` — silently killing every root default (a regression whose visible symptom is dead syntax highlighting).
   _Example:_ a CSS comment writes the blockquote marker as '> ' (single quotes), never backtick-quoted.
 
 ## S — spacing model

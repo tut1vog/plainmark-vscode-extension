@@ -96,7 +96,7 @@ describe('create_sync_loop SYNC-H-7 SYNC-G-2 SYNC-G-3 SYNC-G-4 SYNC-W-3 SYNC-W-4
     expect(h.applies).toEqual([]);
   });
 
-  // FIX-2 (review 2026-06-10): an in-flight update built on text A must not
+  // An in-flight update built on text A must not
   // apply after an external edit moved the doc to B — the whole-doc replace
   // would silently destroy the external edit, and the corrective change event
   // would never come (the clobbered text was just remembered as self-applied).
@@ -179,7 +179,7 @@ describe('create_sync_loop SYNC-H-7 SYNC-G-2 SYNC-G-3 SYNC-G-4 SYNC-W-3 SYNC-W-4
     ]);
   });
 
-  // FIX-1 (review 2026-06-10): byte-equality suppression swallowed any external
+  // Byte-equality suppression swallowed any external
   // edit whose bytes matched a remembered submission (split-editor undo being
   // the easy repro). Version provenance forwards it: the external change event
   // carries a version no self-applyEdit produced.
@@ -298,7 +298,7 @@ describe('create_sync_loop SYNC-H-7 SYNC-G-2 SYNC-G-3 SYNC-G-4 SYNC-W-3 SYNC-W-4
     });
   });
 
-  // FIX-4 (review 2026-06-10): a webview rebooted while an applyEdit is in
+  // A webview rebooted while an applyEdit is in
   // flight (config change re-sets webview.html) posts `ready`; a synchronous
   // handler would seed it with pre-apply text, and the apply's echo is
   // suppressed — the stale seed would then full-replace the doc backwards.

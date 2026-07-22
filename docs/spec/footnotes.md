@@ -47,13 +47,13 @@ autocomplete and no rendered back-reference (`↩`) affordance.
 
 ## I — Interaction
 
-- **FN-I-1** `[smoke]` — While the canonical reveal predicate (`should_reveal_for_selection`, MRS-R-2…R-5: any selection range touching the reference node reveals, EXCEPT a non-empty selection strictly covering it on both sides; pointer-down evaluates the frozen pre-press selection) holds for a reference node's byte span, the replace decoration MUST be dropped so the raw `[^id]` source shows; reveal is node-level, not line-level. Unified via DEF-7 (2026-06-12): select-all no longer un-renders every reference.
+- **FN-I-1** `[smoke]` — While the canonical reveal predicate (`should_reveal_for_selection`, MRS-R-2…R-5: any selection range touching the reference node reveals, EXCEPT a non-empty selection strictly covering it on both sides; pointer-down evaluates the frozen pre-press selection) holds for a reference node's byte span, the replace decoration MUST be dropped so the raw `[^id]` source shows; reveal is node-level, not line-level. Under the unified reveal model: select-all no longer un-renders every reference.
   _Example:_ `text[^|a]` → the `[^a]` source is shown verbatim; other refs on the same line stay superscripted; Ctrl+A keeps all refs superscripted.
 
 - **FN-I-2** `[smoke]` — Hovering a reference superscript MUST, after a 300ms delay, open a popover (CM6 `Tooltip`, `above: true`) anchored to the reference span, unless a click-pinned popover is already open for it.
   _Example:_ hover superscript `a`, wait 300ms → popover appears above the reference.
 
-- **FN-I-3** `[smoke]` — The hover popover MUST stay open when the pointer moves from the reference into the popover element, and MUST close 150ms after the pointer leaves the reference without entering the popover, OR 150ms after the pointer leaves the popover itself (DEF-1, 2026-06-12); re-entering the popover within that window cancels the close.
+- **FN-I-3** `[smoke]` — The hover popover MUST stay open when the pointer moves from the reference into the popover element, and MUST close 150ms after the pointer leaves the reference without entering the popover, OR 150ms after the pointer leaves the popover itself; re-entering the popover within that window cancels the close.
   _Example:_ hover `a` then move onto the popover → it stays; move away to blank text (from either the ref or the popover) → it closes after 150ms.
 
 - **FN-I-4** `[smoke]` — Left-clicking (button 0) a reference superscript MUST open a click-mode popover and MUST `preventDefault` so the caret is not placed; a click popover MUST NOT be downgraded to hover mode by a later hover.

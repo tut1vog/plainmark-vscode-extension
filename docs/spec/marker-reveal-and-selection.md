@@ -25,8 +25,8 @@ node-scoped, applies the non-strict-cover rule, and is gated by the pointer-down
 freeze (while a button is held it evaluates the pre-press selection captured in
 `frozen_reveal_selection_field`, not the live one); the emphasis family, inline
 code, links, backslash escapes (`escapes.md`), fenced-code fence reveal
-(`code-blocks.md` CBLK-I-1/CBLK-I-3), math widgets (`math.md`), and — unified via
-DEF-7 (2026-06-12) — the image paragraph widget (IMG-I-1), mermaid block widget
+(`code-blocks.md` CBLK-I-1/CBLK-I-3), math widgets (`math.md`), and — under the unified
+reveal model — the image paragraph widget (IMG-I-1), mermaid block widget
 (MMD-I-1), footnote reference reveal (FN-I-1), and the ordered-list per-line
 reveal (LIST-I-3, evaluated against the item's own marker line range) call it
 directly. The

@@ -11,7 +11,7 @@ function next_frame(): Promise<void> {
 // replace widget (shorter box, vertical-align: middle), and text. The clipped
 // selection layer's visual-row detection must neither seed nor split rows on
 // these height differences, and each row's rectangle must cover the tallest
-// sampled box. Regression for the 2026-06-12 owner report: full-width band +
+// sampled box. Regression: full-width band +
 // darker double-painted box over the text on selected task lists.
 describe('SHELL-X-10: selection rectangles on task-list lines', () => {
   let container: HTMLElement;

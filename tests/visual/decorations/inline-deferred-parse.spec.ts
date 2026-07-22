@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { syntaxTreeAvailable } from '@codemirror/language';
 import { mount_editor } from '../util.js';
 
-// FIX-14: inline-decoration ViewPlugins must rebuild when CM6's lazy parse
+// Inline-decoration ViewPlugins must rebuild when CM6's lazy parse
 // advances the tree (effect-only transactions: no docChanged / viewportChanged
 // / selectionSet). Jump past the parse frontier and wait — with no further
 // interaction — for the heading chrome and footnote widget to appear.

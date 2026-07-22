@@ -3,7 +3,7 @@ import type { EditorView } from '@codemirror/view';
 import { allow_console } from '../console-sentinel.js';
 import { mount_editor, move_cursor } from '../util.js';
 
-describe('math typeset failure FIX-8', () => {
+describe('math typeset failure is cached', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
   let saved_mathjax: Window['MathJax'];

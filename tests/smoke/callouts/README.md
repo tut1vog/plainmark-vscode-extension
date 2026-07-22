@@ -30,7 +30,7 @@
 | 8 | `08-multi-paragraph.md` | Continuous accent chrome across all five lines including the blank `>` separators. |
 | 9 | `09-suppression-vs-plain-blockquote.md` | Visually inspect: plain blockquotes show the multi-bar gradient bar; the callout in the middle does NOT have it. Plain blockquote chrome returns after the callout. |
 | 10 | `10-marker-on-wrong-line.md` | Renders as a plain blockquote (multi-bar chrome). `[!NOTE]` on line 2 is NOT recognized — strongest cross-engine invariant (CALL-E-2). |
-| 11 | `11-pipe-syntax.md` | **Doc-vs-impl divergence checkpoint.** Renders as a plain blockquote, NOT as an unknown-type callout. `docs/spec/callouts.md` entry 2026-05-18 records the supersession. |
+| 11 | `11-pipe-syntax.md` | **Doc-vs-impl divergence checkpoint.** Renders as a plain blockquote, NOT as an unknown-type callout. CALL-E-5 in `docs/spec/callouts.md` records the supersession. |
 | 12 | `12-nested-callout.md` | First block: outer is the NOTE callout; the inner `> >` does not stack additional callout chrome. Second block: plain blockquote at depth 1 + plain blockquote at depth 2 (no callout chrome — matches GitHub "cannot be nested"). |
 
 ## Interaction cases

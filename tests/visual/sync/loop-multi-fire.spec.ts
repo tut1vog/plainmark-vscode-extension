@@ -209,7 +209,7 @@ describe('create_sync_loop multi-fire echo regression SYNC-G-2 SYNC-G-3 SYNC-G-6
   });
 
   it('idempotent external edit while the apply is in flight is absorbed (c, known degenerate)', async () => {
-    // The version-keyed gate (FIX-1, review 2026-06-10) narrowed SYNC-G-6: the
+    // The version-keyed gate narrowed SYNC-G-6: the
     // byte check now exists only to classify the in-flight apply's first fire,
     // so an idempotent external edit is absorbed only inside that await window
     // (harmless — the webview already shows the matching text). This test pins
@@ -245,7 +245,7 @@ describe('create_sync_loop multi-fire echo regression SYNC-G-2 SYNC-G-3 SYNC-G-6
     expect(h.posted.length).toBe(1);
   });
 
-  it('idempotent external edit after the apply settles is forwarded (FIX-1)', async () => {
+  it('idempotent external edit after the apply settles is forwarded', async () => {
     const h = make_harness('hello');
     const loop = create_sync_loop(h.document, h.webview, h.applier);
     await loop.handle_webview_message({ type: 'ready' });

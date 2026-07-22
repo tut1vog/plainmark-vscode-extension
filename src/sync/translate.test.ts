@@ -14,7 +14,7 @@ describe('native_to_lf SYNC-H-3', () => {
     expect(native_to_lf('a\r\nb\nc\r\n')).toBe('a\nb\nc\n');
   });
 
-  // FIX-5 (review 2026-06-10): lone CR is normalized at the host boundary —
+  // Lone CR is normalized at the host boundary —
   // CM6 normalizes it anyway, and keeping it host-side made the LF views
   // diverge so the first keystroke rewrote EOLs as an UNDECLARED whole-doc
   // diff. Now declared: legacy classic-Mac EOLs normalize on first edit.

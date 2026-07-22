@@ -125,7 +125,7 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7)', () => {
 
   it('callout body lines carry the gap, except the first one under the header', async () => {
     // Title→content seam stays the header's title-padding-bottom alone
-    // (owner smoke 2026-07-20 rejected gap-sized spacing under the icon line).
+    // (the callout title seam carries no gap — CALL-R-11).
     expect(await gap_flags('> [!note] title\n> body\n> more')).toEqual([false, false, true]);
   });
 

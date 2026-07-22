@@ -10,7 +10,7 @@ interface MermaidGlobal {
   };
 }
 
-describe('mermaid bundle load failure FIX-12', () => {
+describe('mermaid bundle load failure renders a visible error', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

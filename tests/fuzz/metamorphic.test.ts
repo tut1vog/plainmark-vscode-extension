@@ -46,8 +46,7 @@ function parse(src: string): Tree {
 // across line endings). The allowlist is loaded from
 // `fixtures/metamorphic-known-divergences.json` so the test fails when a
 // new divergence appears (regression) or when a previously-listed entry no
-// longer diverges (cleanup signal). Initial census: first run,
-// 2026-05-28.
+// longer diverges (cleanup signal).
 import known_divergences from './fixtures/metamorphic-known-divergences.json';
 
 type DivergenceKey = `${string}#${number}`;
@@ -95,7 +94,7 @@ describe('metamorphic: CRLF ↔ LF identity', () => {
   });
 });
 
-// FIX-5 (review 2026-06-10): lone `\r` is normalized at the host boundary
+// Lone `\r` is normalized at the host boundary
 // (`native_to_lf`), so the webview parser never sees a CR variant — the
 // invariant to fuzz is the boundary function itself: any EOL flavor of a
 // corpus entry must normalize to the exact LF original. String identity over

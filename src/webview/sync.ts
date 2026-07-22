@@ -150,7 +150,7 @@ export interface SyncDispatchView {
   dispatch(spec: TransactionSpec): void;
 }
 
-// Newest-sync-wins coalescing (DEF-12): every dispatch bumps the view's
+// Newest-sync-wins coalescing: every dispatch bumps the view's
 // generation; a sync deferred behind composition re-checks it on retry and
 // drops itself once a newer sync exists. Without this, the stale retry
 // regresses the doc to older host text after the newer sync applied — and the

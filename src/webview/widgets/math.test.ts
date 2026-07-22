@@ -123,7 +123,7 @@ describe('MathWidget.eq MATH-R-6', () => {
   });
 });
 
-describe('math_cache_field — failed typeset results FIX-8', () => {
+describe('math_cache_field — failed typeset results are cached', () => {
   it('records an { ok: false } result under the display-aware key', () => {
     let state = make_state('$$\na\n$$\n');
     state = state.update({

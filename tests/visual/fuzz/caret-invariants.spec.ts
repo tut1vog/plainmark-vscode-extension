@@ -40,7 +40,7 @@
 //            this oracle's gate
 //            check, the typed char, and the round-trip Backspace —
 //            sending the two keystrokes into different views (the
-//            captured 2026-06-01 flake: "w" landed in the main doc
+//            captured flake: "w" landed in the main doc
 //            while Backspace deleted a char inside a cell subview and
 //            triggered a whole-table re-pad). Identity is simply not
 //            the contract while a table exists in the doc; gate (i)'s

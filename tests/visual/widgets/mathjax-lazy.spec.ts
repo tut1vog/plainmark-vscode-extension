@@ -15,7 +15,7 @@ function mathjax_script_count(): number {
   return document.querySelectorAll('script[src*="mathjax"]').length;
 }
 
-describe('mathjax lazy load (DEF-9)', () => {
+describe('mathjax lazy load', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

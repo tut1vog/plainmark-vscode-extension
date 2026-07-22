@@ -360,7 +360,7 @@ describe('caret survives undo of a multi-line (<br>) cell edit', () => {
   });
 });
 
-describe('SYNC-H-8 — a host sync rebases the active cell subview (FIX-3)', () => {
+describe('SYNC-H-8 — a host sync rebases the active cell subview', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -448,7 +448,7 @@ describe('SYNC-H-8 — a host sync rebases the active cell subview (FIX-3)', () 
   });
 });
 
-describe('FIX-11 — destroy after an eq()-true widget swap tears down the stranded active state', () => {
+describe('destroy after an eq()-true widget swap tears down the stranded active state', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -514,7 +514,7 @@ describe('FIX-11 — destroy after an eq()-true widget swap tears down the stran
   });
 });
 
-describe('FIX-7 — cell keymap resolves table.from live after a position shift', () => {
+describe('cell keymap resolves table.from live after a position shift', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

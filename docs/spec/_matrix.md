@@ -422,7 +422,7 @@
 | IMG-I-10 | tier-b | conforming | `image-paste.spec.ts` |
 | IMG-I-11 | tier-a + tier-b + smoke | conforming | `image.test.ts`, `image.spec.ts` |
 | IMG-R-1 | UNCOVERED | conforming | — |
-| IMG-R-2 | tier-a | conforming | `image.test.ts` |
+| IMG-R-2 | tier-a + tier-b | conforming | `image.test.ts`, `image.spec.ts` |
 | IMG-R-3 | tier-a + tier-b | conforming | `image.test.ts`, `image.spec.ts` |
 | IMG-R-4 | smoke | conforming | — |
 | IMG-R-5 | tier-a | conforming | `image.test.ts` |
@@ -715,7 +715,7 @@
 | PARA-R-4 | smoke | conforming | — |
 | PARA-R-5 | smoke | conforming | — |
 | PARA-R-6 | UNCOVERED | conforming | — |
-| PARA-R-7 | tier-b | conforming | `paragraph-gap-blockquote.spec.ts`, `paragraph-gap-blocks.spec.ts`, `paragraph-gap-list-continuation.spec.ts` |
+| PARA-R-7 | tier-a + tier-b | conforming | `blockquote.test.ts`, `math.test.ts`, `paragraph-gap-blockquote.spec.ts`, `paragraph-gap-blocks.spec.ts`, `paragraph-gap-list-continuation.spec.ts` |
 | PARA-SP-1 | tier-a + tier-b + inherited | conforming | — |
 | PARA-SP-2 | tier-a | conforming | `list_enter_lazy_continuation.test.ts` |
 | PARA-SP-3 | tier-a + tier-b + smoke + inherited | conforming | — |

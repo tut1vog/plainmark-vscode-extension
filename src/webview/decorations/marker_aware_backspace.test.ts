@@ -57,7 +57,7 @@ describe('marker_aware_backspace MRS-B-1 MRS-B-2 MRS-B-3 MRS-B-4 MRS-B-5 MRS-B-6
     });
   });
 
-  describe('YIELDS — blockquote contexts (DEF-10: consumed upstream by blockquote_plain_backspace)', () => {
+  describe('YIELDS — blockquote contexts (consumed upstream by blockquote_plain_backspace)', () => {
     it('blockquote `>  hello` at col 2 returns false', () => {
       const { view, applied } = make_view('>  hello', 2);
       expect(marker_aware_backspace(view)).toBe(false);
@@ -193,7 +193,7 @@ describe('lazy_continuation_backspace MRS-B-10', () => {
   });
 
   describe('YIELDS', () => {
-    it('blockquote lazy line `> q\\n`#x` yields (DEF-10: consumed upstream by blockquote_plain_backspace)', () => {
+    it('blockquote lazy line `> q\\n`#x` yields (consumed upstream by blockquote_plain_backspace)', () => {
       const { view, applied } = make_view('> q\n`#x', 6);
       expect(lazy_continuation_backspace(view)).toBe(false);
       expect(applied).toHaveLength(0);

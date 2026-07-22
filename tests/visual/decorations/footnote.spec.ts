@@ -183,7 +183,7 @@ describe('footnote_insert command', () => {
   });
 });
 
-describe('footnote reveal — covering selection (DEF-7)', () => {
+describe('footnote reveal — covering selection', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

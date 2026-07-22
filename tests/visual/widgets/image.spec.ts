@@ -73,7 +73,7 @@ describe('image widget', () => {
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(1);
   });
 
-  it('DEF-7: a covering selection (select-all) keeps the image rendered', () => {
+  it('a covering selection (select-all) keeps the image rendered', () => {
     const doc = `hello\n\n![alt](${sample_data_url})\n\nworld`;
     view = mount_editor(container, doc, 'https://example.test/');
     move_cursor(view, doc.length);
@@ -82,7 +82,7 @@ describe('image widget', () => {
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(1);
   });
 
-  it('DEF-7: a drag selection entering the image does not reveal source mid-drag', () => {
+  it('a drag selection entering the image does not reveal source mid-drag', () => {
     const doc = `hello\n\n![alt](${sample_data_url})\n\nworld`;
     view = mount_editor(container, doc, 'https://example.test/');
     move_cursor(view, 2);
@@ -110,7 +110,7 @@ describe('image widget', () => {
     expect(container.querySelectorAll('.plainmark-image-block-preview img')).toHaveLength(1);
   });
 
-  it('a click on the rendered image places the caret and reveals source (FIX-13)', async () => {
+  it('a click on the rendered image places the caret and reveals source', async () => {
     const doc = `hello\n\n![alt](${sample_data_url})\n\nworld`;
     view = mount_editor(container, doc, 'https://example.test/');
     move_cursor(view, doc.length);

@@ -77,7 +77,7 @@ describe('TBL-SP-4 parse_cell_text — keeps markdown escapes verbatim', () => {
     expect(parse_cell_text('\\$38-\\$45')).toBe('\\$38-\\$45');
   });
 
-  it('DEF-6: converts <br> to newline case-insensitively, matching render (BR1)', () => {
+  it('converts <br> to newline case-insensitively, matching render (BR1)', () => {
     expect(parse_cell_text('a<BR>b')).toBe('a\nb');
     expect(parse_cell_text('a<Br/>b')).toBe('a\nb');
     expect(parse_cell_text('a<BR />b')).toBe('a\nb');

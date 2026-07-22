@@ -121,7 +121,7 @@ function gap_eligible(
 
 // A hard `\n` renders as a paragraph break: every eligible line after the
 // first document line gets gap padding above it. Soft-wrapped rows share one
-// .cm-line, so wrap boundaries are untouched (PARA-E-5 amendment, 2026-07-19).
+// .cm-line, so wrap boundaries are untouched (PARA-E-5).
 function build_gap_decorations(view: EditorView): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   for (const { from, to } of view.visibleRanges) {

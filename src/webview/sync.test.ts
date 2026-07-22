@@ -383,7 +383,7 @@ describe('dispatch_host_sync — CJK IME composition guard SYNC-G-7', () => {
     expect(spec.changes).toEqual({ from: 0, to: 2, insert: 'XYZ' });
   });
 
-  // FIX-2 (review 2026-06-10): base-version bookkeeping must track APPLIED
+  // Base-version bookkeeping must track APPLIED
   // syncs only — advancing it on receipt would let a composition-deferred
   // sync stamp a base the doc does not yet reflect.
   it('on_applied fires when the sync dispatches', () => {
@@ -418,7 +418,7 @@ describe('dispatch_host_sync — CJK IME composition guard SYNC-G-7', () => {
     expect(applied).toBe(1);
   });
 
-  // DEF-12 (review 2026-06-10): newest-sync-wins coalescing. A sync deferred
+  // Newest-sync-wins coalescing: a sync deferred
   // behind composition must not apply after a newer sync — its retry would
   // regress the doc to stale host text, and the next keystroke's update
   // (carrying the still-valid base version) would write that regression back
