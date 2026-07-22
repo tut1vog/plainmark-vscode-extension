@@ -4,6 +4,18 @@ All notable changes to the Plainmark extension are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Math blocks render inside quotes** — `$$…$$` display math nested in a blockquote or callout now typesets inside the quote's bar and tint, like Typora and Obsidian, at any nesting depth and for the single-line, multi-line, and lazy-continuation forms; the `>` prefixes are stripped from the formula instead of typesetting as stray "greater than" operators. Math inside list items stays as source.
+
+### Fixed
+
+- **Editing near quoted math no longer corrupts the file** — with display math in a blockquote, a single Backspace on the line below could silently delete the entire formula, and some edit gestures wrote the formula's on-screen unicode rendering back into the Markdown source; the decoration shape that mis-mapped those edits is gone.
+- **Display math no longer doubles its surrounding whitespace** — MathJax's own default vertical margins stacked on top of the editor's intended spacing around every `$$…$$` block; the block now spaces with just its own padding.
+- **A display block can no longer get stuck oversized** — a formula measured before the math fonts finished loading could lock an inflated box height in for the whole session, leaving a large blank band under the math.
+
 ## [1.6.2] - 2026-07-21
 
 ### Added
