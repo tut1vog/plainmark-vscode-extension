@@ -265,7 +265,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.96.0",
-    "@vitest/browser": "^4.1.9",
+    "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.9",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/test-web": "^0.0.80",
