@@ -118,25 +118,33 @@ function quoted_list_indent_units(state: EditorState, line_from: number, line_te
 // padding-left). The net-to-zero pair also pins the per-marker bars: a line
 // whose padding and indent did not cancel would paint its bar off-column. On
 // a list line the indent adds `units` list-indent steps on top of the prefix
-// px (see quoted_list_indent_units). Cached per (depth, px, units).
+// px (see quoted_list_indent_units). `bar_step` (the measured `> ` advance,
+// gt + space) is published as a per-line CSS variable so the widget-line bar
+// rules (MATH-E-13 `:has` bars, which have no rendered markers to flow
+// against) paint each depth's bar at the SAME x as the per-marker bars of
+// neighboring lines; without it the widget line falls back to the em grid
+// and its inner bars visibly drift at depth ≥ 2.
+// Cached per (depth, px, units, first, bar_step).
 const indent_line_cache = new Map<string, Decoration>();
 function indent_line_decoration(
   depth: number,
   px: number,
   units: number,
   first: boolean,
+  bar_step: number,
 ): Decoration {
-  const key = `${depth}:${px}:${units}:${first}`;
+  const key = `${depth}:${px}:${units}:${first}:${bar_step}`;
   let deco = indent_line_cache.get(key);
   if (!deco) {
     const expr =
       units > 0
         ? `calc(${px}px + ${units} * var(--plainmark-list-indent, 1em))`
         : `${px}px`;
+    const step = bar_step > 0 ? `--plainmark-quote-bar-step:${bar_step}px;` : '';
     const style =
       units > 0
-        ? `padding-left:${expr};text-indent:calc(-1 * ${expr})`
-        : `padding-left:${px}px;text-indent:-${px}px`;
+        ? `${step}padding-left:${expr};text-indent:calc(-1 * ${expr})`
+        : `${step}padding-left:${px}px;text-indent:-${px}px`;
     deco = Decoration.line({
       class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}`,
       attributes: {
@@ -223,6 +231,7 @@ const blockquote_handler: NodeHandler = {
               hanging_indent_px(counts.gt, counts.ws, metrics),
               units,
               first,
+              Math.round((metrics.gt + metrics.space) * 100) / 100,
             )
           : depth_line_decorations.get(`${clamped}:${first}`);
       if (deco) decorations.push(deco.range(line.from));
@@ -339,10 +348,13 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
 
   // A quote line whose content is a quote-nested math widget (MATH-E-13) has
   // its `>` markers inside the replaced range — the per-marker bars above
-  // cannot draw. The LINE's own ::before carries the bars instead: one bar
-  // per depth on the em-fallback grid (the true per-marker x positions do not
-  // exist — no markers are rendered). `:has()` is supported by both hosts
-  // (Electron / evergreen browsers).
+  // cannot draw. The LINE's own ::before carries the bars instead, one per
+  // depth, stepped by `--plainmark-quote-bar-step` — the measured `> `
+  // advance the line decoration publishes (indent_line_decoration) — so each
+  // bar lands at the SAME x as neighboring lines' per-marker bars; the em
+  // grid is only the pre-measure fallback. `:has()` is supported by both
+  // hosts (Electron / evergreen browsers).
+  const bar_step = `var(--plainmark-quote-bar-step, ${indent})`;
   for (let n = 1; n <= MAX_DEPTH; n++) {
     rules[
       `.plainmark-blockquote[data-blockquote-depth="${n}"]:has(> .plainmark-math-block)::before`
@@ -352,8 +364,8 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
       top: '0',
       bottom: '0',
       left: '0',
-      width: `calc(${n - 1} * ${indent} + ${bar_width})`,
-      background: `repeating-linear-gradient(to right, ${bar_color} 0, ${bar_color} ${bar_width}, transparent ${bar_width}, transparent ${indent})`,
+      width: `calc(${n - 1} * ${bar_step} + ${bar_width})`,
+      background: `repeating-linear-gradient(to right, ${bar_color} 0, ${bar_color} ${bar_width}, transparent ${bar_width}, transparent ${bar_step})`,
       'pointer-events': 'none',
     };
   }

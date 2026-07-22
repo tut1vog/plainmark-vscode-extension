@@ -107,7 +107,7 @@ describe('blockquote line decoration — measured-indent branch BQ-R-12', () => 
     const decos = line_decos('> quote\n', { gt: 7, space: 4 });
     expect(decos).toHaveLength(1);
     expect(decos[0].depth).toBe('1');
-    expect(decos[0].style).toBe('padding-left:11px;text-indent:-11px');
+    expect(decos[0].style).toBe('--plainmark-quote-bar-step:11px;padding-left:11px;text-indent:-11px');
   });
 
   it('falls back to the class-only decoration (no inline style) before measurement', () => {
@@ -144,28 +144,28 @@ describe('quoted list line indent — depth-driven units BQ-R-12 LIST-R-11', () 
   it('adds one indent unit on a depth-0 list line, counting only the quote prefix', () => {
     // '> - a' — prefix '> ' → 1·7 + 1·4 = 11px, plus 1 unit for the marker slot
     expect(line_styles('> - a\n')).toEqual([
-      'padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
+      '--plainmark-quote-bar-step:11px;padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
     ]);
   });
 
   it('adds depth+1 units on a nested list line, excluding the nesting spaces from the px', () => {
     // line 2 '>   - n' — prefix-only counts stay gt 1, ws 1 (11px); 2 units
     expect(line_styles('> - a\n>   - n\n')).toEqual([
-      'padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
-      'padding-left:calc(11px + 2 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 2 * var(--plainmark-list-indent, 1em)))',
+      '--plainmark-quote-bar-step:11px;padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
+      '--plainmark-quote-bar-step:11px;padding-left:calc(11px + 2 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 2 * var(--plainmark-list-indent, 1em)))',
     ]);
   });
 
   it('keeps the plain px form on a non-list quote line, counting the full literal run', () => {
     // '>   x' — not a list; intentional content spaces stay counted: 1·7 + 3·4 = 19px
-    expect(line_styles('>   x\n')).toEqual(['padding-left:19px;text-indent:-19px']);
+    expect(line_styles('>   x\n')).toEqual(['--plainmark-quote-bar-step:11px;padding-left:19px;text-indent:-19px']);
   });
 
   it('keeps the plain px form on a list item continuation line', () => {
     // line 2 '>   cont' is ListItem content but has no ListMark of its own
     expect(line_styles('> - a\n>   cont\n')).toEqual([
-      'padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
-      'padding-left:19px;text-indent:-19px',
+      '--plainmark-quote-bar-step:11px;padding-left:calc(11px + 1 * var(--plainmark-list-indent, 1em));text-indent:calc(-1 * calc(11px + 1 * var(--plainmark-list-indent, 1em)))',
+      '--plainmark-quote-bar-step:11px;padding-left:19px;text-indent:-19px',
     ]);
   });
 });

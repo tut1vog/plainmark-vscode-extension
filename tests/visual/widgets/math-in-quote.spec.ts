@@ -68,6 +68,44 @@ describe('quote-nested block math — rendered widget, byte safety', () => {
     expect(parseFloat(before.width)).toBeGreaterThan(0);
   });
 
+  it('nested-depth bar alignment: the widget line inner bar sits at the neighbor line marker x', async () => {
+    // The widget line has no rendered markers, so its bars come from the
+    // line ::before stepped by --plainmark-quote-bar-step (the measured `> `
+    // advance). At depth 2 the inner bar must land at the same x as the
+    // second `>` of an adjacent, normally-rendered quote line — the em
+    // fallback grid visibly drifts.
+    const doc = '> > text above\n> > $$\\frac{a}{b}$$\n> > text below\n\ntail';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await expect
+      .poll(() => container.querySelectorAll('.plainmark-math-block mjx-container').length, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBeGreaterThan(0);
+    const widget_line = () =>
+      container.querySelector<HTMLElement>('.plainmark-math-block')?.parentElement ?? null;
+    // The measured step lands async (probe -> effect -> rebuild): poll for it.
+    await expect
+      .poll(
+        () =>
+          widget_line()
+            ? getComputedStyle(widget_line()!).getPropertyValue('--plainmark-quote-bar-step')
+            : '',
+        { timeout: 10000, interval: 100 },
+      )
+      .toMatch(/px/);
+    await frames(3);
+    // Neighbor line 1: x-advance from its first `>` (pos 0) to its second (pos 2).
+    const x0 = view.coordsAtPos(0)!.left;
+    const x2 = view.coordsAtPos(2)!.left;
+    const marker_step = x2 - x0;
+    const before = getComputedStyle(widget_line()!, '::before');
+    // depth 2: width = 1 * step + 4px bar width.
+    const bar_step = parseFloat(before.width) - 4;
+    expect(Math.abs(bar_step - marker_step)).toBeLessThanOrEqual(1.5);
+  });
+
   it('marker-metrics poisoning regression: prose above, math line is the only quote', async () => {
     // The probe's first-in-viewport QuoteMark sits INSIDE the replaced range;
     // measuring it via coordsAtPos returned the widget's box edges (~the full
