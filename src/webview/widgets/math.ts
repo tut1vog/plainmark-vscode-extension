@@ -359,10 +359,7 @@ const block_trail_re = /(?:\n[ \t>]*)?\$\$\s*$/;
 // via block_trail_re. Without this the literal `>` bytes reach MathJax and
 // typeset as relational operators — the mis-render Obsidian still ships
 // natively. Read-only (MATH-SP-2); unquoted blocks pass through unchanged.
-export function find_block_math_source_stripped(
-  state: EditorState,
-  node: SyntaxNode,
-): string {
+function find_block_math_source_stripped(state: EditorState, node: SyntaxNode): string {
   const raw = state.doc.sliceString(node.from, node.to);
   const lead = raw.match(block_lead_re)?.[0].length ?? 0;
   const trail = raw.match(block_trail_re)?.[0].length ?? 0;
