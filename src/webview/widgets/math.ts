@@ -538,6 +538,17 @@ const math_theme = EditorView.theme({
   '.plainmark-math-inline': {
     color: 'var(--plainmark-math-color, inherit)',
   },
+  // MathJax v4's CHTML stylesheet gives display containers a default vertical
+  // margin (`mjx-container[display] { margin: .7em 0 }`) that stacks on the
+  // widget's own padding (MATH-R-7 + the ADR-0010 gap), roughly doubling the
+  // whitespace around every display block. The widget padding is the single
+  // spacing authority — zero the inner container's margin in both the replace
+  // widget and the in-flow preview. MathJax's small internal `.3em 2px`
+  // padding stays: it keeps glyphs off the scroll-box edge (MATH-R-9).
+  '.plainmark-math-block mjx-container[display="true"], .plainmark-math-block-preview mjx-container[display="true"]':
+    {
+      margin: '0',
+    },
   '.plainmark-math-pending': {
     opacity: 'var(--plainmark-math-pending-opacity, 0.5)',
   },

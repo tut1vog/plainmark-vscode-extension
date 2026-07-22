@@ -73,6 +73,58 @@ describe('math widget geometry oracles', () => {
     expect(mjx.bottom).toBeLessThanOrEqual(below.top + 1);
   });
 
+  it('MATH-R-7: the block widget padding is the only vertical chrome — the inner mjx-container margin is zeroed', async () => {
+    // Src unique to this test: a shared src would seed the widget's reserved
+    // min-height from another test's measurement and inflate the box past the
+    // padding + container sum this oracle asserts.
+    const doc = 'above paragraph\n\n$$\\frac{p_1}{q_2}$$\n\nbelow paragraph';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await expect
+      .poll(() => container.querySelectorAll('mjx-container[display="true"]').length, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBeGreaterThan(0);
+    await frames(3);
+
+    const block = container.querySelector<HTMLElement>('.plainmark-math-block')!;
+    const mjx = container.querySelector<HTMLElement>('mjx-container[display="true"]')!;
+    const mcs = getComputedStyle(mjx);
+    expect(mcs.marginTop).toBe('0px');
+    expect(mcs.marginBottom).toBe('0px');
+
+    // Relational: the widget box is exactly its padding plus the typeset
+    // container — any re-leaked default margin (MathJax ships `.7em 0`)
+    // reopens a gap between the two heights.
+    const bcs = getComputedStyle(block);
+    const chrome = parseFloat(bcs.paddingTop) + parseFloat(bcs.paddingBottom);
+    const gap =
+      block.getBoundingClientRect().height - mjx.getBoundingClientRect().height - chrome;
+    expect(Math.abs(gap)).toBeLessThanOrEqual(1);
+  });
+
+  it('MATH-R-7 MATH-I-6: the in-flow block preview zeroes the inner mjx-container margin too', async () => {
+    const doc = '$$\\frac{a}{b}$$\n\ntail';
+    view = mount_editor(container, doc);
+    move_cursor(view, 3); // caret inside the block — preview surface active
+    await expect
+      .poll(
+        () =>
+          container.querySelectorAll('.plainmark-math-block-preview mjx-container').length,
+        { timeout: 30000, interval: 100 },
+      )
+      .toBeGreaterThan(0);
+    await frames(3);
+
+    const mjx = container.querySelector<HTMLElement>(
+      '.plainmark-math-block-preview mjx-container',
+    )!;
+    const mcs = getComputedStyle(mjx);
+    expect(mcs.marginTop).toBe('0px');
+    expect(mcs.marginBottom).toBe('0px');
+  });
+
   it('MATH-R-2 MATH-R-3: inline math height stays within a band of the line text and overlaps the text baseline', async () => {
     const doc = 'reference line here\n\nprose with $x^2$ math here\n\ntail';
     view = mount_editor(container, doc);
