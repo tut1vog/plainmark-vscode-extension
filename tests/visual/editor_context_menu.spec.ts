@@ -279,6 +279,73 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.selection.main.to).toBe(11);
   });
 
+  it('Paragraph submenu opens with ten items, enabled even without a selection', () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 2 } });
+    right_click_at(view, 2);
+
+    get_menu_item('paragraph')!.dispatchEvent(new MouseEvent('mouseenter'));
+    const submenu_items = [
+      'heading_1',
+      'heading_2',
+      'heading_3',
+      'heading_4',
+      'heading_5',
+      'heading_6',
+      'bulleted_list',
+      'numbered_list',
+      'task_list',
+      'blockquote',
+    ];
+    for (const id of submenu_items) {
+      const item = get_menu_item(id);
+      expect(item, `missing item ${id}`).not.toBeNull();
+      expect(item!.classList.contains('plainmark-context-menu-item-disabled')).toBe(false);
+    }
+  });
+
+  it('Paragraph > Heading 1 prefixes the caret line in one transaction; re-applying reverts it', async () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 2 } });
+    right_click_at(view, 2);
+    const dispatch_spy = vi.spyOn(view, 'dispatch');
+
+    get_menu_item('paragraph')!.dispatchEvent(new MouseEvent('mouseenter'));
+    get_menu_item('heading_1')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+
+    const change_calls = dispatch_spy.mock.calls.filter(
+      (c) => (c[0] as { changes?: unknown }).changes !== undefined,
+    );
+    expect(change_calls.length).toBe(1);
+    expect(view.state.doc.toString()).toBe('# hello world\n\nsecond paragraph\n');
+    expect(get_menus().length).toBe(0);
+
+    right_click_at(view, 4);
+    get_menu_item('paragraph')!.dispatchEvent(new MouseEvent('mouseenter'));
+    get_menu_item('heading_1')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+    expect(view.state.doc.toString()).toBe(DOC);
+  });
+
+  it('Paragraph > Blockquote quotes every non-blank line of a multi-line selection', async () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 0, head: DOC.length } });
+    right_click_at(view, 2);
+
+    get_menu_item('paragraph')!.dispatchEvent(new MouseEvent('mouseenter'));
+    get_menu_item('blockquote')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+
+    expect(view.state.doc.toString()).toBe('> hello world\n\n> second paragraph\n');
+  });
+
   it('Escape dismisses the menu', () => {
     view = mount_editor(container, DOC);
     right_click_at(view, 2);

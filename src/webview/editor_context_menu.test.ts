@@ -15,6 +15,7 @@ function stub_actions(): EditorMenuActions {
     format_italic: vi.fn(),
     format_strikethrough: vi.fn(),
     format_inline_code: vi.fn(),
+    paragraph: vi.fn(),
     insert_table: vi.fn(),
     insert_code_block: vi.fn(),
     insert_math_block: vi.fn(),
@@ -45,10 +46,33 @@ describe('compute_editor_menu_entries — structure', () => {
       'item:paste',
       '|',
       'submenu:format',
+      'submenu:paragraph',
       'submenu:insert',
       '|',
       'item:select_all',
     ]);
+  });
+
+  it('Paragraph submenu holds six headings, a separator, and the four block types', () => {
+    const entries = compute_editor_menu_entries({ has_selection: false }, stub_actions());
+    const submenu = find_submenu(entries, 'paragraph');
+    const shape = submenu.entries.map((e) => (e.kind === 'separator' ? '|' : e.id));
+    expect(shape).toEqual([
+      'heading_1',
+      'heading_2',
+      'heading_3',
+      'heading_4',
+      'heading_5',
+      'heading_6',
+      '|',
+      'bulleted_list',
+      'numbered_list',
+      'task_list',
+      'blockquote',
+    ]);
+    for (const e of submenu.entries) {
+      if (e.kind === 'item') expect(e.disabled, e.id).toBeFalsy();
+    }
   });
 
   it('Format submenu holds bold, italic, strikethrough, inline code', () => {
@@ -89,7 +113,7 @@ describe('compute_editor_menu_entries — structure', () => {
       }
     };
     walk(entries);
-    expect(ids.size).toBe(15);
+    expect(ids.size).toBe(26);
   });
 });
 
@@ -129,6 +153,16 @@ describe('compute_editor_menu_entries — wiring and shortcuts', () => {
     expect(act.paste).toHaveBeenCalledTimes(1);
     expect(act.insert_math_block).toHaveBeenCalledTimes(1);
     expect(act.copy).not.toHaveBeenCalled();
+  });
+
+  it('paragraph items pass their style to the shared paragraph action', () => {
+    const act = stub_actions();
+    const entries = compute_editor_menu_entries({ has_selection: false }, act);
+    const submenu = find_submenu(entries, 'paragraph');
+    find_item(submenu.entries, 'heading_3').run();
+    find_item(submenu.entries, 'blockquote').run();
+    expect(act.paragraph).toHaveBeenNthCalledWith(1, 'heading_3');
+    expect(act.paragraph).toHaveBeenNthCalledWith(2, 'blockquote');
   });
 
   it('clipboard items and footnote carry their CM6 shortcut combos', () => {

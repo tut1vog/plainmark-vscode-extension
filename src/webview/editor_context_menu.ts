@@ -4,6 +4,7 @@ import { EditorView } from '@codemirror/view';
 import { show_context_menu, type ShellEntry } from './context_menu_shell.js';
 import { copy_selection, cut_selection, request_clipboard_paste } from './clipboard.js';
 import { toggle_inline_style } from './format_toggle.js';
+import { apply_paragraph_transform, type ParagraphStyle } from './paragraph_transform.js';
 import { insert_code_block, insert_horizontal_rule, insert_math_block } from './insert_block.js';
 import { insert_footnote } from './decorations/footnote_insert.js';
 import { insert_table_at_caret } from './widgets/insert_table_command.js';
@@ -21,6 +22,7 @@ export interface EditorMenuActions {
   format_italic(): void;
   format_strikethrough(): void;
   format_inline_code(): void;
+  paragraph(style: ParagraphStyle): void;
   insert_table(): void;
   insert_code_block(): void;
   insert_math_block(): void;
@@ -88,6 +90,46 @@ export function compute_editor_menu_entries(
     },
     {
       kind: 'submenu',
+      id: 'paragraph',
+      label: 'Paragraph',
+      entries: [
+        ...([1, 2, 3, 4, 5, 6] as const).map(
+          (level): ShellEntry => ({
+            kind: 'item',
+            id: `heading_${level}`,
+            label: `Heading ${level}`,
+            run: () => act.paragraph(`heading_${level}`),
+          }),
+        ),
+        { kind: 'separator' },
+        {
+          kind: 'item',
+          id: 'bulleted_list',
+          label: 'Bulleted List',
+          run: () => act.paragraph('bulleted_list'),
+        },
+        {
+          kind: 'item',
+          id: 'numbered_list',
+          label: 'Numbered List',
+          run: () => act.paragraph('numbered_list'),
+        },
+        {
+          kind: 'item',
+          id: 'task_list',
+          label: 'Task List',
+          run: () => act.paragraph('task_list'),
+        },
+        {
+          kind: 'item',
+          id: 'blockquote',
+          label: 'Blockquote',
+          run: () => act.paragraph('blockquote'),
+        },
+      ],
+    },
+    {
+      kind: 'submenu',
       id: 'insert',
       label: 'Insert',
       entries: [
@@ -137,6 +179,10 @@ function make_view_actions(view: EditorView): EditorMenuActions {
     },
     format_inline_code: () => {
       toggle_inline_style(view, 'inline_code');
+      view.focus();
+    },
+    paragraph: (style) => {
+      apply_paragraph_transform(view, style);
       view.focus();
     },
     insert_table: () => insert_table_at_caret(view),
