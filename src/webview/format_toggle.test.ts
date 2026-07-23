@@ -61,6 +61,32 @@ describe('toggle_inline_style_spec — wrap', () => {
     });
   });
 
+  it('whitespace-padded selection: markers land inside the whitespace, bytes untouched', () => {
+    expect(apply('hello world ', 5, 12, 'bold')).toEqual({
+      doc: 'hello **world** ',
+      from: 8,
+      to: 13,
+    });
+    expect(apply('one\ntwo\n', 0, 4, 'italic')).toEqual({
+      doc: '*one*\ntwo\n',
+      from: 1,
+      to: 4,
+    });
+    expect(apply('a\n\nb\n', 1, 4, 'bold')).toEqual({
+      doc: 'a\n\n**b**\n',
+      from: 5,
+      to: 6,
+    });
+  });
+
+  it('all-whitespace selection is a no-op', () => {
+    expect(apply('a  b', 1, 3, 'bold')).toEqual({ doc: 'a  b', from: 1, to: 3 });
+  });
+
+  it('whitespace-padded selection around an existing construct unwraps it', () => {
+    expect(apply(' **bold** ', 0, 10, 'bold')).toEqual({ doc: ' bold ', from: 0, to: 6 });
+  });
+
   it('reversed selection (head before anchor) wraps and stays reversed over the content', () => {
     const state = make_state('hello world', 11, 6);
     const next = state.update(toggle_inline_style_spec(state, 'bold')!).state;

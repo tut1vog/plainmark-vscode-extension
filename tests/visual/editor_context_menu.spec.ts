@@ -247,6 +247,22 @@ describe('editor context menu — DOM behavior', () => {
     expect(get_menus().length).toBe(0);
   });
 
+  it('Format > Bold with a whitespace-padded selection places markers inside the whitespace', async () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 5, head: 11 } });
+    right_click_at(view, 8);
+
+    get_menu_item('format')!.dispatchEvent(new MouseEvent('mouseenter'));
+    get_menu_item('format_bold')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+
+    expect(view.state.doc.toString()).toBe('hello **world**\n\nsecond paragraph\n');
+    expect(view.state.selection.main.from).toBe(8);
+    expect(view.state.selection.main.to).toBe(13);
+  });
+
   it('Format > Bold on a bold construct unwraps it back to the original bytes', async () => {
     view = mount_editor(container, 'hello **world**\n');
     view.dispatch({ selection: { anchor: 8, head: 13 } });

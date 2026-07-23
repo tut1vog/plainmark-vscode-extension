@@ -43,6 +43,22 @@ function covering_node(
   return null;
 }
 
+const TRIMMABLE = new Set([' ', '\t', '\n', '\r']);
+
+// CommonMark flanking rules void emphasis whose marker touches whitespace
+// (`**world **` is not bold) — markers go inside the whitespace, bytes untouched.
+function trimmed_bounds(
+  state: EditorState,
+  from: number,
+  to: number,
+): { from: number; to: number } {
+  let a = from;
+  let b = to;
+  while (a < b && TRIMMABLE.has(state.doc.sliceString(a, a + 1))) a++;
+  while (b > a && TRIMMABLE.has(state.doc.sliceString(b - 1, b))) b--;
+  return { from: a, to: b };
+}
+
 function unwrapped_range(
   range: SelectionRange,
   marks: Array<{ from: number; to: number }>,
@@ -66,7 +82,9 @@ export function toggle_inline_style_spec(
   if (state.selection.ranges.every((r) => r.empty)) return null;
   const spec = state.changeByRange((range) => {
     if (range.empty) return { range };
-    const node = covering_node(state, range.from, range.to, def.node_name);
+    const { from, to } = trimmed_bounds(state, range.from, range.to);
+    if (from >= to) return { range };
+    const node = covering_node(state, from, to, def.node_name);
     const marks = node
       ? node.getChildren(def.mark_name).map((m) => ({ from: m.from, to: m.to }))
       : [];
@@ -76,15 +94,17 @@ export function toggle_inline_style_spec(
         range: unwrapped_range(range, marks),
       };
     }
+    const content_from = from + def.marker.length;
+    const content_to = to + def.marker.length;
     return {
       changes: [
-        { from: range.from, insert: def.marker },
-        { from: range.to, insert: def.marker },
+        { from, insert: def.marker },
+        { from: to, insert: def.marker },
       ],
-      range: EditorSelection.range(
-        range.anchor + def.marker.length,
-        range.head + def.marker.length,
-      ),
+      range:
+        range.head < range.anchor
+          ? EditorSelection.range(content_to, content_from)
+          : EditorSelection.range(content_from, content_to),
     };
   });
   return {
