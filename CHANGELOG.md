@@ -6,7 +6,8 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
-- **Bold in table cells no longer changes weight when clicked** — a cell at rest rendered bold text at the browser's default weight, while placing the caret in the cell switched it to the theme's semibold, a visible shift on every click into a bold-bearing cell; cells at rest now use the same themed styling as active ones. Italic, strikethrough, and links get the same treatment, so theme overrides for those styles apply in resting cells too, and a link in a resting cell now shows the text cursor — matching that a click edits the cell rather than opening the link.
+- **Bold in a table cell no longer changes weight when you click in** — bold, italic, strikethrough, and link text in table cells now looks identical at rest and while editing; bold previously rendered slightly heavier at rest and visibly thinned the moment the caret entered the cell.
+- **Links in table cells show the text cursor** — hovering a link in a cell previously showed the hand cursor even though clicking edits the cell rather than opening the link.
 
 ### Security
 
