@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { count_words, word_count_label } from './word_count.js';
 
-describe('count_words', () => {
+describe('count_words — SHELL-C-13', () => {
   it('empty document counts zero', () => {
     expect(count_words('')).toBe(0);
   });
@@ -32,7 +32,7 @@ describe('count_words', () => {
   });
 });
 
-describe('word_count_label', () => {
+describe('word_count_label — SHELL-C-13', () => {
   it('zero is plural', () => {
     expect(word_count_label(0)).toBe('0 Words');
   });

@@ -201,6 +201,9 @@ declared in `package.json` `contributes.commands` AND registered via
 - **SHELL-C-12** `[smoke]` — `tutivog.plainmark.noop_find` MUST be registered as an inert command and bound (via `keybindings`, `key: ctrl+f` / `mac: cmd+f`, `when: activeCustomEditorId == 'tutivog.plainmark'`) so the workbench takes no action on Ctrl/Cmd+F while Plainmark is active — the webview's CM6 search (`SHELL-X-16`) owns find. Mirrors the undo/redo muzzle (`SHELL-C-5`).
   _Example:_ Ctrl/Cmd+F in a Plainmark tab fires `noop_find` (a log-only no-op) and the workbench find does not open; the CM6 search bar opens instead.
 
+- **SHELL-C-13** `[smoke]` — The provider MUST maintain a single right-aligned status bar item showing the active Plainmark document's word count — the count of whitespace-separated non-whitespace runs over the raw source (markdown markers count as words), labeled `N Words` with a `1 Word` singular. It MUST refresh on panel resolve, view-state change, document change, and panel disposal, and MUST be hidden whenever no Plainmark panel is active — a custom-editor tab surfaces none of the built-in text-editor status entries (Ln/Col, selection), so this item is the tab's only document indicator.
+  _Example:_ focus a Plainmark tab containing `# Title\n\nhello world` → the status bar shows `4 Words`; typing updates the count live; switching to a text-editor tab hides the item.
+
 ## A — activation & dual host target
 
 Extension activation entry points and the dual Node / Web bundles. Section code
