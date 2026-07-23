@@ -93,8 +93,7 @@ describe('TBL-R-3: emit_table_cell — inline formatting', () => {
     const strong = h.querySelector('strong');
     expect(strong).not.toBeNull();
     expect(strong?.textContent).toBe('bold');
-    // Editor decoration class — keeps the static render on the themed
-    // weight (600) instead of the UA default (700).
+    // editor decoration class — themed weight 600, not the UA 700
     expect(strong?.className).toBe('plainmark-strong');
   });
 
