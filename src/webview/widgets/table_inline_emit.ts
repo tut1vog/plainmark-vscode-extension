@@ -28,8 +28,14 @@ function emit_children(parent: Node, node: SyntaxNode, doc: Text, cache: Map<str
   emit_text(parent, doc.sliceString(cursor, node.to));
 }
 
-function emit_wrapped(tag: string, parent: Node, node: SyntaxNode, doc: Text, cache: Map<string, MathResult>, image_base: string | null): void {
+function emit_wrapped(tag: string, class_name: string, parent: Node, node: SyntaxNode, doc: Text, cache: Map<string, MathResult>, image_base: string | null): void {
   const el = document.createElement(tag);
+  // Carry the same class the editor's mark decorations use so the scoped
+  // theme rules (--plainmark-strong-weight & co.) style the static render.
+  // A bare element falls back to UA styles (e.g. <strong> at 700 vs the
+  // themed 600), which visibly shifts when the caret enters the cell and
+  // the subview takes over.
+  el.className = class_name;
   // emphasis-family firstChild/lastChild are syntax markers — content sits strictly between them
   const first = node.firstChild;
   const last = node.lastChild;
@@ -69,6 +75,10 @@ function emit_inline_code(parent: Node, node: SyntaxNode, doc: Text): void {
 
 function emit_link(parent: Node, node: SyntaxNode, doc: Text, cache: Map<string, MathResult>, image_base: string | null): void {
   const a = document.createElement('a');
+  // Same class as the editor's link decoration — keeps color/decoration on
+  // the themed chain and sets cursor:text, which matches actual behavior
+  // (mousedown on a static cell activates editing; it does not open links).
+  a.className = 'plainmark-link';
   // the bracketed label sits between the `[` and `]` LinkMarks and can itself contain inline nodes
   const first = node.firstChild;
   let label_to: number | null = null;
@@ -179,13 +189,13 @@ function emit_node(parent: Node, node: SyntaxNode, doc: Text, cache: Map<string,
       emit_text(parent, unescape_text(doc.sliceString(node.from, node.to)));
       return;
     case 'StrongEmphasis':
-      emit_wrapped('strong', parent, node, doc, cache, image_base);
+      emit_wrapped('strong', 'plainmark-strong', parent, node, doc, cache, image_base);
       return;
     case 'Emphasis':
-      emit_wrapped('em', parent, node, doc, cache, image_base);
+      emit_wrapped('em', 'plainmark-em', parent, node, doc, cache, image_base);
       return;
     case 'Strikethrough':
-      emit_wrapped('del', parent, node, doc, cache, image_base);
+      emit_wrapped('del', 'plainmark-strikethrough', parent, node, doc, cache, image_base);
       return;
     case 'InlineCode':
       emit_inline_code(parent, node, doc);

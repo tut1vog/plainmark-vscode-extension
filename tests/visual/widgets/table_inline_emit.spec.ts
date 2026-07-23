@@ -93,6 +93,9 @@ describe('TBL-R-3: emit_table_cell — inline formatting', () => {
     const strong = h.querySelector('strong');
     expect(strong).not.toBeNull();
     expect(strong?.textContent).toBe('bold');
+    // Editor decoration class — keeps the static render on the themed
+    // weight (600) instead of the UA default (700).
+    expect(strong?.className).toBe('plainmark-strong');
   });
 
   it('emits *italic* as <em>', () => {
@@ -101,6 +104,7 @@ describe('TBL-R-3: emit_table_cell — inline formatting', () => {
     const em = h.querySelector('em');
     expect(em).not.toBeNull();
     expect(em?.textContent).toBe('it');
+    expect(em?.className).toBe('plainmark-em');
   });
 
   it('emits ~~strike~~ as <del>', () => {
@@ -109,6 +113,7 @@ describe('TBL-R-3: emit_table_cell — inline formatting', () => {
     const del = h.querySelector('del');
     expect(del).not.toBeNull();
     expect(del?.textContent).toBe('gone');
+    expect(del?.className).toBe('plainmark-strikethrough');
   });
 
   it('emits `code` as <code> with verbatim contents (no escape processing)', () => {
@@ -139,6 +144,7 @@ describe('TBL-R-3: emit_table_cell — links and images', () => {
     expect(a).not.toBeNull();
     expect(a?.getAttribute('href')).toBe('https://example.com');
     expect(a?.textContent).toBe('click');
+    expect(a?.className).toBe('plainmark-link');
   });
 
   it('renders nested **bold** inside a link label as <a><strong>...', () => {
