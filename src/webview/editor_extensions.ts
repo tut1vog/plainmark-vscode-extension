@@ -7,6 +7,7 @@ import { type Extension, Prec } from '@codemirror/state';
 import { EditorView, drawSelection, keymap } from '@codemirror/view';
 import { search, searchKeymap } from '@codemirror/search';
 import { oracle_line_height_pin } from './oracle_line_height_pin.js';
+import { cjk_word_motion_keymap } from './cjk_word_motion.js';
 import { match_code_language } from './language_aliases.js';
 import { image_paste_extension } from './image_paste.js';
 import { editor_context_menu_extension } from './editor_context_menu.js';
@@ -194,6 +195,9 @@ const editor_extensions_core: Extension[] = [
   }),
   // historyKeymap binds Mod-Shift-z to redo on Mac (via mac override) and Linux (separate entry) but NOT Windows.
   keymap.of([
+    // Before defaultKeymap's cursorGroup* (equal precedence, earlier-in-array
+    // wins): adds Intl.Segmenter word stops inside unspaced CJK runs.
+    ...cjk_word_motion_keymap,
     ...defaultKeymap,
     ...historyKeymap,
     { key: 'Mod-Shift-z', run: redo, preventDefault: true },

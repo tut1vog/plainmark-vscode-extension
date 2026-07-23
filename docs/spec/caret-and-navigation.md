@@ -70,6 +70,8 @@ widgets. Section code `N`.
   _Example:_ revealing a table for editing removes its atomic range; collapsing it again restores it.
 - **NAV-N-5** `[accepted]` — Caret-reveal constructs (image, inline / block math, mermaid) MUST NOT register atomic ranges; the caret deliberately enters their source range to reveal and edit it. Skipping is provided by the per-construct caret-reveal handler, not by this file's atomic mechanism.
   _Example:_ ArrowRight into `![alt](url)` reveals the source so it becomes editable, rather than jumping over it. (Image specialization: `IMG-I-4`.)
+- **NAV-N-6** `[smoke]` — Word-wise horizontal motion and selection (Ctrl+Arrow / Ctrl+Shift+Arrow; Alt on macOS) MUST stop at `Intl.Segmenter` word boundaries inside an unspaced run of Han / Hiragana / Katakana instead of skipping the whole run as one group. The refinement MUST apply only when the skipped span lies on a single line and contains such a character; motion over any other text MUST be identical to the CM6 default.
+  _Example:_ `|你好世界` → Ctrl+ArrowRight → `你好|世界`, not `你好世界|`.
 
 ## M — Mechanical caret/selection invariants
 

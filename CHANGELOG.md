@@ -7,6 +7,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 ### Fixed
 
 - **Chinese and Japanese text now counts correctly in the word count** — a run of CJK text with no spaces previously counted as a single word; each Chinese or Japanese character now counts as one word, and CJK punctuation is not counted.
+- **Ctrl+Arrow steps through Chinese and Japanese word by word** — word-wise cursor movement and Shift-selection previously jumped an entire unspaced CJK run in one leap; they now stop at word boundaries inside the run (Alt+Arrow on macOS).
 
 ## [1.7.1] - 2026-07-23
 
