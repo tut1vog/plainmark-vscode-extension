@@ -4,6 +4,10 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ## [Unreleased]
 
+### Fixed
+
+- **Bold in table cells no longer changes weight when clicked** — a cell at rest rendered bold text at the browser's default weight, while placing the caret in the cell switched it to the theme's semibold, a visible shift on every click into a bold-bearing cell; cells at rest now use the same themed styling as active ones. Italic, strikethrough, and links get the same treatment, so theme overrides for those styles apply in resting cells too, and a link in a resting cell now shows the text cursor — matching that a click edits the cell rather than opening the link.
+
 ### Security
 
 - **Updated the bundled diagram sanitizer** — the DOMPurify library that Mermaid uses to sanitize diagram SVG before it reaches the editor is upgraded to 3.4.12, picking up an upstream fix for a sanitizer-bypass advisory in its handling of allowed custom elements. Opening Markdown files with Mermaid diagrams from untrusted sources is safer as a result; diagram rendering is otherwise unchanged.
