@@ -33,6 +33,7 @@ Plainmark runs as a custom editor in both the desktop app and the browser — op
 - **Paste images** — paste a screenshot from the clipboard and Plainmark saves it into your workspace and inserts the image link.
 - **Outline view** — jump around the document from the Explorer sidebar.
 - **Word count** — the status bar shows a live word count while a Plainmark tab is active.
+- **CJK-aware** — the word count and `Ctrl/Alt+Arrow` word jumps both understand unspaced Chinese and Japanese text.
 - **Find** — press `Ctrl/Cmd+F` to search the whole document — next/previous, highlight all, and replace — including text scrolled out of view.
 - **Theming** — built-in light/dark themes plus your own CSS.
 
