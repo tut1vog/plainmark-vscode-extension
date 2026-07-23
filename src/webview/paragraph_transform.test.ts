@@ -51,7 +51,7 @@ describe('classify_line', () => {
   });
 });
 
-describe('paragraph_transform_spec — single line', () => {
+describe('CTX-I-7 CTX-I-8 paragraph_transform_spec — single line', () => {
   it('caret on a plain line sets the prefix', () => {
     expect(apply('hello', 2, 2, 'heading_2')).toBe('## hello');
     expect(apply('hello', 2, 2, 'bulleted_list')).toBe('- hello');
@@ -109,7 +109,7 @@ describe('paragraph_transform_spec — single line', () => {
   });
 });
 
-describe('paragraph_transform_spec — multi-line', () => {
+describe('CTX-I-7 CTX-I-9 CTX-E-2 paragraph_transform_spec — multi-line', () => {
   const DOC = 'one\ntwo\n\nthree';
 
   it('sets the prefix on every non-blank touched line', () => {

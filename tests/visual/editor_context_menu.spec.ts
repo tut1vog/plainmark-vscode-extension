@@ -50,7 +50,7 @@ describe('editor context menu — DOM behavior', () => {
     document.querySelectorAll('.plainmark-context-menu').forEach((el) => el.remove());
   });
 
-  it('right-click in prose opens the editor menu with the clipboard trio, Insert, and Select All', () => {
+  it('CTX-R-1 CTX-R-2: right-click in prose opens the editor menu with the clipboard trio, Insert, and Select All', () => {
     view = mount_editor(container, DOC);
     right_click_at(view, 2);
 
@@ -63,7 +63,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(menus[0].classList.contains('plainmark-table-context-menu')).toBe(false);
   });
 
-  it('no selection: cut and copy render disabled; paste and select all stay enabled', () => {
+  it('CTX-R-5 CTX-I-2: no selection: cut and copy render disabled; paste and select all stay enabled', () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 2 } });
     right_click_at(view, 2);
@@ -80,7 +80,7 @@ describe('editor context menu — DOM behavior', () => {
     }
   });
 
-  it('right-click inside the selection keeps it and enables cut/copy', () => {
+  it('CTX-I-1: right-click inside the selection keeps it and enables cut/copy', () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 0, head: 5 } });
     right_click_at(view, 2);
@@ -95,7 +95,7 @@ describe('editor context menu — DOM behavior', () => {
     ).toBe(false);
   });
 
-  it('right-click outside the selection moves the caret to the click point first', () => {
+  it('CTX-I-1: right-click outside the selection moves the caret to the click point first', () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 0, head: 5 } });
     const target_pos = DOC.indexOf('paragraph');
@@ -110,7 +110,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.selection.main.head).toBe(expected);
   });
 
-  it('hovering Insert opens the submenu with the five insert items', () => {
+  it('CTX-R-3: hovering Insert opens the submenu with the five insert items', () => {
     view = mount_editor(container, DOC);
     right_click_at(view, 2);
 
@@ -131,7 +131,7 @@ describe('editor context menu — DOM behavior', () => {
     }
   });
 
-  it('hovering a plain sibling item closes an open submenu', () => {
+  it('CTX-R-3: hovering a plain sibling item closes an open submenu', () => {
     view = mount_editor(container, DOC);
     right_click_at(view, 2);
 
@@ -142,7 +142,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(get_menu_item('insert')!.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('Insert > Horizontal Rule inserts the rule in one transaction and dismisses the whole menu tree', async () => {
+  it('CTX-I-10 CTX-R-4 CTX-SP-1: Insert > Horizontal Rule inserts the rule in one transaction and dismisses the whole menu tree', async () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: DOC.length } });
     right_click_at(view, DOC.length - 1);
@@ -162,7 +162,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(get_menus().length).toBe(0);
   });
 
-  it('Insert > Code Block places the caret on the empty line between the fences', async () => {
+  it('CTX-I-10: Insert > Code Block places the caret on the empty line between the fences', async () => {
     view = mount_editor(container, 'hello\n');
     view.dispatch({ selection: { anchor: 6 } });
     right_click_at(view, 6);
@@ -177,7 +177,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.selection.main.head).toBe(10);
   });
 
-  it('Cut copies the selection to the clipboard and deletes it in one transaction', async () => {
+  it('CTX-I-2: Cut copies the selection to the clipboard and deletes it in one transaction', async () => {
     const written: string[] = [];
     // Own-property stub shadows the Navigator.prototype getter; deleted in finally.
     Object.defineProperty(navigator, 'clipboard', {
@@ -207,7 +207,7 @@ describe('editor context menu — DOM behavior', () => {
     }
   });
 
-  it('Format submenu opens with four items; all disabled without a selection', () => {
+  it('CTX-R-5 CTX-I-5: Format submenu opens with four items; all disabled without a selection', () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 2 } });
     right_click_at(view, 2);
@@ -225,7 +225,7 @@ describe('editor context menu — DOM behavior', () => {
     }
   });
 
-  it('Format > Bold wraps the selection in one transaction, keeps it on the content, and dismisses', async () => {
+  it('CTX-I-5 CTX-SP-2: Format > Bold wraps the selection in one transaction, keeps it on the content, and dismisses', async () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 6, head: 11 } });
     right_click_at(view, 8);
@@ -247,7 +247,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(get_menus().length).toBe(0);
   });
 
-  it('Format > Bold with a whitespace-padded selection places markers inside the whitespace', async () => {
+  it('CTX-I-6: Format > Bold with a whitespace-padded selection places markers inside the whitespace', async () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 5, head: 11 } });
     right_click_at(view, 8);
@@ -263,7 +263,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.selection.main.to).toBe(13);
   });
 
-  it('Format > Bold on a bold construct unwraps it back to the original bytes', async () => {
+  it('CTX-I-5: Format > Bold on a bold construct unwraps it back to the original bytes', async () => {
     view = mount_editor(container, 'hello **world**\n');
     view.dispatch({ selection: { anchor: 8, head: 13 } });
     right_click_at(view, 9);
@@ -279,7 +279,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.selection.main.to).toBe(11);
   });
 
-  it('Paragraph submenu opens with ten items, enabled even without a selection', () => {
+  it('CTX-R-2: Paragraph submenu opens with ten items, enabled even without a selection', () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 2 } });
     right_click_at(view, 2);
@@ -304,7 +304,7 @@ describe('editor context menu — DOM behavior', () => {
     }
   });
 
-  it('Paragraph > Heading 1 prefixes the caret line in one transaction; re-applying reverts it', async () => {
+  it('CTX-I-7: Paragraph > Heading 1 prefixes the caret line in one transaction; re-applying reverts it', async () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 2 } });
     right_click_at(view, 2);
@@ -332,7 +332,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.doc.toString()).toBe(DOC);
   });
 
-  it('Paragraph > Bulleted List on an empty paragraph inserts the prefix and parks the caret after it', async () => {
+  it('CTX-I-8: Paragraph > Bulleted List on an empty paragraph inserts the prefix and parks the caret after it', async () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 12 } });
     right_click_at(view, 12);
@@ -347,7 +347,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.selection.main.head).toBe(14);
   });
 
-  it('Paragraph > Blockquote quotes every non-blank line of a multi-line selection', async () => {
+  it('CTX-I-7 CTX-E-2: Paragraph > Blockquote quotes every non-blank line of a multi-line selection', async () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 0, head: DOC.length } });
     right_click_at(view, 2);
@@ -361,7 +361,22 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.doc.toString()).toBe('> hello world\n\n> second paragraph\n');
   });
 
-  it('Escape dismisses the menu', () => {
+  it('CTX-I-4: Select All selects the whole document and dismisses the menu', async () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 2 } });
+    right_click_at(view, 2);
+
+    get_menu_item('select_all')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+
+    expect(view.state.selection.main.from).toBe(0);
+    expect(view.state.selection.main.to).toBe(DOC.length);
+    expect(get_menus().length).toBe(0);
+  });
+
+  it('CTX-R-4: Escape dismisses the menu', () => {
     view = mount_editor(container, DOC);
     right_click_at(view, 2);
     expect(get_menus().length).toBe(1);
@@ -372,7 +387,7 @@ describe('editor context menu — DOM behavior', () => {
     expect(get_menus().length).toBe(0);
   });
 
-  it('right-click inside a table cell opens the table menu, not the editor menu', () => {
+  it('CTX-E-1: right-click inside a table cell opens the table menu, not the editor menu', () => {
     view = mount_editor(container, SAMPLE_TABLE);
     const td = container.querySelector('[data-row-index="1"][data-col-index="0"]')!;
     td.dispatchEvent(
@@ -387,7 +402,7 @@ describe('editor context menu — DOM behavior', () => {
   });
 });
 
-describe('clipboard paste controller — host round-trip', () => {
+describe('CTX-I-3 clipboard paste controller — host round-trip', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 

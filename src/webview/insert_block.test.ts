@@ -3,7 +3,7 @@ import { plan_block_insert } from './insert_block.js';
 
 const CODE_BLOCK = '```\n\n```';
 
-describe('plan_block_insert', () => {
+describe('CTX-I-10 plan_block_insert', () => {
   it('at the start of an empty line: no prefix, no suffix, cursor inside the block', () => {
     const plan = plan_block_insert(
       { caret: 6, at_line_start: true, next_char: '' },

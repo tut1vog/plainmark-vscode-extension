@@ -36,7 +36,7 @@ function find_submenu(entries: ShellEntry[], id: string): ShellSubmenu {
   return entry;
 }
 
-describe('compute_editor_menu_entries — structure', () => {
+describe('CTX-R-2 compute_editor_menu_entries — structure', () => {
   it('emits clipboard trio, Insert submenu, and Select All in canonical order with separators', () => {
     const entries = compute_editor_menu_entries({ has_selection: true }, stub_actions());
     const shape = entries.map((e) => (e.kind === 'separator' ? '|' : `${e.kind}:${e.id}`));
@@ -117,7 +117,7 @@ describe('compute_editor_menu_entries — structure', () => {
   });
 });
 
-describe('compute_editor_menu_entries — disabled rules', () => {
+describe('CTX-I-2 CTX-I-5 compute_editor_menu_entries — disabled rules', () => {
   it('no selection: cut, copy, and all format items disabled; paste, select all, and inserts stay enabled', () => {
     const entries = compute_editor_menu_entries({ has_selection: false }, stub_actions());
     expect(find_item(entries, 'cut').disabled).toBe(true);
@@ -165,7 +165,7 @@ describe('compute_editor_menu_entries — wiring and shortcuts', () => {
     expect(act.paragraph).toHaveBeenNthCalledWith(2, 'blockquote');
   });
 
-  it('clipboard items and footnote carry their CM6 shortcut combos', () => {
+  it('CTX-R-6: clipboard items and footnote carry their CM6 shortcut combos', () => {
     const entries = compute_editor_menu_entries({ has_selection: true }, stub_actions());
     expect(find_item(entries, 'cut').shortcut).toBe('Mod-x');
     expect(find_item(entries, 'copy').shortcut).toBe('Mod-c');

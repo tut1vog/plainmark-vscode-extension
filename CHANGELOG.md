@@ -4,6 +4,10 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ## [Unreleased]
 
+### Added
+
+- **Right-click menu in the editor** — cut, copy, and paste plus Format, Paragraph, and Insert menus: toggle bold, italic, strikethrough, or inline code on a selection; turn lines into headings, lists, task lists, or quotes; and insert tables, code blocks, math blocks, horizontal rules, and footnotes. Formatting is toggle-aware — applying a style that's already there removes it — and markers are placed to skip surrounding spaces so the result always renders.
+
 ### Fixed
 
 - **Bold in a table cell no longer changes weight when you click in** — bold, italic, strikethrough, and link text in table cells now looks identical at rest and while editing; bold previously rendered slightly heavier at rest and visibly thinned the moment the caret entered the cell.

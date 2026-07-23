@@ -29,7 +29,7 @@ function apply(
   };
 }
 
-describe('toggle_inline_style_spec — wrap', () => {
+describe('CTX-I-5 CTX-I-6 toggle_inline_style_spec — wrap', () => {
   it('wraps a plain selection in the canonical marker and keeps the selection on the content', () => {
     expect(apply('hello world', 6, 11, 'bold')).toEqual({
       doc: 'hello **world**',
@@ -96,7 +96,7 @@ describe('toggle_inline_style_spec — wrap', () => {
   });
 });
 
-describe('toggle_inline_style_spec — unwrap', () => {
+describe('CTX-I-5 toggle_inline_style_spec — unwrap', () => {
   it('content selection inside the construct removes both markers', () => {
     expect(apply('a **bold** z', 4, 8, 'bold')).toEqual({ doc: 'a bold z', from: 2, to: 6 });
     expect(apply('a ~~gone~~ z', 4, 8, 'strikethrough')).toEqual({
@@ -130,7 +130,7 @@ describe('toggle_inline_style_spec — unwrap', () => {
   });
 });
 
-describe('toggle_inline_style_spec — no-ops', () => {
+describe('CTX-I-5 CTX-I-6 toggle_inline_style_spec — no-ops', () => {
   it('returns null for an empty selection', () => {
     const state = make_state('hello', 2, 2);
     expect(toggle_inline_style_spec(state, 'bold')).toBeNull();

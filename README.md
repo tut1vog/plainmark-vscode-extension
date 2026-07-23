@@ -24,6 +24,7 @@ Plainmark runs as a custom editor in both the desktop app and the browser — op
 ## Features
 
 - **Live preview** — headings, emphasis, links, lists, blockquotes, and code render inline; the raw Markdown markers reveal only on the line your caret is on.
+- **Right-click menu** — cut/copy/paste plus Format, Paragraph, and Insert: toggle bold/italic/strikethrough/inline code on a selection, turn lines into headings, lists, or quotes, and insert tables, code blocks, math blocks, horizontal rules, and footnotes.
 - **Tables** — visual editing with insert / delete / move row and column, whole-table delete, per-column alignment, and configurable keyboard shortcuts.
 - **Math** — LaTeX rendered with MathJax, inline and block.
 - **Diagrams** — Mermaid flowcharts, sequence diagrams, and more.

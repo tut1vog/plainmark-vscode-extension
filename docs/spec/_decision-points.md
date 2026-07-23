@@ -54,6 +54,9 @@ Status legend: `pending` (awaiting owner ratification) · `blessed` · `reopened
 | SYNC-P-4 | Under `files.autoSave: afterDelay`, the dirty indicator may linger per edit; Plainmark adds no extension-side self-save to mask it (no API to suppress the indicator). | docs/spec/sync-and-persistence.md | pending |
 | THEME-V-7 | Mermaid diagram interior colors come from mermaid's own theme engine, not the `--plainmark-*` surface; only the outer container variables are themable. Mirrors the construct-level MMD-E-9. | docs/spec/mermaid.md | pending |
 | SHELL-X-14 | Residual scroll-jump: (1) first render of a never-measured async block widget reflows by `\|actual − reserve\|` (cold mermaid reserves a 200px default; math/image reserve only when warm — no a-priori formula); (2) during an active native-scrollbar drag the browser overwrites CM6's scroll correction (only the on-release snap is fixed; full removal needs a custom scrollbar, not pursued). Same class of bug open in Obsidian 1.12.5. | docs/spec/editor-shell.md | pending |
+| CTX-E-3 | Right-click in the editor margin outside the text column falls through to the webview's default menu; the custom-menu trigger is scoped to the text area. | docs/spec/context-menu.md | pending |
+| CTX-E-4 | Format and Paragraph menu items apply literally inside fenced code blocks — no construct guard; the edit is an explicit user action. | docs/spec/context-menu.md | pending |
+| CTX-E-5 | No arrow-key menu navigation (parity with the table cell menu); Escape / outside-click / scroll dismissal only. | docs/spec/context-menu.md | pending |
 
 ## Conformance-unknown — smoke to confirm (batch 2)
 
