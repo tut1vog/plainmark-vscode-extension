@@ -48,6 +48,13 @@ export interface WebviewPasteImageMessage {
   mime: string;
 }
 
+// Clipboard read must round-trip through the host (`vscode.env.clipboard`) —
+// command-invoked `navigator.clipboard.readText` in a webview loses the user
+// gesture and hits open permission bugs (vscode#184326, #182642).
+interface WebviewReadClipboardMessage {
+  type: 'read_clipboard';
+}
+
 export type WebviewToHostMessage =
   | WebviewReadyMessage
   | WebviewUpdateMessage
@@ -55,7 +62,8 @@ export type WebviewToHostMessage =
   | WebviewLinkClickMessage
   | WebviewStyleLoadErrorMessage
   | WebviewTableEditErrorMessage
-  | WebviewPasteImageMessage;
+  | WebviewPasteImageMessage
+  | WebviewReadClipboardMessage;
 
 export interface HostSyncMessage {
   type: 'sync';
@@ -102,6 +110,11 @@ interface HostPasteImageReplyError {
 
 export type HostPasteImageReplyMessage = HostPasteImageReplyOk | HostPasteImageReplyError;
 
+interface HostClipboardTextMessage {
+  type: 'clipboard_text';
+  text: string;
+}
+
 export type HostToWebviewMessage =
   | HostSyncMessage
   | HostInsertTableMessage
@@ -109,4 +122,5 @@ export type HostToWebviewMessage =
   | HostFocusEditorMessage
   | HostStyleReloadMessage
   | HostScrollToHeadingMessage
-  | HostPasteImageReplyMessage;
+  | HostPasteImageReplyMessage
+  | HostClipboardTextMessage;

@@ -9,6 +9,7 @@ import { search, searchKeymap } from '@codemirror/search';
 import { oracle_line_height_pin } from './oracle_line_height_pin.js';
 import { match_code_language } from './language_aliases.js';
 import { image_paste_extension } from './image_paste.js';
+import { editor_context_menu_extension } from './editor_context_menu.js';
 import {
   block_delimiter_autoclose,
   block_empty_backspace,
@@ -428,6 +429,8 @@ export const editor_extensions: Extension[] = [
   // Main view only (not in cell_subview_extensions) — the controller inserts at the
   // main caret, so a cell-subview paste must not be intercepted here.
   image_paste_extension,
+  // Main view only — table cells own their contextmenu; prose right-clicks open the editor menu.
+  editor_context_menu_extension,
   scroller_theme,
   // Main view only — cell subviews don't own a scroller, so they can't scroll-snap.
   oracle_line_height_pin,

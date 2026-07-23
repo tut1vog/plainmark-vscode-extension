@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  aria_keyshortcut,
   compute_menu_items,
-  format_shortcut,
   type MenuItem,
   type MenuItemId,
 } from './table_context_menu.js';
+import { aria_keyshortcut, format_shortcut } from '../context_menu_shell.js';
 import type { TableModel } from './table_serialize.js';
 
 function make_model(

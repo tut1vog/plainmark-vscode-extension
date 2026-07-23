@@ -19,6 +19,8 @@ function webview_tag(msg: WebviewToHostMessage): string {
       return msg.reason;
     case 'paste_image':
       return msg.mime;
+    case 'read_clipboard':
+      return 'read_clipboard';
     default: {
       const _exhaustive: never = msg;
       return _exhaustive;
@@ -42,6 +44,8 @@ function host_tag(msg: HostToWebviewMessage): string {
       return `${msg.line}:${msg.character}`;
     case 'paste_image_reply':
       return 'relative_path' in msg ? msg.relative_path : msg.error;
+    case 'clipboard_text':
+      return msg.text;
     default: {
       const _exhaustive: never = msg;
       return _exhaustive;
@@ -59,6 +63,7 @@ describe('wire protocol', () => {
       { type: 'style_load_error', href: 'file:///x.css' },
       { type: 'table_edit_error', reason: 'boom' },
       { type: 'paste_image', data: 'aGVsbG8=', mime: 'image/png' },
+      { type: 'read_clipboard' },
     ];
     for (const original of messages) {
       const decoded = JSON.parse(JSON.stringify(original)) as WebviewToHostMessage;
@@ -78,6 +83,7 @@ describe('wire protocol', () => {
       { type: 'scroll_to_heading', line: 42, character: 3 },
       { type: 'paste_image_reply', relative_path: 'assets/x.png' },
       { type: 'paste_image_reply', error: 'no writable filesystem' },
+      { type: 'clipboard_text', text: 'pasted' },
     ];
     for (const original of messages) {
       const decoded = JSON.parse(JSON.stringify(original)) as HostToWebviewMessage;

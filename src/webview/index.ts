@@ -13,6 +13,7 @@ import {
   create_image_paste_controller,
   type PasteImageDetail,
 } from './image_paste.js';
+import { PASTE_REQUEST_EVENT, create_clipboard_paste_controller } from './clipboard.js';
 import type { HostPasteImageReplyMessage } from '../sync/protocol.js';
 import { insert_footnote } from './decorations/footnote_insert.js';
 import { editor_extensions } from './editor_extensions.js';
@@ -85,6 +86,11 @@ const view = new EditorView({
 // in VS Code's webview console when smoke-only bugs need direct view access).
 // Webview CSP blocks third-party scripts, so exposing the view is safe.
 (window as { __plainmark_view?: EditorView }).__plainmark_view = view;
+
+const clipboard_paste_controller = create_clipboard_paste_controller(view, post_message);
+document.addEventListener(PASTE_REQUEST_EVENT, () => {
+  clipboard_paste_controller.request();
+});
 
 const image_paste_controller = create_image_paste_controller(view, post_message);
 document.addEventListener(PASTE_IMAGE_EVENT, (event) => {
@@ -162,6 +168,12 @@ window.addEventListener('message', (event: MessageEvent) => {
   }
   if (msg.type === 'paste_image_reply') {
     image_paste_controller.deliver_reply(msg as HostPasteImageReplyMessage);
+    return;
+  }
+  if (msg.type === 'clipboard_text') {
+    clipboard_paste_controller.deliver(
+      (msg as Extract<HostToWebviewMessage, { type: 'clipboard_text' }>).text,
+    );
     return;
   }
   if (msg.type === 'scroll_to_heading') {

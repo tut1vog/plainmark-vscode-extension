@@ -454,6 +454,16 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         void handle_paste_image(message, document, webviewPanel.webview);
         return Promise.resolve();
       }
+      if (message?.type === 'read_clipboard') {
+        void vscode.env.clipboard.readText().then(
+          (text) =>
+            void webviewPanel.webview.postMessage({
+              type: 'clipboard_text',
+              text,
+            } satisfies HostToWebviewMessage),
+        );
+        return Promise.resolve();
+      }
       return loop.handle_webview_message(raw);
     };
     const sub_msg = webviewPanel.webview.onDidReceiveMessage(
