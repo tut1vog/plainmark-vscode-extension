@@ -2,12 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.7.2] - 2026-07-23
 
 ### Fixed
 
-- **Chinese and Japanese text now counts correctly in the word count** — a run of CJK text with no spaces previously counted as a single word; each Chinese or Japanese character now counts as one word, and CJK punctuation is not counted.
-- **Ctrl+Arrow steps through Chinese and Japanese word by word** — word-wise cursor movement and Shift-selection previously jumped an entire unspaced CJK run in one leap; they now stop at word boundaries inside the run (Alt+Arrow on macOS).
+- **Chinese and Japanese text now counts correctly in the word count** — a line written without spaces used to count as a single word, and now counts one word per character, with punctuation left out of the total.
+- **Ctrl+Arrow now steps through Chinese and Japanese one word at a time** — moving or selecting by word used to leap over a whole stretch of text written without spaces, and now stops at each word boundary inside it (Alt+Arrow on macOS).
 
 ## [1.7.1] - 2026-07-23
 
