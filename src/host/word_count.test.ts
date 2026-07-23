@@ -30,6 +30,31 @@ describe('count_words — SHELL-C-13', () => {
     // `#`, `---`, `|` are non-whitespace runs; the v1 counter does not parse markdown.
     expect(count_words('# Title\n\n---\n\n| a | b |')).toBe(8);
   });
+
+  it('an unspaced run of Chinese counts one word per character', () => {
+    expect(count_words('这是一行没有空格的中文')).toBe(11);
+  });
+
+  it('CJK punctuation separates without counting as a word', () => {
+    expect(count_words('今天天气很好，我们去公园吧。')).toBe(12);
+  });
+
+  it('mixed CJK and latin counts each side by its own rule', () => {
+    // 4 Han characters + `VS` + `Code`
+    expect(count_words('用VS Code写中文')).toBe(6);
+  });
+
+  it('kana counts one word per character', () => {
+    expect(count_words('これはテストです')).toBe(8);
+  });
+
+  it('hangul stays whitespace-counted', () => {
+    expect(count_words('안녕하세요 세계')).toBe(2);
+  });
+
+  it('fullwidth alphanumerics still count as whitespace-separated runs', () => {
+    expect(count_words('ＡＢＣ １２３')).toBe(2);
+  });
 });
 
 describe('word_count_label — SHELL-C-13', () => {
