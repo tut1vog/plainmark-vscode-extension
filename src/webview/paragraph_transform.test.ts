@@ -18,6 +18,19 @@ function apply(
   return state.update(spec).state.doc.toString();
 }
 
+function with_caret(
+  doc: string,
+  anchor: number,
+  head: number,
+  style: ParagraphStyle,
+): { doc: string; head: number } {
+  const state = EditorState.create({ doc, selection: EditorSelection.single(anchor, head) });
+  const spec = paragraph_transform_spec(state, style);
+  if (!spec) throw new Error('transform returned null');
+  const next = state.update(spec).state;
+  return { doc: next.doc.toString(), head: next.selection.main.head };
+}
+
 describe('classify_line', () => {
   it('recognizes headings, list kinds, quotes, and blanks', () => {
     expect(classify_line('## title')).toMatchObject({ kind: 'heading', heading_level: 2 });
@@ -74,9 +87,25 @@ describe('paragraph_transform_spec — single line', () => {
     expect(apply('  2. item', 4, 4, 'bulleted_list')).toBe('  - item');
   });
 
-  it('blank-only selection is a no-op', () => {
-    expect(apply('   ', 1, 1, 'heading_1')).toBeNull();
-    expect(apply('', 0, 0, 'bulleted_list')).toBeNull();
+  it('caret on an empty paragraph takes the prefix with the caret placed after it', () => {
+    expect(with_caret('', 0, 0, 'bulleted_list')).toEqual({ doc: '- ', head: 2 });
+    expect(with_caret('', 0, 0, 'heading_2')).toEqual({ doc: '## ', head: 3 });
+    expect(with_caret('', 0, 0, 'blockquote')).toEqual({ doc: '> ', head: 2 });
+    expect(with_caret('a\n\nb', 2, 2, 'bulleted_list')).toEqual({ doc: 'a\n- \nb', head: 4 });
+    expect(with_caret('a\n\nb', 2, 2, 'task_list')).toEqual({ doc: 'a\n- [ ] \nb', head: 8 });
+  });
+
+  it('a whitespace-only line is replaced by the clean prefix', () => {
+    expect(with_caret('   ', 1, 1, 'heading_1')).toEqual({ doc: '# ', head: 2 });
+  });
+
+  it('an all-blank multi-line selection prefixes every line', () => {
+    expect(apply('\n\n', 0, 2, 'bulleted_list')).toBe('- \n- \n');
+    expect(apply('\n\n', 0, 2, 'numbered_list')).toBe('1. \n2. \n');
+  });
+
+  it('prefix applied to an empty line toggles back off', () => {
+    expect(apply('a\n- \nb', 4, 4, 'bulleted_list')).toBe('a\n\nb');
   });
 });
 

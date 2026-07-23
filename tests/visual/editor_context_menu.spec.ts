@@ -332,6 +332,21 @@ describe('editor context menu — DOM behavior', () => {
     expect(view.state.doc.toString()).toBe(DOC);
   });
 
+  it('Paragraph > Bulleted List on an empty paragraph inserts the prefix and parks the caret after it', async () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 12 } });
+    right_click_at(view, 12);
+
+    get_menu_item('paragraph')!.dispatchEvent(new MouseEvent('mouseenter'));
+    get_menu_item('bulleted_list')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+
+    expect(view.state.doc.toString()).toBe('hello world\n- \nsecond paragraph\n');
+    expect(view.state.selection.main.head).toBe(14);
+  });
+
   it('Paragraph > Blockquote quotes every non-blank line of a multi-line selection', async () => {
     view = mount_editor(container, DOC);
     view.dispatch({ selection: { anchor: 0, head: DOC.length } });

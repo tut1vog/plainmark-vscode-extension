@@ -117,20 +117,43 @@ export function paragraph_transform_spec(
   const lines = [...line_numbers].sort((a, b) => a - b).map((n) => doc.line(n));
   const shapes = lines.map((line) => classify_line(line.text));
   const eligible = shapes.filter((s) => !s.blank);
-  if (eligible.length === 0) return null;
-  const active_all = eligible.every((s) => is_active(s, style));
+  // Blank lines are skipped only while a non-blank line is in the selection
+  // (don't decorate separator blanks) — a caret on an empty paragraph still
+  // takes the prefix, Typora/Obsidian style.
+  const all_blank = eligible.length === 0;
+  const considered = all_blank ? shapes : eligible;
+  const active_all = considered.every((s) => is_active(s, style));
+
+  const main = state.selection.main;
+  const single_caret =
+    main.empty && state.selection.ranges.length === 1 && line_numbers.size === 1;
+  let caret: number | null = null;
 
   const changes: Array<{ from: number; to?: number; insert?: string }> = [];
   let ordinal = 1;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const shape = shapes[i];
-    if (shape.blank) continue;
+    if (shape.blank) {
+      if (!all_blank) continue;
+      if (style === 'blockquote' && active_all) {
+        changes.push({ from: line.from, to: line.from + shape.quote_len });
+        continue;
+      }
+      // Replace the line's whitespace remainder so the prefix lands clean.
+      const from = style === 'blockquote' ? line.from : line.from + shape.quote_len;
+      const prefix = target_prefix(style, ordinal);
+      if (style === 'numbered_list') ordinal++;
+      changes.push({ from, to: line.to, insert: prefix });
+      if (single_caret) caret = from + prefix.length;
+      continue;
+    }
     if (style === 'blockquote') {
       if (active_all) {
         changes.push({ from: line.from, to: line.from + shape.quote_len });
       } else if (shape.quote_len === 0) {
         changes.push({ from: line.from, insert: '> ' });
+        if (single_caret && main.head === line.from) caret = line.from + 2;
       }
       continue;
     }
@@ -146,10 +169,14 @@ export function paragraph_transform_spec(
       to: line.from + shape.marker_end,
       insert: prefix,
     });
+    if (single_caret && main.head === line.from + shape.marker_start) {
+      caret = line.from + shape.marker_start + prefix.length;
+    }
   }
   if (changes.length === 0) return null;
   return {
     changes,
+    ...(caret !== null ? { selection: { anchor: caret } } : {}),
     annotations: Transaction.userEvent.of('input'),
     scrollIntoView: true,
   };
