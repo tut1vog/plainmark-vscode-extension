@@ -3,6 +3,7 @@ import type { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { show_context_menu, type ShellEntry } from './context_menu_shell.js';
 import { copy_selection, cut_selection, request_clipboard_paste } from './clipboard.js';
+import { toggle_inline_style } from './format_toggle.js';
 import { insert_code_block, insert_horizontal_rule, insert_math_block } from './insert_block.js';
 import { insert_footnote } from './decorations/footnote_insert.js';
 import { insert_table_at_caret } from './widgets/insert_table_command.js';
@@ -16,6 +17,10 @@ export interface EditorMenuActions {
   copy(): void;
   paste(): void;
   select_all(): void;
+  format_bold(): void;
+  format_italic(): void;
+  format_strikethrough(): void;
+  format_inline_code(): void;
   insert_table(): void;
   insert_code_block(): void;
   insert_math_block(): void;
@@ -46,6 +51,41 @@ export function compute_editor_menu_entries(
     },
     { kind: 'item', id: 'paste', label: 'Paste', shortcut: 'Mod-v', run: act.paste },
     { kind: 'separator' },
+    {
+      kind: 'submenu',
+      id: 'format',
+      label: 'Format',
+      entries: [
+        {
+          kind: 'item',
+          id: 'format_bold',
+          label: 'Bold',
+          disabled: !ctx.has_selection,
+          run: act.format_bold,
+        },
+        {
+          kind: 'item',
+          id: 'format_italic',
+          label: 'Italic',
+          disabled: !ctx.has_selection,
+          run: act.format_italic,
+        },
+        {
+          kind: 'item',
+          id: 'format_strikethrough',
+          label: 'Strikethrough',
+          disabled: !ctx.has_selection,
+          run: act.format_strikethrough,
+        },
+        {
+          kind: 'item',
+          id: 'format_inline_code',
+          label: 'Inline Code',
+          disabled: !ctx.has_selection,
+          run: act.format_inline_code,
+        },
+      ],
+    },
     {
       kind: 'submenu',
       id: 'insert',
@@ -81,6 +121,22 @@ function make_view_actions(view: EditorView): EditorMenuActions {
     paste: () => request_clipboard_paste(),
     select_all: () => {
       selectAll(view);
+      view.focus();
+    },
+    format_bold: () => {
+      toggle_inline_style(view, 'bold');
+      view.focus();
+    },
+    format_italic: () => {
+      toggle_inline_style(view, 'italic');
+      view.focus();
+    },
+    format_strikethrough: () => {
+      toggle_inline_style(view, 'strikethrough');
+      view.focus();
+    },
+    format_inline_code: () => {
+      toggle_inline_style(view, 'inline_code');
       view.focus();
     },
     insert_table: () => insert_table_at_caret(view),

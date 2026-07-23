@@ -207,6 +207,62 @@ describe('editor context menu — DOM behavior', () => {
     }
   });
 
+  it('Format submenu opens with four items; all disabled without a selection', () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 2 } });
+    right_click_at(view, 2);
+
+    get_menu_item('format')!.dispatchEvent(new MouseEvent('mouseenter'));
+    for (const id of [
+      'format_bold',
+      'format_italic',
+      'format_strikethrough',
+      'format_inline_code',
+    ]) {
+      const item = get_menu_item(id);
+      expect(item, `missing item ${id}`).not.toBeNull();
+      expect(item!.classList.contains('plainmark-context-menu-item-disabled')).toBe(true);
+    }
+  });
+
+  it('Format > Bold wraps the selection in one transaction, keeps it on the content, and dismisses', async () => {
+    view = mount_editor(container, DOC);
+    view.dispatch({ selection: { anchor: 6, head: 11 } });
+    right_click_at(view, 8);
+    const dispatch_spy = vi.spyOn(view, 'dispatch');
+
+    get_menu_item('format')!.dispatchEvent(new MouseEvent('mouseenter'));
+    get_menu_item('format_bold')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+
+    const change_calls = dispatch_spy.mock.calls.filter(
+      (c) => (c[0] as { changes?: unknown }).changes !== undefined,
+    );
+    expect(change_calls.length).toBe(1);
+    expect(view.state.doc.toString()).toBe('hello **world**\n\nsecond paragraph\n');
+    expect(view.state.selection.main.from).toBe(8);
+    expect(view.state.selection.main.to).toBe(13);
+    expect(get_menus().length).toBe(0);
+  });
+
+  it('Format > Bold on a bold construct unwraps it back to the original bytes', async () => {
+    view = mount_editor(container, 'hello **world**\n');
+    view.dispatch({ selection: { anchor: 8, head: 13 } });
+    right_click_at(view, 9);
+
+    get_menu_item('format')!.dispatchEvent(new MouseEvent('mouseenter'));
+    get_menu_item('format_bold')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+    await next_frame();
+
+    expect(view.state.doc.toString()).toBe('hello world\n');
+    expect(view.state.selection.main.from).toBe(6);
+    expect(view.state.selection.main.to).toBe(11);
+  });
+
   it('Escape dismisses the menu', () => {
     view = mount_editor(container, DOC);
     right_click_at(view, 2);

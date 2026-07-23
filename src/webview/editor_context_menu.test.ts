@@ -11,6 +11,10 @@ function stub_actions(): EditorMenuActions {
     copy: vi.fn(),
     paste: vi.fn(),
     select_all: vi.fn(),
+    format_bold: vi.fn(),
+    format_italic: vi.fn(),
+    format_strikethrough: vi.fn(),
+    format_inline_code: vi.fn(),
     insert_table: vi.fn(),
     insert_code_block: vi.fn(),
     insert_math_block: vi.fn(),
@@ -40,9 +44,22 @@ describe('compute_editor_menu_entries — structure', () => {
       'item:copy',
       'item:paste',
       '|',
+      'submenu:format',
       'submenu:insert',
       '|',
       'item:select_all',
+    ]);
+  });
+
+  it('Format submenu holds bold, italic, strikethrough, inline code', () => {
+    const entries = compute_editor_menu_entries({ has_selection: false }, stub_actions());
+    const submenu = find_submenu(entries, 'format');
+    const ids = submenu.entries.filter((e) => e.kind === 'item').map((e) => e.id);
+    expect(ids).toEqual([
+      'format_bold',
+      'format_italic',
+      'format_strikethrough',
+      'format_inline_code',
     ]);
   });
 
@@ -72,27 +89,32 @@ describe('compute_editor_menu_entries — structure', () => {
       }
     };
     walk(entries);
-    expect(ids.size).toBe(10);
+    expect(ids.size).toBe(15);
   });
 });
 
 describe('compute_editor_menu_entries — disabled rules', () => {
-  it('no selection: cut and copy disabled; paste, select all, and inserts stay enabled', () => {
+  it('no selection: cut, copy, and all format items disabled; paste, select all, and inserts stay enabled', () => {
     const entries = compute_editor_menu_entries({ has_selection: false }, stub_actions());
     expect(find_item(entries, 'cut').disabled).toBe(true);
     expect(find_item(entries, 'copy').disabled).toBe(true);
+    for (const e of find_submenu(entries, 'format').entries) {
+      if (e.kind === 'item') expect(e.disabled, e.id).toBe(true);
+    }
     expect(find_item(entries, 'paste').disabled).toBeFalsy();
     expect(find_item(entries, 'select_all').disabled).toBeFalsy();
-    const submenu = find_submenu(entries, 'insert');
-    for (const e of submenu.entries) {
-      if (e.kind === 'item') expect(e.disabled).toBeFalsy();
+    for (const e of find_submenu(entries, 'insert').entries) {
+      if (e.kind === 'item') expect(e.disabled, e.id).toBeFalsy();
     }
   });
 
-  it('with selection: cut and copy enabled', () => {
+  it('with selection: cut, copy, and format items enabled', () => {
     const entries = compute_editor_menu_entries({ has_selection: true }, stub_actions());
     expect(find_item(entries, 'cut').disabled).toBe(false);
     expect(find_item(entries, 'copy').disabled).toBe(false);
+    for (const e of find_submenu(entries, 'format').entries) {
+      if (e.kind === 'item') expect(e.disabled, e.id).toBe(false);
+    }
   });
 });
 
