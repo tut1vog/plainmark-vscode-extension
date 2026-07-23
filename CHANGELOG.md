@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Word count in the status bar** — while a Plainmark tab is active, the status bar shows a live word count that updates as you type; it hides when you switch to a non-Plainmark tab.
+
 ## [1.7.0] - 2026-07-23
 
 ### Added

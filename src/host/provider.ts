@@ -24,6 +24,7 @@ import {
 import { read_table_keybindings } from './table_keybindings.js';
 import type { ResolvedTableKeybindings } from '../common/table_keybindings.js';
 import { register_outline } from './outline.js';
+import { count_words, word_count_label } from './word_count.js';
 import {
   dedupe_file_name,
   document_base_name,
@@ -94,6 +95,23 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       }
     }
     return null;
+  }
+
+  private static status_bar_item: vscode.StatusBarItem | null = null;
+
+  // Custom editors get no built-in Ln/Col/selection status entry, so this item
+  // is the only document indicator a Plainmark tab shows.
+  private static refresh_status_bar(): void {
+    const item = PlainmarkEditorProvider.status_bar_item;
+    if (!item) return;
+    const panel = PlainmarkEditorProvider.get_active_panel();
+    const document = panel ? PlainmarkEditorProvider.panel_documents.get(panel) : undefined;
+    if (!document) {
+      item.hide();
+      return;
+    }
+    item.text = word_count_label(count_words(document.getText()));
+    item.show();
   }
 
   private static set_editor_active_context(active: boolean): void {
@@ -265,6 +283,8 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         await config.update('theme', picked.value, vscode.ConfigurationTarget.Global);
       },
     );
+    const status_bar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    PlainmarkEditorProvider.status_bar_item = status_bar;
     const outline = register_outline({
       view_type: PlainmarkEditorProvider.viewType,
       get_panel_for_uri: (uri) => PlainmarkEditorProvider.get_panel_for_uri(uri),
@@ -281,6 +301,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       open_in_plainmark,
       select_theme,
       outline,
+      status_bar,
     ];
     // Gated test command (inert in production): pushes a synthetic webview
     // message into a panel's real dispatch, keyed by document URI. Not declared
@@ -509,18 +530,21 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     const sub_change = vscode.workspace.onDidChangeTextDocument((e) => {
       if (e.document.uri.toString() !== document.uri.toString()) return;
       loop.handle_text_document_change(document.uri.toString());
+      PlainmarkEditorProvider.refresh_status_bar();
     });
 
     PlainmarkEditorProvider.active_panels.add(webviewPanel);
     PlainmarkEditorProvider.panel_documents.set(webviewPanel, document);
     if (webviewPanel.active) PlainmarkEditorProvider.last_active_panel = webviewPanel;
     PlainmarkEditorProvider.refresh_editor_active_context();
+    PlainmarkEditorProvider.refresh_status_bar();
     let was_active = webviewPanel.active;
     const sub_view_state = webviewPanel.onDidChangeViewState((e) => {
       if (e.webviewPanel.active) {
         PlainmarkEditorProvider.last_active_panel = e.webviewPanel;
       }
       PlainmarkEditorProvider.refresh_editor_active_context();
+      PlainmarkEditorProvider.refresh_status_bar();
       // Refocus CM6 only on the inactive→active edge (avoid focus-steal): VS Code focuses the iframe, not the inner contenteditable, so the retained caret won't render.
       if (e.webviewPanel.active && !was_active) {
         void webviewPanel.webview.postMessage({
@@ -545,6 +569,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         PlainmarkEditorProvider.last_active_panel = null;
       }
       PlainmarkEditorProvider.refresh_editor_active_context();
+      PlainmarkEditorProvider.refresh_status_bar();
     });
   }
 
