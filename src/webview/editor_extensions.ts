@@ -195,8 +195,9 @@ const editor_extensions_core: Extension[] = [
   }),
   // historyKeymap binds Mod-Shift-z to redo on Mac (via mac override) and Linux (separate entry) but NOT Windows.
   keymap.of([
-    // Before defaultKeymap's cursorGroup* (equal precedence, earlier-in-array
-    // wins): adds Intl.Segmenter word stops inside unspaced CJK runs.
+    // Before defaultKeymap's cursorGroup*/deleteGroup* (equal precedence,
+    // earlier-in-array wins): adds Intl.Segmenter word stops inside unspaced
+    // CJK runs.
     ...cjk_word_motion_keymap,
     ...defaultKeymap,
     ...historyKeymap,

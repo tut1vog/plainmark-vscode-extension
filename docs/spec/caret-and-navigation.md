@@ -72,6 +72,8 @@ widgets. Section code `N`.
   _Example:_ ArrowRight into `![alt](url)` reveals the source so it becomes editable, rather than jumping over it. (Image specialization: `IMG-I-4`.)
 - **NAV-N-6** `[smoke]` — Word-wise horizontal motion and selection (Ctrl+Arrow / Ctrl+Shift+Arrow; Alt on macOS) MUST stop at `Intl.Segmenter` word boundaries inside an unspaced run of Han / Hiragana / Katakana instead of skipping the whole run as one group. The refinement MUST apply only when the skipped span lies on a single line and contains such a character; motion over any other text MUST be identical to the CM6 default.
   _Example:_ `|你好世界` → Ctrl+ArrowRight → `你好|世界`, not `你好世界|`.
+- **NAV-N-7** `[smoke]` — Word-wise deletion (Ctrl+Backspace / Ctrl+Delete; Alt on macOS) MUST delete only up to the nearest `Intl.Segmenter` word boundary inside an unspaced run of Han / Hiragana / Katakana instead of deleting the whole run as one group. The refinement MUST apply only when the deleted span lies on a single line and contains such a character; deletion over any other text MUST be identical to the CM6 default, including its single-space and atomic-range rules.
+  _Example:_ `你好世界|` → Ctrl+Backspace → `你好|`, not `|`.
 
 ## M — Mechanical caret/selection invariants
 
