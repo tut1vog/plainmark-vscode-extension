@@ -188,6 +188,42 @@ describe('image widget', () => {
     expect(shown).toContain('old.pngx');
   });
 
+  it('re-rendering a gap-above image keeps its height stable (no min-height ratchet)', async () => {
+    // Src unique to this test: the height cache is module-global, and a shared
+    // src would seed this widget from another test's measurement.
+    const unique_src =
+      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    const doc = `hello\n![alt](${unique_src})\n\nworld`;
+    view = mount_editor(container, doc, 'https://example.test/');
+    move_cursor(view, 0);
+    const settle = async (): Promise<void> => {
+      await vi.waitFor(() => {
+        const img = container.querySelector<HTMLImageElement>('.plainmark-image-block img');
+        expect(img?.complete).toBe(true);
+      });
+      // remember_block_height measures one rAF after load.
+      for (let i = 0; i < 3; i++) await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    };
+    await settle();
+
+    // Each reveal/re-render cycle rebuilds the widget DOM from the cached
+    // height; under the ratchet every cycle grew the box by one paragraph gap.
+    for (let i = 0; i < 3; i++) {
+      move_cursor(view, doc.indexOf('![') + 1);
+      expect(container.querySelectorAll('.plainmark-image-block-preview')).toHaveLength(1);
+      move_cursor(view, 0);
+      await settle();
+    }
+
+    const widget = container.querySelector<HTMLElement>('.plainmark-image-block')!;
+    const img = widget.querySelector('img')!;
+    const padding = parseFloat(getComputedStyle(widget).paddingTop);
+    expect(widget.getBoundingClientRect().height).toBeCloseTo(
+      img.getBoundingClientRect().height + padding,
+      0,
+    );
+  });
+
   it('IMG-E-6: a failed image load shows the broken-image placeholder', async () => {
     // Valid base64, undecodable as PNG → the <img> fires `error` deterministically (no network).
     const broken = 'data:image/png;base64,AAAAAA==';

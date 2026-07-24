@@ -43,7 +43,12 @@ function build_image_dom(
   img.alt = alt;
   // Height is unknown until the image decodes — cache once it lays out so the
   // next off-screen render seeds the height map at the real size.
-  img.addEventListener('load', () => remember_block_height(resolved_src, container));
+  img.addEventListener('load', () => {
+    // The reservation ends at decode — kept, it feeds back through the measurement (measured ≥ reserved) and ratchets the cache; mirrors math.ts.
+    container.style.minHeight = '';
+    // Measure the img, not the container, so the gap-above padding never enters the cache shared with the padding-free preview.
+    remember_block_height(resolved_src, img);
+  });
   // A broken <img> (especially with empty alt) collapses to an empty block in the webview — show an explicit placeholder instead.
   img.addEventListener('error', () => {
     container.classList.add('plainmark-image-broken');
