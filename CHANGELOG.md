@@ -7,6 +7,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 ### Fixed
 
 - **Ctrl+Backspace deletes Chinese and Japanese word by word** — deleting by word previously removed an entire unspaced CJK run in one keystroke; Ctrl+Backspace and Ctrl+Delete now remove one word at a time inside the run (Alt+Backspace / Alt+Delete on macOS).
+- **The gap below an image no longer grows while you edit** — clicking on or editing around an image used to add a strip of blank space beneath it each time, gradually pushing away the content below; images now keep their natural height.
 
 ## [1.7.2] - 2026-07-23
 
