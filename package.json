@@ -230,6 +230,12 @@
           "scope": "resource",
           "default": ".",
           "markdownDescription": "Folder where images pasted into the Plainmark editor are saved. Relative paths resolve against the current document's folder; the default `.` saves the image next to the document. Two variables are supported, matching VS Code's Markdown image-copy setting (`markdown.copyFiles.destination`):\n\n- `${documentWorkspaceFolder}` — the workspace folder that contains the document; falls back to the document's folder when it is not in a workspace.\n- `${documentBaseName}` — the document's file name without its extension.\n\nFor example, `${documentWorkspaceFolder}/assets` saves every image under a single workspace `assets` folder, while `assets/${documentBaseName}` gives each note its own image folder. Pasted files are named `image-YYYYMMDD-HHMMSS.<ext>` (the extension comes from the image type) and never overwrite an existing file. Pasting an image is unavailable in unsaved (untitled) documents and on read-only file systems."
+        },
+        "plainmark.paste.convertTables": {
+          "type": "boolean",
+          "scope": "resource",
+          "default": true,
+          "markdownDescription": "Convert table-like clipboard content into a Markdown table on paste, the way Typora and Obsidian do. Applies when the clipboard carries a single HTML `<table>` (a range copied from Excel, Google Sheets, or a rendered web table) or strictly tab-separated text with a consistent column count. Anything that doesn't qualify — including paste inside a table cell — is inserted as plain text. Disable to always paste the clipboard text literally. Changing this setting reloads the editor view."
         }
       }
     }

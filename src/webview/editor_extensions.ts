@@ -10,6 +10,7 @@ import { oracle_line_height_pin } from './oracle_line_height_pin.js';
 import { cjk_word_motion_keymap } from './cjk_word_motion.js';
 import { match_code_language } from './language_aliases.js';
 import { image_paste_extension } from './image_paste.js';
+import { table_paste_extension } from './paste_table.js';
 import { editor_context_menu_extension } from './editor_context_menu.js';
 import {
   block_delimiter_autoclose,
@@ -434,6 +435,8 @@ export const editor_extensions: Extension[] = [
   // Main view only (not in cell_subview_extensions) — the controller inserts at the
   // main caret, so a cell-subview paste must not be intercepted here.
   image_paste_extension,
+  // After the image sniff (IMG-I-6), main view only — a cell paste stays literal (TBL-I-19).
+  table_paste_extension,
   // Main view only — table cells own their contextmenu; prose right-clicks open the editor menu.
   editor_context_menu_extension,
   scroller_theme,

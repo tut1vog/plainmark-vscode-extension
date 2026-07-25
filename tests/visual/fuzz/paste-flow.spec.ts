@@ -21,6 +21,7 @@ import { afterAll, beforeAll, describe, it } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { editor_extensions } from '../../../src/webview/editor_extensions.js';
+import { convert_pasted_table } from '../../../src/webview/paste_table.js';
 import corpus from '../../fuzz/fixtures/paste-corpus/index.json';
 import { allow_console, unexpected_console_snapshot } from '../console-sentinel.js';
 
@@ -124,15 +125,23 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
       // checks above are trivially satisfied by a paste that silently inserts
       // nothing, so without this a broken (no-op) paste handler would pass.
       // CM6's default paste handler inserts the clipboard `text/plain` verbatim
-      // at the caret (it ignores `text/html`), so for every fixture the doc MUST
-      // grow by exactly `text_plain.length` and that exact text MUST occupy the
-      // span beginning at the paste position.
-      const expected = fixture.text_plain;
+      // at the caret (it ignores `text/html`) — except a fixture that qualifies
+      // for paste-table conversion (TBL-I-35/36), which inserts the converted
+      // table markdown instead: the seed caret is mid-line with `\n` as the
+      // next byte, so the insert is `'\n' + table` (leading own-line break, no
+      // trailing byte) and the caret lands past the existing `\n`, at the start
+      // of the line after the table.
+      const converted = convert_pasted_table({
+        html: fixture.text_html ?? '',
+        text: fixture.text_plain,
+      });
+      const expected = converted !== null ? '\n' + converted : fixture.text_plain;
+      const expected_caret = CARET_OFFSET + expected.length + (converted !== null ? 1 : 0);
       const inserted = after_text.slice(CARET_OFFSET, CARET_OFFSET + inserted_length);
       if (inserted_length !== expected.length) {
         throw new Error(
           `paste flow: doc did not grow by the pasted length for fixture "${fixture.name}"\n` +
-            `expected growth: ${expected.length} (text/plain length)\n` +
+            `expected growth: ${expected.length}\n` +
             `  actual growth: ${inserted_length}`,
         );
       }
@@ -143,10 +152,10 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
             `  actual inserted: ${JSON.stringify(inserted)}`,
         );
       }
-      if (new_caret !== CARET_OFFSET + expected.length) {
+      if (new_caret !== expected_caret) {
         throw new Error(
-          `paste flow: caret did not advance past the paste for fixture "${fixture.name}"\n` +
-            `expected caret: ${CARET_OFFSET + expected.length}\n` +
+          `paste flow: caret did not land after the paste for fixture "${fixture.name}"\n` +
+            `expected caret: ${expected_caret}\n` +
             `  actual caret: ${new_caret}`,
         );
       }

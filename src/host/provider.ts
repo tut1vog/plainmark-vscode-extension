@@ -367,12 +367,18 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       return resolved;
     };
 
+    const compute_paste_table_conversion = (): boolean =>
+      vscode.workspace
+        .getConfiguration('plainmark', document.uri)
+        .get<boolean>('paste.convertTables', true);
+
     const initial_styles = install_styles();
     const initial_keybindings = compute_keybindings();
     webviewPanel.webview.html = this.getHtml(
       webviewPanel.webview,
       initial_styles,
       initial_keybindings,
+      compute_paste_table_conversion(),
     );
 
     const document_dir_webview_uri = document_dir_uri
@@ -510,11 +516,13 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       const styles_changed = e.affectsConfiguration('plainmark.styles', document.uri);
       const keys_changed = e.affectsConfiguration('plainmark.tableKeybindings', document.uri);
       const theme_changed = e.affectsConfiguration('plainmark.theme');
-      if (!styles_changed && !keys_changed && !theme_changed) return;
+      const paste_changed = e.affectsConfiguration('plainmark.paste.convertTables', document.uri);
+      if (!styles_changed && !keys_changed && !theme_changed && !paste_changed) return;
       init_log.debug('plainmark configuration changed — reloading webview', {
         styles_changed,
         keys_changed,
         theme_changed,
+        paste_changed,
       });
       const next_styles = install_styles();
       const next_keybindings = compute_keybindings();
@@ -524,6 +532,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         webviewPanel.webview,
         next_styles,
         next_keybindings,
+        compute_paste_table_conversion(),
       );
     });
 
@@ -577,6 +586,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     webview: vscode.Webview,
     styles: readonly ResolvedStyle[],
     keybindings: ResolvedTableKeybindings,
+    pasteTableConversion: boolean,
   ): string {
     // Gather the vscode-dependent values (asWebviewUri, cspSource, theme config)
     // here; the pure string construction (CSP, nonce placement, escaping,
@@ -597,6 +607,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       themeCss: theme_css_for(theme_id),
       styleHrefs: styles.map(({ href }) => href),
       keybindings,
+      pasteTableConversion,
     });
   }
 }

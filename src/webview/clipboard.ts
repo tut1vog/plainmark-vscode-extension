@@ -1,6 +1,11 @@
 import { Transaction, type EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { native_to_lf } from '../sync/translate.js';
+import {
+  insert_pasted_table,
+  paste_table_conversion_enabled,
+  table_markdown_from_tsv,
+} from './paste_table.js';
 import type { PostMessage } from './sync.js';
 import { create_logger } from '../log.js';
 
@@ -69,9 +74,20 @@ export function create_clipboard_paste_controller(
       if (!pending) return;
       pending = false;
       if (text.length === 0) return;
+      // The CM6 doc is always the LF-normalized form; host clipboard text may carry CRLF.
+      const lf_text = native_to_lf(text);
+      // The host round-trip carries only text/plain, so only the TSV branch of
+      // the paste-table conversion applies here (TBL-I-35 / CTX-I-3).
+      if (paste_table_conversion_enabled()) {
+        const table_markdown = table_markdown_from_tsv(lf_text);
+        if (table_markdown !== null) {
+          insert_pasted_table(view, table_markdown);
+          view.focus();
+          return;
+        }
+      }
       view.dispatch({
-        // The CM6 doc is always the LF-normalized form; host clipboard text may carry CRLF.
-        ...view.state.replaceSelection(native_to_lf(text)),
+        ...view.state.replaceSelection(lf_text),
         annotations: [Transaction.userEvent.of('input.paste')],
         scrollIntoView: true,
       });
