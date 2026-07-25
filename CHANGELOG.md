@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.2] - 2026-07-25
+
+### Added
+
+- **Pressing ↑ or ↓ with text selected now moves the caret right away** — previously the first press only collapsed the selection to its edge, and you had to press again to actually move up or down; now one press does both.
+
 ## [1.8.1] - 2026-07-25
 
 ### Fixed
