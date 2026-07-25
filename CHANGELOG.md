@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] - 2026-07-25
+
+### Added
+
+- **Pasting a spreadsheet or web table now becomes a Markdown table** — copy cells from Excel, Google Sheets, or a table on a web page and paste into the editor, and it lands as a formatted Markdown table instead of raw tab-separated text. Turn it off with the new `plainmark.paste.convertTables` setting if you'd rather paste as plain text.
+
 ## [1.7.3] - 2026-07-24
 
 ### Fixed
