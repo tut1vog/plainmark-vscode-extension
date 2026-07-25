@@ -6,7 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
-- **Typing between two bullet points no longer shifts the whole layout** — with several blank lines between two list items, typing the first character on one of those lines used to make every blank line around it jump apart at once; the spacing now stays put, and blank lines between list items breathe the same as blank lines anywhere else.
+- **Typing between two bullet points no longer shifts the layout** — with blank lines between two list items, typing the first character on one of those lines used to make everything around it jump; nothing moves now, and list items separated by a blank line take the same comfortable spacing paragraphs get.
 
 ## [1.8.0] - 2026-07-25
 

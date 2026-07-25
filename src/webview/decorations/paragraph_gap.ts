@@ -46,9 +46,10 @@ const gap_line = Decoration.line({ class: 'plainmark-paragraph-gap' });
 // `para\n* ` as paragraph text, `para\n* x` as a list — all transitional states
 // on the way to a bullet. Prose lines, blank lines, setext lines, AND the first
 // line of a top-level list all keep the gap, so none of those reclassifications
-// moves the layout vertically; only interior list MARKER lines (a ListItem
-// starts on the line) drop to the tighter item spacing (which lists.ts applies
-// via an adjacent-sibling rule).
+// moves the layout vertically; only interior list MARKER lines at a TIGHT
+// seam (a ListItem starts on the line, directly under a non-blank line) drop
+// to the tighter item spacing (which lists.ts applies via an adjacent-sibling
+// rule — a rule that needs exactly that adjacency).
 //
 // Item continuation lines — lazy (`- a\nb`) or indented (`- a\n  b`), i.e.
 // lines inside an item begun on an earlier line — keep the gap: under the
@@ -119,7 +120,14 @@ function gap_eligible(
   // appears. It still composes with the list rules below (a quote opening
   // inside a list item reads as that item's continuation).
   if (outermost_list === null || outermost_list.from >= line.from) return true;
-  return innermost_item === null || innermost_item.from < line.from;
+  if (innermost_item === null || innermost_item.from < line.from) return true;
+  // Interior marker line at a loose seam: after a blank line (bare or
+  // quote-prefix-only) it takes the gap, so the seam reads as paragraph
+  // rhythm AND its eligibility survives the reparse when a character typed
+  // on the blank run splits (or a deletion re-merges) the list — the line
+  // flips between interior marker and first-of-list, both gapped, and no
+  // keystroke between loose items moves the layout at all.
+  return /^[ \t>]*$/.test(state.doc.lineAt(line.from - 1).text);
 }
 
 // A hard `\n` renders as a paragraph break: every eligible line after the

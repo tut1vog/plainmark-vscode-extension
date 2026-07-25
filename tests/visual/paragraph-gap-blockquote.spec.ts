@@ -115,6 +115,11 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7)', () => {
     expect(await gap_flags('> - a\n> - b\n> next')).toEqual([false, false, true]);
   });
 
+  it('a quoted loose seam gaps the blank line and the marker under it, like unquoted', async () => {
+    // The `>`-only line counts as the seam's blank line for the marker below.
+    expect(await gap_flags('> - a\n>\n> - b')).toEqual([false, true, true]);
+  });
+
   it('deepening an interior line into a nested quote keeps the gap', async () => {
     expect(await gap_flags('> a\n> > b')).toEqual([false, true]);
   });

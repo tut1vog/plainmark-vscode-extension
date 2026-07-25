@@ -7,9 +7,11 @@ import { editor_extensions } from '../../src/webview/editor_extensions.js';
 // indented — a line inside a list on which no ListItem starts) carries the
 // paragraph gap, so a hard `\n` after the last bullet reads as a paragraph
 // break instead of a soft wrap. Blank lines between loose items carry it
-// too — a character typed on one splits the list and moves the whole blank
-// run outside it, so list-dependent eligibility would reflow every blank
-// line at once. Only marker lines stay tight.
+// too, and so does a marker line directly under a blank line (the loose
+// seam) — a character typed on the blank run splits the list and reparses
+// every one of those lines, so any of them differing between the in-list
+// and out-of-list classification would move the layout on that keystroke.
+// Only marker lines at a tight seam (under a non-blank line) stay tight.
 
 const GAP_CLASS = 'plainmark-paragraph-gap';
 
@@ -64,16 +66,20 @@ describe('paragraph gap on list continuation lines (PARA-R-7)', () => {
     expect(await gap_flags('para\n- x\n- y')).toEqual([false, true, false]);
   });
 
-  it('blank line between loose items carries the gap', async () => {
-    expect(await gap_flags('- a\n\n- b')).toEqual([false, true, false]);
+  it('the loose seam carries the gap on the blank line and the marker line under it', async () => {
+    expect(await gap_flags('- a\n\n- b')).toEqual([false, true, true]);
   });
 
-  it('a blank run between items keeps its gaps when a typed character splits the list', async () => {
-    expect(await gap_flags('- a\n\n\n\n\n- b')).toEqual([false, true, true, true, true, false]);
-    // Same doc with `x` typed on the middle blank line: the list splits and
-    // the blank run leaves it, but no blank line changes eligibility — only
-    // the second list's first line picks up the first-of-list gap.
+  it('typing a character between loose items changes no line eligibility', async () => {
+    // `x` typed on the middle blank line splits the one spanning list into
+    // two, reparsing every line of the run — the flags must not move: blank
+    // lines are eligible in or out of a list, and `- b` flips between
+    // interior-marker-after-blank and first-of-list, both gapped.
+    expect(await gap_flags('- a\n\n\n\n\n- b')).toEqual([false, true, true, true, true, true]);
     expect(await gap_flags('- a\n\nx\n\n\n- b')).toEqual([false, true, true, true, true, true]);
+    // Caret directly above the marker line (owner repro): same invariance.
+    expect(await gap_flags('- abc\n\n\n- def')).toEqual([false, true, true, true]);
+    expect(await gap_flags('- abc\n\nx\n- def')).toEqual([false, true, true, true]);
   });
 
   it('blank line ending a list and the paragraph after both carry the gap', async () => {
