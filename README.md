@@ -31,6 +31,7 @@ Plainmark runs as a custom editor in both the desktop app and the browser — op
 - **Callouts** — Obsidian-style `> [!NOTE]` admonitions.
 - **Footnotes, autolinks, images, frontmatter, HTML** — full Markdown coverage.
 - **Paste images** — paste a screenshot from the clipboard and Plainmark saves it into your workspace and inserts the image link.
+- **Paste tables** — paste a range copied from Excel, Google Sheets, or a table rendered on a web page and it becomes a Markdown table, bold/links included; tab-separated plain text converts too.
 - **Outline view** — jump around the document from the Explorer sidebar.
 - **Word count** — the status bar shows a live word count while a Plainmark tab is active.
 - **CJK-aware** — the word count, `Ctrl/Alt+Arrow` word jumps, and `Ctrl/Alt+Backspace` word deletion all understand unspaced Chinese and Japanese text.
@@ -71,6 +72,7 @@ In-table editing shortcuts (insert/move/delete rows and columns, alignment) are 
 | `plainmark.styles` | Your own CSS files to style the preview. See the [theming guide](./docs/theming-guide.md). |
 | `plainmark.tableKeybindings` | Customize the in-table structural-editing shortcuts. |
 | `plainmark.imagePasteLocation` | Folder for pasted images (default `.`, next to the document); supports `${documentWorkspaceFolder}` and `${documentBaseName}`. |
+| `plainmark.paste.convertTables` | Convert a copied spreadsheet range, web table, or tab-separated text into a Markdown table on paste (default on); turn off to always paste literally. |
 
 ## Known limitations
 
