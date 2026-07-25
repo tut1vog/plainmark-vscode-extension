@@ -2,11 +2,11 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.8.1] - 2026-07-25
 
 ### Fixed
 
-- **Typing between two bullet points no longer shifts the layout** — with blank lines or text between two list items, typing the first character on one of those lines used to make surrounding lines jump; nothing moves now. Bullets separated by a blank line or a plain text line take the same comfortable spacing paragraphs get; bullets stacked directly on each other keep their tight spacing.
+- **Typing between two bullet points no longer shifts the layout** — editing a blank or text line between two list items used to make surrounding lines suddenly jump; nothing moves now.
 
 ## [1.8.0] - 2026-07-25
 
