@@ -56,8 +56,11 @@ const gap_line = Decoration.line({ class: 'plainmark-paragraph-gap' });
 // paragraphs, not soft wraps. Marker typing on one stays a single jump: `-`
 // prepended to existing text is still continuation prose (`-next`), and the
 // space keystroke completes a real item (`- next`) in the same instant the
-// gap hands off to item spacing. Blank lines between loose items have no
-// ListItem ancestor and stay tight, so loose-list geometry is unchanged.
+// gap hands off to item spacing. Blank lines between loose items (in the
+// list, no ListItem ancestor) keep the gap like every other blank line: a
+// character typed on one splits the list and drops the whole blank run out
+// of it, so list-dependent eligibility would reflow every one of those
+// lines on a single keystroke (owner-reported bug, 2026-07-25).
 function gap_eligible(
   state: EditorState,
   line: { from: number; to: number; text: string },
@@ -116,7 +119,7 @@ function gap_eligible(
   // appears. It still composes with the list rules below (a quote opening
   // inside a list item reads as that item's continuation).
   if (outermost_list === null || outermost_list.from >= line.from) return true;
-  return innermost_item !== null && innermost_item.from < line.from;
+  return innermost_item === null || innermost_item.from < line.from;
 }
 
 // A hard `\n` renders as a paragraph break: every eligible line after the

@@ -6,8 +6,10 @@ import { editor_extensions } from '../../src/webview/editor_extensions.js';
 // Guards PARA-R-7: an item continuation line (lazy or
 // indented — a line inside a list on which no ListItem starts) carries the
 // paragraph gap, so a hard `\n` after the last bullet reads as a paragraph
-// break instead of a soft wrap. Marker lines and blank lines between loose
-// items stay tight (loose-list geometry unchanged).
+// break instead of a soft wrap. Blank lines between loose items carry it
+// too — a character typed on one splits the list and moves the whole blank
+// run outside it, so list-dependent eligibility would reflow every blank
+// line at once. Only marker lines stay tight.
 
 const GAP_CLASS = 'plainmark-paragraph-gap';
 
@@ -35,6 +37,7 @@ describe('paragraph gap on list continuation lines (PARA-R-7)', () => {
   });
 
   async function gap_flags(doc: string): Promise<boolean[]> {
+    view?.destroy();
     view = new EditorView({
       state: EditorState.create({ doc, extensions: [...editor_extensions] }),
       parent: host,
@@ -61,8 +64,16 @@ describe('paragraph gap on list continuation lines (PARA-R-7)', () => {
     expect(await gap_flags('para\n- x\n- y')).toEqual([false, true, false]);
   });
 
-  it('blank line between loose items stays tight (geometry unchanged)', async () => {
-    expect(await gap_flags('- a\n\n- b')).toEqual([false, false, false]);
+  it('blank line between loose items carries the gap', async () => {
+    expect(await gap_flags('- a\n\n- b')).toEqual([false, true, false]);
+  });
+
+  it('a blank run between items keeps its gaps when a typed character splits the list', async () => {
+    expect(await gap_flags('- a\n\n\n\n\n- b')).toEqual([false, true, true, true, true, false]);
+    // Same doc with `x` typed on the middle blank line: the list splits and
+    // the blank run leaves it, but no blank line changes eligibility — only
+    // the second list's first line picks up the first-of-list gap.
+    expect(await gap_flags('- a\n\nx\n\n\n- b')).toEqual([false, true, true, true, true, true]);
   });
 
   it('blank line ending a list and the paragraph after both carry the gap', async () => {
