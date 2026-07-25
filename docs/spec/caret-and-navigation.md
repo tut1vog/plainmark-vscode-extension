@@ -74,6 +74,8 @@ widgets. Section code `N`.
   _Example:_ `|你好世界` → Ctrl+ArrowRight → `你好|世界`, not `你好世界|`.
 - **NAV-N-7** `[smoke]` — Word-wise deletion (Ctrl+Backspace / Ctrl+Delete; Alt on macOS) MUST delete only up to the nearest `Intl.Segmenter` word boundary inside an unspaced run of Han / Hiragana / Katakana instead of deleting the whole run as one group. The refinement MUST apply only when the deleted span lies on a single line and contains such a character; deletion over any other text MUST be identical to the CM6 default, including its single-space and atomic-range rules.
   _Example:_ `你好世界|` → Ctrl+Backspace → `你好|`, not `|`.
+- **NAV-N-8** — ArrowDown / ArrowUp on a non-empty selection MUST, in one keystroke, collapse the selection to its end / start edge and move the caret one visual line down / up from that edge; when no line exists in that direction the caret lands on the edge's visual line end / start instead. This replaces the CM6 default of collapsing without moving. It applies to the plain vertical arrows only: horizontal arrows and every other selection-collapsing motion keep the CM6 collapse-in-place default, and Shift+Arrow selection extension is unchanged.
+  _Example:_ a selection inside line 2 of a three-line document → ArrowDown → an empty caret on line 3, in a single press.
 
 ## M — Mechanical caret/selection invariants
 
