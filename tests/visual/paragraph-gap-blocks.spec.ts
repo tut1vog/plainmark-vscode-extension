@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
-// Guards PARA-R-7: the FIRST line of every non-prose
+// Guards PARA-R-10 / PARA-R-11: the FIRST line of every non-prose
 // block construct (fenced/indented code, HTML blocks, headings, HR, tables,
 // block math) joins the paragraph rhythm when the block sits below other
 // content — never on doc line 1, never inside a quote (BQ-R-13). Interior
@@ -22,7 +22,7 @@ async function frames(n: number): Promise<void> {
   for (let i = 0; i < n; i++) await next_frame();
 }
 
-describe('paragraph gap above block constructs (PARA-R-7)', () => {
+describe('paragraph gap above block constructs (PARA-R-10 PARA-R-11)', () => {
   let host: HTMLElement;
   let view: EditorView | undefined;
 

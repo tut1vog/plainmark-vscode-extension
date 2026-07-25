@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
-// Guards PARA-R-7, and its construct mirrors
+// Guards PARA-R-9, and its construct mirrors
 // BQ-R-13 (quote interiors) and CALL-R-11 (callout bodies): quote and callout
 // interiors share the prose paragraph rhythm. Interior blockquote lines (any
 // depth), quoted blank lines, callout body lines (minus the first, under the
@@ -25,7 +25,7 @@ async function frames(n: number): Promise<void> {
   for (let i = 0; i < n; i++) await next_frame();
 }
 
-describe('paragraph gap inside blockquotes and callouts (PARA-R-7)', () => {
+describe('paragraph gap inside blockquotes and callouts (PARA-R-9)', () => {
   let host: HTMLElement;
   let view: EditorView | undefined;
 
