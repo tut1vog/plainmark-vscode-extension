@@ -46,10 +46,10 @@ const gap_line = Decoration.line({ class: 'plainmark-paragraph-gap' });
 // `para\n* ` as paragraph text, `para\n* x` as a list — all transitional states
 // on the way to a bullet. Prose lines, blank lines, setext lines, AND the first
 // line of a top-level list all keep the gap, so none of those reclassifications
-// moves the layout vertically; only interior list MARKER lines at a TIGHT
-// seam (a ListItem starts on the line, directly under a non-blank line) drop
-// to the tighter item spacing (which lists.ts applies via an adjacent-sibling
-// rule — a rule that needs exactly that adjacency).
+// moves the layout vertically; only marker lines at a TIGHT seam (a ListItem
+// starts on this line AND on the line directly above) drop to the tighter
+// item spacing (which lists.ts applies via an adjacent-sibling rule — a rule
+// that needs exactly that adjacency).
 //
 // Item continuation lines — lazy (`- a\nb`) or indented (`- a\n  b`), i.e.
 // lines inside an item begun on an earlier line — keep the gap: under the
@@ -121,13 +121,31 @@ function gap_eligible(
   // inside a list item reads as that item's continuation).
   if (outermost_list === null || outermost_list.from >= line.from) return true;
   if (innermost_item === null || innermost_item.from < line.from) return true;
-  // Interior marker line at a loose seam: after a blank line (bare or
-  // quote-prefix-only) it takes the gap, so the seam reads as paragraph
-  // rhythm AND its eligibility survives the reparse when a character typed
-  // on the blank run splits (or a deletion re-merges) the list — the line
-  // flips between interior marker and first-of-list, both gapped, and no
-  // keystroke between loose items moves the layout at all.
-  return /^[ \t>]*$/.test(state.doc.lineAt(line.from - 1).text);
+  // Marker line: seam-local spacing. Tight only directly under another
+  // marker line — the seam the adjacent-sibling item spacing owns; under
+  // anything else (blank, prose, continuation, a construct's last line) the
+  // marker takes the gap, first-of-list and interior alike. Spacing keyed
+  // on the marker's ROLE in a list reflows lines the keystroke never
+  // touched — lazy continuation lets one character typed lines away merge
+  // or split lists and flip an untouched marker between first-of-list and
+  // interior — while the seam itself can only change by editing the marker
+  // line or the line directly above it.
+  return !list_item_starts_on(state, state.doc.lineAt(line.from - 1));
+}
+
+// Probes past the lexical quote prefix like gap_eligible, so a quoted
+// marker resolves into its ListItem rather than the QuoteMark.
+function list_item_starts_on(
+  state: EditorState,
+  line: { from: number; to: number; text: string },
+): boolean {
+  const prefix = /^[ \t>]*/.exec(line.text)![0].length;
+  const probe = Math.min(line.from + prefix, line.to);
+  const side = probe === line.to ? -1 : 1;
+  for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(probe, side); n; n = n.parent) {
+    if (n.name === 'ListItem') return n.from >= line.from;
+  }
+  return false;
 }
 
 // A hard `\n` renders as a paragraph break: every eligible line after the

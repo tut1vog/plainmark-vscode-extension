@@ -42,6 +42,7 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7)', () => {
   });
 
   async function mount(doc: string): Promise<HTMLElement[]> {
+    view?.destroy();
     view = new EditorView({
       state: EditorState.create({ doc, extensions: [...editor_extensions] }),
       parent: host,
@@ -116,8 +117,10 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-7)', () => {
   });
 
   it('a quoted loose seam gaps the blank line and the marker under it, like unquoted', async () => {
-    // The `>`-only line counts as the seam's blank line for the marker below.
     expect(await gap_flags('> - a\n>\n> - b')).toEqual([false, true, true]);
+    // Seam-local rule inside quotes too: a quoted marker under a quoted
+    // continuation line keeps the gap, so the in-quote merge is stable.
+    expect(await gap_flags('> - a\n> x\n> - b')).toEqual([false, true, true]);
   });
 
   it('deepening an interior line into a nested quote keeps the gap', async () => {
