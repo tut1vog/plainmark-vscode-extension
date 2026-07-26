@@ -60,6 +60,7 @@ Available from the Command Palette (`Ctrl/Cmd+Shift+P`):
 | Plainmark: Open in Text Editor | `Ctrl/Cmd+Shift+M` (toggles back) |
 | Plainmark: Insert table | — |
 | Plainmark: Insert footnote | `Ctrl/Cmd+Shift+6` |
+| Plainmark: Normalize list indentation | — |
 | Plainmark: Select Theme | — |
 
 In-table editing shortcuts (insert/move/delete rows and columns, alignment) are configurable via `plainmark.tableKeybindings`.

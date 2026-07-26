@@ -36,6 +36,8 @@ function host_tag(msg: HostToWebviewMessage): string {
       return 'insert_table';
     case 'insert_footnote':
       return 'insert_footnote';
+    case 'normalize_list_indent':
+      return 'normalize_list_indent';
     case 'focus_editor':
       return 'focus_editor';
     case 'style_reload':
@@ -78,6 +80,7 @@ describe('wire protocol', () => {
       { type: 'sync', text: 'doc', version: 3, document_dir_webview_uri: 'vscode://x', initial_cursor: { line: 1, character: 0 } },
       { type: 'insert_table' },
       { type: 'insert_footnote' },
+      { type: 'normalize_list_indent' },
       { type: 'focus_editor' },
       { type: 'style_reload', href: 'file:///x.css' },
       { type: 'scroll_to_heading', line: 42, character: 3 },

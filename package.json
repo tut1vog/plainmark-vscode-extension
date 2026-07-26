@@ -93,6 +93,10 @@
         "title": "Plainmark: Insert footnote"
       },
       {
+        "command": "tutivog.plainmark.normalizeListIndentation",
+        "title": "Plainmark: Normalize list indentation"
+      },
+      {
         "command": "tutivog.plainmark.openInTextEditor",
         "title": "Plainmark: Open in Text Editor",
         "icon": "$(code)"

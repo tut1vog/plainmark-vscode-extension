@@ -132,9 +132,9 @@ The host↔webview message *routing* the shell registers. The sync payload
 semantics are owned by `sync-and-persistence.md`. Section code `M`. The
 webview→host types are `ready`,
 `update`, `cursor_changed`, `link_click`, `style_load_error`, `table_edit_error`;
-the host→webview types are `sync`, `insert_table`, `insert_footnote`, `style_reload`.
+the host→webview types are `sync`, `insert_table`, `insert_footnote`, `normalize_list_indent`, `style_reload`.
 
-- **SHELL-M-1** — The webview MUST install a single `window` `message` listener that dispatches by `msg.type`, ignoring any payload that is not an object, and MUST route `sync`, `insert_table`, `insert_footnote`, and `style_reload` to their respective handlers.
+- **SHELL-M-1** — The webview MUST install a single `window` `message` listener that dispatches by `msg.type`, ignoring any payload that is not an object, and MUST route `sync`, `insert_table`, `insert_footnote`, `normalize_list_indent`, and `style_reload` to their respective handlers.
   _Example:_ a `{ type: 'insert_table' }` message → `insert_table_at_caret(view)`; a malformed non-object payload → ignored.
 
 - **SHELL-M-2** — On the host side, `onDidReceiveMessage` MUST give the shell-owned sideband handlers (`link_click`, `style_load_error`, `table_edit_error`) first refusal before forwarding to the sync loop; a message consumed by a sideband handler MUST NOT reach `loop.handle_webview_message`.
@@ -203,6 +203,9 @@ declared in `package.json` `contributes.commands` AND registered via
 
 - **SHELL-C-13** `[smoke]` — The provider MUST maintain a single right-aligned status bar item showing the active Plainmark document's word count over the raw source: each Han, Hiragana, or Katakana character counts as one word (unspaced scripts), CJK punctuation acts as a separator without counting, and all remaining text counts as whitespace-separated non-whitespace runs (markdown markers count as words), labeled `N Words` with a `1 Word` singular. It MUST refresh on panel resolve, view-state change, document change, and panel disposal, and MUST be hidden whenever no Plainmark panel is active — a custom-editor tab surfaces none of the built-in text-editor status entries (Ln/Col, selection), so this item is the tab's only document indicator.
   _Example:_ focus a Plainmark tab containing `# Title\n\nhello world` → the status bar shows `4 Words`; a tab containing an unspaced 11-character Chinese line shows `11 Words`, not `1 Word`; typing updates the count live; switching to a text-editor tab hides the item.
+
+- **SHELL-C-14** `[smoke]` — `tutivog.plainmark.normalizeListIndentation` MUST be registered and, when invoked, MUST post `{ type: 'normalize_list_indent' }` to the active Plainmark panel's webview. The document transform it triggers is owned by `LIST-I-15`.
+  _Example:_ Command Palette → "Plainmark: Normalize list indentation" → active panel receives `normalize_list_indent`.
 
 ## A — activation & dual host target
 

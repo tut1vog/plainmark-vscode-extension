@@ -170,6 +170,15 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         void panel?.webview.postMessage({ type: 'insert_footnote' } satisfies HostToWebviewMessage);
       },
     );
+    const normalize_list_indent = vscode.commands.registerCommand(
+      'tutivog.plainmark.normalizeListIndentation',
+      () => {
+        const panel = PlainmarkEditorProvider.get_active_panel();
+        void panel?.webview.postMessage({
+          type: 'normalize_list_indent',
+        } satisfies HostToWebviewMessage);
+      },
+    );
     // `vscode.openWith` with viewId `'default'` is the
     // documented way to switch a custom-editor tab back to VS Code's built-in
     // text editor. Plain
@@ -297,6 +306,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       noop_find,
       insert_table,
       insert_footnote,
+      normalize_list_indent,
       open_in_text_editor,
       open_in_plainmark,
       select_theme,
