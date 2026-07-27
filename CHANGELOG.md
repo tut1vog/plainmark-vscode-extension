@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.5] - 2026-07-27
+
+### Fixed
+
+- **Clicking in the wide margin beyond the text column no longer strands the caret inside a collapsed link** — a click in the blank area to the right of the centered content column now places the caret at the end of the line instead of inside a collapsed link, which used to make it unexpectedly expand.
+
 ## [1.8.4] - 2026-07-27
 
 ### Fixed
