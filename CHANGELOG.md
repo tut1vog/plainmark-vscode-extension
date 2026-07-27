@@ -2,6 +2,13 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.4] - 2026-07-27
+
+### Fixed
+
+- **Clicking past the end of a line that ends in a collapsed link now lands the caret at the line's end** — the blank space to the right of a shortened link used to swallow the click and leave the caret stuck earlier in the line, inside the link.
+- **Selecting text on a line that ends in a collapsed link no longer highlights blank space past the text** — the highlight used to stretch into the empty space beyond the last visible character instead of stopping right at it.
+
 ## [1.8.3] - 2026-07-27
 
 ### Added
