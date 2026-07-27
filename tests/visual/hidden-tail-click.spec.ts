@@ -86,4 +86,44 @@ describe('NAV-N-9: click past a collapsed trailing run lands the caret at line e
     await click_at(c.right + 60, (c.top + c.bottom) / 2);
     expect(view.state.selection.main.head).toBe(line.to);
   });
+
+  // A press right of the content column targets the scroller, not contentDOM;
+  // CM6 never sees it. The browser's native placement puts the caret at the
+  // last visible position (synced via the selection observer), or ignores the
+  // press entirely — both must still land the caret at the line end.
+  async function scroller_press(sync_to: number | null): Promise<void> {
+    const { y } = link_line();
+    const content = view.contentDOM.getBoundingClientRect();
+    const opts = {
+      bubbles: true,
+      cancelable: true,
+      clientX: content.right + 10,
+      clientY: y,
+      button: 0,
+      detail: 1,
+    };
+    view.scrollDOM.dispatchEvent(new MouseEvent('mousedown', opts));
+    await next_frame();
+    if (sync_to !== null) {
+      view.dispatch({ selection: { anchor: sync_to } });
+      await next_frame();
+    }
+    document.dispatchEvent(new MouseEvent('mouseup', opts));
+    await next_frame();
+    await next_frame();
+  }
+
+  it('scroller press with native placement at the visible end → caret at line end', async () => {
+    const { text_to, line_to } = link_line();
+    await scroller_press(text_to);
+    expect(view.state.selection.main.head).toBe(line_to);
+    expect(view.state.selection.main.empty).toBe(true);
+  });
+
+  it('scroller press the browser ignores → caret at line end', async () => {
+    const { line_to } = link_line();
+    await scroller_press(null);
+    expect(view.state.selection.main.head).toBe(line_to);
+    expect(view.state.selection.main.empty).toBe(true);
+  });
 });

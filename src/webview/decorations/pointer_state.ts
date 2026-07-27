@@ -50,7 +50,7 @@ export const frozen_reveal_selection_field = StateField.define<EditorSelection |
   },
 });
 
-// Listen directly via addEventListener on contentDOM (not via CM6's
+// Listen directly via addEventListener on scrollDOM (not via CM6's
 // domEventHandlers / domEventObservers facets) because CM6's
 // `eventBelongsToEditor` short-circuits ALL handlers AND observers when
 // `event.defaultPrevented === true` (`input.ts` `eventBelongsToEditor`,
@@ -59,6 +59,13 @@ export const frozen_reveal_selection_field = StateField.define<EditorSelection |
 // instead), so a CM6-registered listener never fires for the bubble through
 // main.contentDOM — leaving main.pointer_down stuck false through the
 // activation click. Direct addEventListener bypasses that gate.
+//
+// scrollDOM, not contentDOM: the content column is a centered max-width
+// strip, and a press in the blank scroller area right of it never bubbles
+// through contentDOM — yet the browser's native placement still moves the
+// caret there (synced back via CM6's selection observer). Binding at
+// scrollDOM keeps the hidden-tail capture and the reveal-freeze latch in
+// play for those presses (NAV-N-9).
 const mousedown_listener_plugin = ViewPlugin.fromClass(
   class implements PluginValue {
     private readonly handle_down: (event: MouseEvent) => void;
@@ -77,10 +84,10 @@ const mousedown_listener_plugin = ViewPlugin.fromClass(
           });
         }
       };
-      view.contentDOM.addEventListener('mousedown', this.handle_down, true);
+      view.scrollDOM.addEventListener('mousedown', this.handle_down, true);
     }
     destroy(): void {
-      this.view.contentDOM.removeEventListener('mousedown', this.handle_down, true);
+      this.view.scrollDOM.removeEventListener('mousedown', this.handle_down, true);
     }
   },
 );
@@ -112,18 +119,23 @@ const document_mouseup_plugin = ViewPlugin.fromClass(
         // construct is left alone (MRS-S-12). A double-click (detail===2) keeps
         // markers OUT — it never snaps and trims any its word selection swept in,
         // e.g. underscore `_em_` (MRS-S-10, MRS-S-11).
-        const adjusted =
-          event.detail === 2
-            ? compute_double_click_trim(this.view.state)
-            : compute_marker_snap(this.view.state, (from, to) =>
-                should_reveal_for_selection(this.view.state, from, to),
-              );
-        // Snap adjusts non-empty drags; the hidden-tail remap moves a plain click's caret past a collapsed trailing run (NAV-N-9) — the conditions are disjoint.
+        // The hidden-tail remap moves a plain click's caret past a collapsed
+        // trailing run (NAV-N-9); it wins over the snap because an armed press
+        // is a caret-placement gesture, never a drag. Snap then adjusts
+        // non-empty drags.
         const remap = take_hidden_tail_remap(this.view, this.view.state);
-        if (adjusted) {
-          this.view.dispatch({ selection: adjusted, effects: release_effects });
-        } else if (remap !== null) {
+        const adjusted =
+          remap !== null
+            ? null
+            : event.detail === 2
+              ? compute_double_click_trim(this.view.state)
+              : compute_marker_snap(this.view.state, (from, to) =>
+                  should_reveal_for_selection(this.view.state, from, to),
+                );
+        if (remap !== null) {
           this.view.dispatch({ selection: { anchor: remap }, effects: release_effects });
+        } else if (adjusted) {
+          this.view.dispatch({ selection: adjusted, effects: release_effects });
         } else {
           this.view.dispatch({ effects: release_effects });
         }
@@ -134,11 +146,11 @@ const document_mouseup_plugin = ViewPlugin.fromClass(
         if (event.buttons === 0) release(event);
       };
       document.addEventListener('mouseup', this.handle_up);
-      this.view.contentDOM.addEventListener('mousemove', this.handle_move);
+      this.view.scrollDOM.addEventListener('mousemove', this.handle_move);
     }
     destroy(): void {
       document.removeEventListener('mouseup', this.handle_up);
-      this.view.contentDOM.removeEventListener('mousemove', this.handle_move);
+      this.view.scrollDOM.removeEventListener('mousemove', this.handle_move);
     }
   },
 );
