@@ -1,5 +1,6 @@
 import { type Text } from '@codemirror/state';
 import { Direction, EditorView, RectangleMarker, layer } from '@codemirror/view';
+import { visible_end_before } from './hidden_marker_runs.js';
 
 // Class on the wrapper element of our custom selection layer.
 const LAYER_CLASS = 'cm-clippedSelectionLayer';
@@ -231,7 +232,9 @@ export const clipped_selection_layer = layer({
           }
           if (!start || start.bottom - start.top < MIN_ROW_SEED_HEIGHT) break;
           const row_end = visual_row_end(view, pos, seg.to, start);
-          const end = view.coordsAtPos(row_end, -1) ?? start;
+          // Hidden markers keep laid-out glyph geometry (width:0 clips paint, not layout), so a row ending inside a hidden run measures at the visible end (SHELL-X-10).
+          const measure_end = Math.max(pos, visible_end_before(view, row_end));
+          const end = view.coordsAtPos(measure_end, -1) ?? start;
           // Union of the row's start/end boxes so a mixed-height row (checkbox
           // seed + taller text) is covered at full height. Guarded to the seed's
           // row: at a single-position row, the end-side rect can land on the

@@ -11,6 +11,10 @@ import {
   type ViewUpdate,
 } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
+import {
+  register_hidden_run_source,
+  unregister_hidden_run_source,
+} from './hidden_marker_runs.js';
 import { pointer_down_field } from './pointer_state.js';
 
 export interface NodeHandler {
@@ -86,7 +90,7 @@ class InlineDecorationsPlugin implements PluginValue {
   private readonly extra_rebuild?: (update: ViewUpdate) => boolean;
 
   constructor(
-    view: EditorView,
+    private readonly view: EditorView,
     handlers: readonly NodeHandler[],
     extra_rebuild?: (update: ViewUpdate) => boolean,
   ) {
@@ -97,6 +101,11 @@ class InlineDecorationsPlugin implements PluginValue {
       view.visibleRanges,
       this.registry,
     );
+    register_hidden_run_source(view, this);
+  }
+
+  destroy(): void {
+    unregister_hidden_run_source(this.view, this);
   }
 
   update(update: ViewUpdate): void {

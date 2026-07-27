@@ -257,7 +257,7 @@
 | SHELL-X-7 | UNCOVERED | conforming | — |
 | SHELL-X-8 | smoke | conforming | — |
 | SHELL-X-9 | tier-b + smoke | conforming | `selection-alignment.spec.ts` |
-| SHELL-X-10 | tier-a + tier-b + smoke | conforming | `clipped_selection.test.ts`, `selection-alignment.spec.ts`, `task-selection.spec.ts`, `math-wrap-selection.spec.ts` |
+| SHELL-X-10 | tier-a + tier-b + smoke | conforming | `clipped_selection.test.ts`, `hidden_marker_runs.test.ts`, `clipped-selection-hidden-tail.spec.ts`, `selection-alignment.spec.ts`, `task-selection.spec.ts`, `math-wrap-selection.spec.ts` |
 | SHELL-X-11 | tier-b | conforming | `table_cell_selection_color.spec.ts` |
 | SHELL-X-12 | smoke | conforming | — |
 | SHELL-X-13 | smoke | conforming | — |
@@ -597,7 +597,7 @@
 | MRS-B-9 | tier-a + tier-b + inherited | conforming | — |
 | MRS-B-10 | tier-a | conforming | `marker_aware_backspace.test.ts` |
 | MRS-L-1 | tier-b + smoke | conforming | `triple-click-line.spec.ts` |
-| MRS-P-1 | tier-a + tier-b | conforming | `selection_reveal.test.ts`, `marker-reveal-after-mouseup.spec.ts` |
+| MRS-P-1 | tier-a + tier-b | conforming | `selection_reveal.test.ts`, `clipped-selection-hidden-tail.spec.ts`, `marker-reveal-after-mouseup.spec.ts` |
 | MRS-P-2 | tier-a | conforming | `selection_reveal.test.ts` |
 | MRS-P-3 | UNCOVERED | conforming | — |
 | MRS-P-4 | smoke | conforming | — |
@@ -606,7 +606,7 @@
 | MRS-R-1 | UNCOVERED | conforming | — |
 | MRS-R-2 | tier-a | conforming | `selection_reveal.test.ts` |
 | MRS-R-3 | tier-a | conforming | `selection_reveal.test.ts` |
-| MRS-R-4 | tier-a | conforming | `selection_reveal.test.ts` |
+| MRS-R-4 | tier-a + tier-b | conforming | `selection_reveal.test.ts`, `clipped-selection-hidden-tail.spec.ts` |
 | MRS-R-5 | tier-a | conforming | `selection_reveal.test.ts` |
 | MRS-R-6 | tier-a | conforming | `inline_decorations.test.ts` |
 | MRS-R-7 | tier-a | conforming | `inline_decorations.test.ts` |
