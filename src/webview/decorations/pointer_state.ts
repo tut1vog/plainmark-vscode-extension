@@ -5,6 +5,10 @@ import {
   StateField,
 } from '@codemirror/state';
 import { EditorView, ViewPlugin, type PluginValue } from '@codemirror/view';
+import {
+  capture_hidden_tail_press,
+  take_hidden_tail_remap,
+} from './hidden_tail_click.js';
 import { compute_double_click_trim, compute_marker_snap } from './selection_snap.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 
@@ -61,6 +65,8 @@ const mousedown_listener_plugin = ViewPlugin.fromClass(
     constructor(private readonly view: EditorView) {
       this.handle_down = (event: MouseEvent): void => {
         if (event.button !== 0) return;
+        // Capture phase: markers still render per the pre-press selection, so the hidden-tail geometry is the one the user clicked against.
+        capture_hidden_tail_press(this.view, event);
         if (!this.view.state.field(pointer_down_field, false)) {
           this.view.dispatch({
             effects: [
@@ -112,8 +118,12 @@ const document_mouseup_plugin = ViewPlugin.fromClass(
             : compute_marker_snap(this.view.state, (from, to) =>
                 should_reveal_for_selection(this.view.state, from, to),
               );
+        // Snap adjusts non-empty drags; the hidden-tail remap moves a plain click's caret past a collapsed trailing run (NAV-N-9) — the conditions are disjoint.
+        const remap = take_hidden_tail_remap(this.view, this.view.state);
         if (adjusted) {
           this.view.dispatch({ selection: adjusted, effects: release_effects });
+        } else if (remap !== null) {
+          this.view.dispatch({ selection: { anchor: remap }, effects: release_effects });
         } else {
           this.view.dispatch({ effects: release_effects });
         }
