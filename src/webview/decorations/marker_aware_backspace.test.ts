@@ -55,6 +55,23 @@ describe('marker_aware_backspace MRS-B-1 MRS-B-2 MRS-B-3 MRS-B-4 MRS-B-5 MRS-B-6
       expect(doc()).toBe('1. hello');
       expect(head()).toBe(2);
     });
+
+    // Fuzz find (caret-invariants seed=0xca4e1a11e seq=33): without checkbox
+    // awareness the guard computed marker_end=2 and yielded, and
+    // deleteMarkupBackward deleted the whole `- [ ] ` unit.
+    it('task item `- [ ]  ~~foo~~` at col 6 → restores `- [ ] ~~foo~~`', () => {
+      const { view, doc, head } = make_view('- [ ]  ~~foo~~', 6);
+      expect(marker_aware_backspace(view)).toBe(true);
+      expect(doc()).toBe('- [ ] ~~foo~~');
+      expect(head()).toBe(5);
+    });
+
+    it('checked task `* [x]  hello` at col 6 → restores `* [x] hello`', () => {
+      const { view, doc, head } = make_view('* [x]  hello', 6);
+      expect(marker_aware_backspace(view)).toBe(true);
+      expect(doc()).toBe('* [x] hello');
+      expect(head()).toBe(5);
+    });
   });
 
   describe('YIELDS — blockquote contexts (consumed upstream by blockquote_plain_backspace)', () => {
@@ -90,6 +107,12 @@ describe('marker_aware_backspace MRS-B-1 MRS-B-2 MRS-B-3 MRS-B-4 MRS-B-5 MRS-B-6
       expect(applied).toHaveLength(0);
     });
 
+    it('empty task item `- [ ] ` at col 6 returns false', () => {
+      const { view, applied } = make_view('- [ ] ', 6);
+      expect(marker_aware_backspace(view)).toBe(false);
+      expect(applied).toHaveLength(0);
+    });
+
     it('blockquote with marker space only `>   ` at col 2 returns false', () => {
       const { view, applied } = make_view('>   ', 2);
       expect(marker_aware_backspace(view)).toBe(false);
@@ -106,6 +129,12 @@ describe('marker_aware_backspace MRS-B-1 MRS-B-2 MRS-B-3 MRS-B-4 MRS-B-5 MRS-B-6
 
     it('canonical `- hello` at col 2 returns false', () => {
       const { view, applied } = make_view('- hello', 2);
+      expect(marker_aware_backspace(view)).toBe(false);
+      expect(applied).toHaveLength(0);
+    });
+
+    it('canonical task `- [ ] hello` at col 6 returns false', () => {
+      const { view, applied } = make_view('- [ ] hello', 6);
       expect(marker_aware_backspace(view)).toBe(false);
       expect(applied).toHaveLength(0);
     });

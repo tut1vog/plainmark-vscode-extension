@@ -18,8 +18,11 @@ import type { EditorView } from '@codemirror/view';
 // One canonical marker (blockquote `>` / unordered `-`*`+ / ordered `1.`/`1)`)
 // followed by exactly ONE space. The `+` allows nested markers (`> > content`).
 // Matching one space (not `\s+`) is load-bearing: greedy `\s+` would absorb
-// the extra whitespace we're meant to detect.
-const MARKER_PREFIX_RE = /^(?:\s*(?:>|[-*+]|\d+[.)])\s)+/;
+// the extra whitespace we're meant to detect. A bullet's GFM task checkbox is
+// part of the marker — lang-markdown's bullet-context pattern
+// (`( {1,4}\[[ xX]\])?`, mirrored here) puts deleteMarkupBackward's spaceEnd
+// after the checkbox, so `- [ ] ` is the unit it would delete.
+const MARKER_PREFIX_RE = /^(?:\s*(?:>|\d+[.)]|[-*+](?: {1,4}\[[ xX]\])?)\s)+/;
 
 // True when `pos` sits inside a ListItem node. Blockquote contexts never reach
 // these handlers: blockquote_plain_backspace runs earlier in the same keymap
