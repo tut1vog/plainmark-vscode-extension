@@ -2,6 +2,18 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.3] - 2026-07-27
+
+### Added
+
+- **New command: "Plainmark: Normalize list indentation"** — moves top-level list items indented one to three spaces back to the left margin, where they can no longer silently turn into nested items as you edit the lines above them.
+
+### Fixed
+
+- **Enter in a list spaced out with blank lines no longer inserts an extra blank line** — pressing Enter at the end of an item now starts the next item on the very next line; a blank line you type yourself still spaces the list out.
+- **Enter inside an item's wrapped text no longer renumbers the list or doubles the line break** — splitting a numbered item's continuation line used to shift the numbers of every item below and insert two line breaks instead of one.
+- **Backspace just after a task checkbox no longer deletes the whole marker** — with the caret right after `- [ ]` and a stray extra space, one Backspace used to remove the bullet and checkbox together; it now removes just the space.
+
 ## [1.8.2] - 2026-07-25
 
 ### Added
