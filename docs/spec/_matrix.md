@@ -578,7 +578,7 @@
 | LIST-R-10 | UNCOVERED | conforming | — |
 | LIST-R-11 | tier-a + smoke | conforming | `blockquote_indent.test.ts`, `lists.test.ts` |
 | LIST-SP-1 | tier-a + tier-b + inherited | conforming | — |
-| LIST-SP-2 | tier-a | conforming | `list_keymap.test.ts` |
+| LIST-SP-2 | tier-a | conforming | `list_keymap.test.ts`, `list_enter_lazy_continuation.test.ts` |
 | LIST-SP-3 | tier-a | conforming | `list_keymap.test.ts`, `lists.test.ts` |
 | LIST-SP-4 | accepted | accepted | — |
 

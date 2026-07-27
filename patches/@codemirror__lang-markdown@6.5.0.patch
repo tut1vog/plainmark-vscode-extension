@@ -1,5 +1,5 @@
 diff --git a/dist/index.cjs b/dist/index.cjs
-index ee5c93ca491431b80566feab7e7944bb6851a528..b3a64192d9e592bd828a8416eeb4e4ca611c612d 100644
+index ee5c93ca491431b80566feab7e7944bb6851a528..da2db90600fea3836484905660e76a07a1dac5ca 100644
 --- a/dist/index.cjs
 +++ b/dist/index.cjs
 @@ -217,7 +217,17 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state: state$1, d
@@ -42,17 +42,23 @@ index ee5c93ca491431b80566feab7e7944bb6851a528..b3a64192d9e592bd828a8416eeb4e4ca
          let insert = "";
          // If not dedented
          if (!continued || /^[\s\d.)\-+*>]*/.exec(line.text)[0].length >= inner.to) {
-@@ -272,7 +291,7 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state: state$1, d
+@@ -272,7 +291,13 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state: state$1, d
          while (from > line.from && /\s/.test(line.text.charAt(from - line.from - 1)))
              from--;
          insert = normalizeIndent(insert, state$1);
 -        if (nonTightList(inner.node, state$1.doc))
-+        if (nonTightList(inner.node, state$1.doc) && !lazy)
++        // PLAINMARK PATCH (loose-list-single-newline-enter): nonTightLists:
++        // false means the caller forgoes loose-list authoring via Enter
++        // altogether, so marker continuation inside an already-loose list
++        // must not prepend the tightness-preserving blank line either --
++        // Enter inserts one \n plus the marker, tight-style, and a manually
++        // typed blank line stays the only way to keep the list loose.
++        if (nonTightList(inner.node, state$1.doc) && !lazy && config.nonTightLists !== false)
              insert = blankLine(context, state$1, line) + state$1.lineBreak + insert;
          changes.push({ from, to: pos, insert: state$1.lineBreak + insert });
          return { range: state.EditorSelection.cursor(from + insert.length + 1), changes };
 diff --git a/dist/index.js b/dist/index.js
-index bb9082cf6682ba328426a23aecaa4d2427878525..de1120135cd858fe1fbaa6a22ecb2cca767aa313 100644
+index bb9082cf6682ba328426a23aecaa4d2427878525..5fab1adb354aa982a500ebd1847acb9b5a528a82 100644
 --- a/dist/index.js
 +++ b/dist/index.js
 @@ -215,7 +215,17 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state, dispatch }
@@ -95,12 +101,18 @@ index bb9082cf6682ba328426a23aecaa4d2427878525..de1120135cd858fe1fbaa6a22ecb2cca
          let insert = "";
          // If not dedented
          if (!continued || /^[\s\d.)\-+*>]*/.exec(line.text)[0].length >= inner.to) {
-@@ -270,7 +289,7 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state, dispatch }
+@@ -270,7 +289,13 @@ const insertNewlineContinueMarkupCommand = (config = {}) => ({ state, dispatch }
          while (from > line.from && /\s/.test(line.text.charAt(from - line.from - 1)))
              from--;
          insert = normalizeIndent(insert, state);
 -        if (nonTightList(inner.node, state.doc))
-+        if (nonTightList(inner.node, state.doc) && !lazy)
++        // PLAINMARK PATCH (loose-list-single-newline-enter): nonTightLists:
++        // false means the caller forgoes loose-list authoring via Enter
++        // altogether, so marker continuation inside an already-loose list
++        // must not prepend the tightness-preserving blank line either --
++        // Enter inserts one \n plus the marker, tight-style, and a manually
++        // typed blank line stays the only way to keep the list loose.
++        if (nonTightList(inner.node, state.doc) && !lazy && config.nonTightLists !== false)
              insert = blankLine(context, state, line) + state.lineBreak + insert;
          changes.push({ from, to: pos, insert: state.lineBreak + insert });
          return { range: EditorSelection.cursor(from + insert.length + 1), changes };

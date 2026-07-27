@@ -7,7 +7,7 @@ import {
 } from '@codemirror/lang-markdown';
 import { GFM } from '@lezer/markdown';
 
-// Three guards on list Enter behavior:
+// Four guards on list Enter behavior:
 //
 // 1. The PLAINMARK PATCH (lazy-continuation-enter) carried in
 //    patches/@codemirror__lang-markdown@6.5.0.patch. Upstream's empty-item test
@@ -28,8 +28,15 @@ import { GFM } from '@lezer/markdown';
 //    upstream still renumbered every following ordered marker (violating
 //    LIST-SP-2: bytes on untouched lines changed), and in a LOOSE list also
 //    prepended a blank line — two `\n` at the caret instead of PARA-SP-2's
-//    one. The patch skips both side effects on that path; real item lines
-//    keep upstream's blank-line + marker + renumber continuation.
+//    one. The patch skips both side effects on that path.
+//
+// 4. The PLAINMARK PATCH (loose-list-single-newline-enter): with
+//    `nonTightLists: false`, marker continuation inside an already-loose
+//    list no longer prepends upstream's tightness-preserving blank line —
+//    Enter inserts one `\n` plus the marker, tight-style (PARA-SP-2 allows
+//    no blank-line bytes; loose lists are authored by typing the blank line
+//    manually, LIST-I-7). The unconfigured command keeps upstream's
+//    blank-line continuation, proving the default branch intact.
 
 function press(
   cmd: StateCommand,
@@ -145,8 +152,29 @@ describe('Enter mid-document on a lazy continuation line (lang-markdown patch, l
     });
   });
 
-  it('preserves upstream continuation on a real loose-list item line: blank line, marker, renumber', () => {
+  it('continues a loose-list item tight-style: one newline plus marker, renumber', () => {
     expect(press_enter_configured('1. a\n\n2. b\n\n3. c\n', 10)).toEqual({
+      doc: '1. a\n\n2. b\n3. \n\n4. c\n',
+      caret: 14,
+    });
+  });
+
+  it('splits an item ahead of its continuation line with one newline plus marker', () => {
+    expect(press_enter_configured('1. item 1\nline 1\n\n2. item 2\n', 9)).toEqual({
+      doc: '1. item 1\n2. \nline 1\n\n3. item 2\n',
+      caret: 13,
+    });
+  });
+
+  it('continues the last loose-list item with one newline plus marker', () => {
+    expect(press_enter_configured('1. item 1\nline 1\n\n2. item 2\n', 27)).toEqual({
+      doc: '1. item 1\nline 1\n\n2. item 2\n3. \n',
+      caret: 31,
+    });
+  });
+
+  it('preserves upstream loose-list continuation under the unconfigured command', () => {
+    expect(press_enter('1. a\n\n2. b\n\n3. c\n', 10)).toEqual({
       doc: '1. a\n\n2. b\n\n3. \n\n4. c\n',
       caret: 15,
     });
