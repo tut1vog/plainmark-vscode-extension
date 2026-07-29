@@ -65,8 +65,14 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **PARA-I-3** — A hard line break MUST follow CommonMark verbatim with no special Plainmark keymap or rendering: two trailing spaces before a newline, or a backslash before a newline, produce a hard break; Plainmark adds nothing.
   _Example:_ `foo  \nbar` (two trailing spaces) and `foo\\\nbar` are hard breaks, handled by the parser, not by a Plainmark Enter override.
 
-- **PARA-I-4** — No paragraph-specific command, shortcut, or autocomplete source ships; paragraph editing falls through to the CM6 default keymap and history.
+- **PARA-I-4** — No paragraph-specific keystroke behavior ships; paragraph editing falls through to the CM6 default keymap and history. The two seam-conversion commands (PARA-I-5, PARA-I-6) are explicit palette commands, never keystroke or paste behavior.
   _Example:_ no `paragraph-toggle` or `insert-paragraph-break` command is bound; Backspace/Enter use CM6 defaults on a plain line.
+
+- **PARA-I-5** — The **Plainmark: Add blank lines between paragraphs** command MUST insert one blank line at every single-`\n` seam interior to a document-level paragraph, so each source line becomes its own CommonMark paragraph for conforming renderers. All insertions MUST land in one transaction (a single undo step), and every inserted byte is a lone `\n` at a line start — no other byte changes. It MUST leave untouched: hard-break seams (a line ending in two spaces or a backslash — PARA-I-3), seams whose next line would re-parse as a different block behind a blank line (leading 4+ spaces or tab, ordered-list markers, `<`-led HTML, `|`-led table rows), and paragraphs inside any container (list item, blockquote, callout). When nothing qualifies — including when the parse is incomplete — it MUST dispatch nothing. (Registration and routing are owned by SHELL-C-15.)
+  _Example:_ `a\nb\nc` → command → `a\n\nb\n\nc`; `a  \nb` keeps its hard-break seam.
+
+- **PARA-I-6** — The **Plainmark: Compact paragraphs** command MUST, in one transaction (a single undo step): (1) join the lines of every multi-line document-level paragraph — each interior newline and its surrounding spaces/tabs collapse to one space, or to nothing when the characters on both sides are CJK (Han, Hiragana, Katakana, CJK punctuation) — skipping hard-break seams; and (2) delete every blank-line run lying between two document-level paragraphs, except when the following paragraph's first line is a setext-underline lookalike (a bare `=`/`-` run), which the guarding blank keeps a paragraph. Container interiors, non-paragraph constructs, and doc-edge blank runs stay untouched; when nothing qualifies it MUST dispatch nothing. The dialect ambiguity resolves toward adoption: a single-`\n` seam inside one CommonMark paragraph reads as a wrap to join, so a rerun on already-compacted content joins those seams too — deliberate, and one undo step restores. (Registration and routing are owned by SHELL-C-15.)
+  _Example:_ `line one\nline two\n\nnext` → command → `line one line two\nnext`; `第一段\n第二段` → `第一段第二段` (no inserted space).
 
 ## SP · Source preservation
 

@@ -18,6 +18,7 @@ import type { HostPasteImageReplyMessage } from '../sync/protocol.js';
 import { insert_footnote } from './decorations/footnote_insert.js';
 import { editor_extensions } from './editor_extensions.js';
 import { normalize_list_indent } from './normalize_list_indent.js';
+import { compact_paragraph_seams, expand_paragraph_seams } from './paragraph_seams.js';
 import { set_image_base_effect } from './widgets/image.js';
 import { insert_table_at_caret } from './widgets/insert_table_command.js';
 import { scroll_caret_to } from './outline_scroll.js';
@@ -164,6 +165,14 @@ window.addEventListener('message', (event: MessageEvent) => {
   }
   if (msg.type === 'normalize_list_indent') {
     normalize_list_indent(view);
+    return;
+  }
+  if (msg.type === 'expand_paragraph_seams') {
+    expand_paragraph_seams(view);
+    return;
+  }
+  if (msg.type === 'compact_paragraph_seams') {
+    compact_paragraph_seams(view);
     return;
   }
   if (msg.type === 'focus_editor') {

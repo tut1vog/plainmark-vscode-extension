@@ -97,6 +97,14 @@
         "title": "Plainmark: Normalize list indentation"
       },
       {
+        "command": "tutivog.plainmark.addBlankLinesBetweenParagraphs",
+        "title": "Plainmark: Add blank lines between paragraphs"
+      },
+      {
+        "command": "tutivog.plainmark.compactParagraphs",
+        "title": "Plainmark: Compact paragraphs (join wrapped lines, remove blank lines)"
+      },
+      {
         "command": "tutivog.plainmark.openInTextEditor",
         "title": "Plainmark: Open in Text Editor",
         "icon": "$(code)"

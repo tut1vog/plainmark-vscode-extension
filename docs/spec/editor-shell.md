@@ -207,6 +207,9 @@ declared in `package.json` `contributes.commands` AND registered via
 - **SHELL-C-14** `[smoke]` — `tutivog.plainmark.normalizeListIndentation` MUST be registered and, when invoked, MUST post `{ type: 'normalize_list_indent' }` to the active Plainmark panel's webview. The document transform it triggers is owned by `LIST-I-15`.
   _Example:_ Command Palette → "Plainmark: Normalize list indentation" → active panel receives `normalize_list_indent`.
 
+- **SHELL-C-15** `[smoke]` — `tutivog.plainmark.addBlankLinesBetweenParagraphs` and `tutivog.plainmark.compactParagraphs` MUST be registered and, when invoked, MUST post `{ type: 'expand_paragraph_seams' }` / `{ type: 'compact_paragraph_seams' }` to the active Plainmark panel's webview. The document transforms they trigger are owned by `PARA-I-5` / `PARA-I-6`.
+  _Example:_ Command Palette → "Plainmark: Compact paragraphs (join wrapped lines, remove blank lines)" → active panel receives `compact_paragraph_seams`.
+
 ## A — activation & dual host target
 
 Extension activation entry points and the dual Node / Web bundles. Section code

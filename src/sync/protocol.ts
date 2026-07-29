@@ -86,6 +86,14 @@ interface HostNormalizeListIndentMessage {
   type: 'normalize_list_indent';
 }
 
+interface HostExpandParagraphSeamsMessage {
+  type: 'expand_paragraph_seams';
+}
+
+interface HostCompactParagraphSeamsMessage {
+  type: 'compact_paragraph_seams';
+}
+
 // Sent on tab reactivation so the webview refocuses CM6 — VS Code focuses the iframe, not the inner contenteditable, so the retained caret won't render otherwise.
 interface HostFocusEditorMessage {
   type: 'focus_editor';
@@ -124,6 +132,8 @@ export type HostToWebviewMessage =
   | HostInsertTableMessage
   | HostInsertFootnoteMessage
   | HostNormalizeListIndentMessage
+  | HostExpandParagraphSeamsMessage
+  | HostCompactParagraphSeamsMessage
   | HostFocusEditorMessage
   | HostStyleReloadMessage
   | HostScrollToHeadingMessage

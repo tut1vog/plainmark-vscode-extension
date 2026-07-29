@@ -38,6 +38,10 @@ function host_tag(msg: HostToWebviewMessage): string {
       return 'insert_footnote';
     case 'normalize_list_indent':
       return 'normalize_list_indent';
+    case 'expand_paragraph_seams':
+      return 'expand_paragraph_seams';
+    case 'compact_paragraph_seams':
+      return 'compact_paragraph_seams';
     case 'focus_editor':
       return 'focus_editor';
     case 'style_reload':
@@ -81,6 +85,8 @@ describe('wire protocol', () => {
       { type: 'insert_table' },
       { type: 'insert_footnote' },
       { type: 'normalize_list_indent' },
+      { type: 'expand_paragraph_seams' },
+      { type: 'compact_paragraph_seams' },
       { type: 'focus_editor' },
       { type: 'style_reload', href: 'file:///x.css' },
       { type: 'scroll_to_heading', line: 42, character: 3 },
