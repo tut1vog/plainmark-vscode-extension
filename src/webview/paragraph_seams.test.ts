@@ -2,15 +2,9 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
-import {
-  compact_paragraph_seams_spec,
-  expand_paragraph_seams_spec,
-} from './paragraph_seams.js';
+import { compact_paragraph_seams_spec, expand_paragraph_seams_spec } from './paragraph_seams.js';
 
-function run(
-  spec_fn: typeof expand_paragraph_seams_spec,
-  doc: string,
-): string | null {
+function run(spec_fn: typeof expand_paragraph_seams_spec, doc: string): string | null {
   const state = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM] })] });
   const spec = spec_fn(state);
   if (!spec) return null;
@@ -51,15 +45,26 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand('> a\nlazy\n')).toBeNull();
   });
 
+  it('separates paragraphs and ATX headings that sit directly adjacent', () => {
+    expect(expand('# h\npara\n')).toBe('# h\n\npara\n');
+    expect(expand('para\n# h\n')).toBe('para\n\n# h\n');
+    expect(expand('# a\n## b\n')).toBe('# a\n\n## b\n');
+    expect(expand('# t\none\ntwo\n## s\nthree\n')).toBe('# t\n\none\n\ntwo\n\n## s\n\nthree\n');
+  });
+
   it('leaves setext headings and other constructs alone', () => {
     expect(expand('title\n===\n')).toBeNull();
+    expect(expand('title\n===\npara\n')).toBeNull();
     expect(expand('```\na\nb\n```\n')).toBeNull();
+    expect(expand('para\n```\nx\n```\n')).toBeNull();
   });
 
   it('is idempotent', () => {
     const once = expand('a\nb\nc\n');
     expect(once).toBe('a\n\nb\n\nc\n');
     expect(expand(once as string)).toBeNull();
+    const headings = expand('# h\npara\n');
+    expect(expand(headings as string)).toBeNull();
   });
 });
 
@@ -96,13 +101,24 @@ describe('PARA-I-6 compact_paragraph_seams_spec', () => {
     expect(compact('a\n\n---\n')).toBeNull();
   });
 
-  it('touches only paragraph-to-paragraph blank runs', () => {
-    expect(compact('a\n\n# h\n')).toBeNull();
+  it('removes blank runs on both sides of ATX headings', () => {
+    expect(compact('a\n\n# h\n')).toBe('a\n# h\n');
+    expect(compact('# h\n\na\n')).toBe('# h\na\n');
+    expect(compact('# a\n\n## b\n')).toBe('# a\n## b\n');
+    expect(compact('# t\n\none\nwrapped\n\n## s\n\ntwo\n')).toBe('# t\none wrapped\n## s\ntwo\n');
+  });
+
+  it('touches only paragraph and ATX-heading blank runs', () => {
     expect(compact('a\n\n- x\n')).toBeNull();
-    expect(compact('# h\n\na\n')).toBeNull();
+    expect(compact('a\n\n```\nx\n```\n')).toBeNull();
     expect(compact('> a\n>\n> b\n')).toBeNull();
     expect(compact('\n\na\n')).toBeNull();
     expect(compact('a\n\n')).toBeNull();
+  });
+
+  it('never merges a paragraph into a setext heading', () => {
+    expect(compact('a\n\ntitle\n===\n')).toBeNull();
+    expect(compact('# h\n\ntitle\n===\n')).toBeNull();
   });
 
   it('treats every single-newline seam as a wrap — a rerun joins house-style paragraphs', () => {

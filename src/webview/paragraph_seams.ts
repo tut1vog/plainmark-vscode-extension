@@ -29,28 +29,37 @@ const BLANK = /^[ \t]*$/;
 
 // House scripts that join without a separator (same classification as the
 // word-count and word-motion CJK handling, extended by CJK punctuation).
-const CJK_END = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303F\uFF01-\uFF60]$/u;
-const CJK_START = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303F\uFF01-\uFF60]/u;
+const CJK_END =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303F\uFF01-\uFF60]$/u;
+const CJK_START =
+  /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303F\uFF01-\uFF60]/u;
 
-interface ParagraphSpan {
+interface BlockSpan {
+  kind: 'para' | 'atx';
   first: number;
   last: number;
 }
 
-function top_level_paragraphs(state: EditorState): ParagraphSpan[] | null {
+// Paragraphs and ATX headings are the convertible blocks: both are safe on
+// either side of a seam edit (a heading is line-scoped, interrupts a
+// paragraph, and hard-terminates). Setext headings are excluded — removing
+// the blank above one absorbs the preceding paragraph into its content run.
+function top_level_blocks(state: EditorState): BlockSpan[] | null {
   const tree = ensureSyntaxTree(state, state.doc.length, PARSE_BUDGET_MS);
   if (!tree) return null;
   const doc = state.doc;
-  const spans: ParagraphSpan[] = [];
+  const spans: BlockSpan[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    if (node.name !== 'Paragraph') continue;
-    spans.push({ first: doc.lineAt(node.from).number, last: doc.lineAt(node.to).number });
+    const kind =
+      node.name === 'Paragraph' ? 'para' : /^ATXHeading[1-6]$/.test(node.name) ? 'atx' : null;
+    if (!kind) continue;
+    spans.push({ kind, first: doc.lineAt(node.from).number, last: doc.lineAt(node.to).number });
   }
   return spans;
 }
 
 export function expand_paragraph_seams_spec(state: EditorState): TransactionSpec | null {
-  const spans = top_level_paragraphs(state);
+  const spans = top_level_blocks(state);
   if (!spans) return null;
   const doc = state.doc;
   const changes: ChangeSpec[] = [];
@@ -63,16 +72,28 @@ export function expand_paragraph_seams_spec(state: EditorState): TransactionSpec
       changes.push({ from: next.from, to: next.from, insert: '\n' });
     }
   }
+  // Directly adjacent convertible blocks (a heading on at least one side —
+  // adjacent paragraph lines are one Paragraph node) separate with a blank.
+  // Both positions are block-start contexts, so the parse is unchanged.
+  for (let i = 0; i + 1 < spans.length; i++) {
+    if (spans[i + 1].first !== spans[i].last + 1) continue;
+    changes.push({
+      from: doc.line(spans[i + 1].first).from,
+      to: doc.line(spans[i + 1].first).from,
+      insert: '\n',
+    });
+  }
   if (changes.length === 0) return null;
   return { changes, annotations: Transaction.userEvent.of('input') };
 }
 
 export function compact_paragraph_seams_spec(state: EditorState): TransactionSpec | null {
-  const spans = top_level_paragraphs(state);
+  const spans = top_level_blocks(state);
   if (!spans) return null;
   const doc = state.doc;
   const changes: ChangeSpec[] = [];
   for (const span of spans) {
+    if (span.kind !== 'para') continue;
     for (let n = span.first; n < span.last; n++) {
       const line = doc.line(n);
       const next = doc.line(n + 1);
@@ -101,7 +122,15 @@ export function compact_paragraph_seams_spec(state: EditorState): TransactionSpe
       }
     }
     if (!all_blank) continue;
-    if (SETEXT_UNDERLINE.test(next_first.text)) continue;
+    // Underline-lookalike paragraphs stay blank-guarded only behind another
+    // paragraph — that is the pairing a collapse would fuse into a setext
+    // heading; behind a heading the `=`/`-` run has nothing to underline.
+    if (
+      spans[i].kind === 'para' &&
+      spans[i + 1].kind === 'para' &&
+      SETEXT_UNDERLINE.test(next_first.text)
+    )
+      continue;
     changes.push({ from: prev_last.to, to: next_first.from - 1 });
   }
   if (changes.length === 0) return null;
