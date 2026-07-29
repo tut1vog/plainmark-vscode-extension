@@ -1,5 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
+import { blank_seam_above } from '../decorations/paragraph_gap.js';
 import {
   type EditorState,
   type Range,
@@ -462,7 +463,9 @@ function build_decorations(state: EditorState): {
               true,
               src,
               result,
-              ws_margins && first_line.number > 1,
+              ws_margins &&
+                first_line.number > 1 &&
+                !blank_seam_above(state.doc, first_line.from),
             ),
           }).range(widget_range.from, widget_range.to),
         );

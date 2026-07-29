@@ -59,8 +59,8 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-9)', () => {
     expect(await gap_flags('> a\n> b\n> c')).toEqual([false, true, true]);
   });
 
-  it('a quoted blank line carries the gap like an unquoted one', async () => {
-    expect(await gap_flags('> a\n>\n> b')).toEqual([false, true, true]);
+  it('a quoted blank line carries the seam gap; the line under it is bare (PARA-R-13)', async () => {
+    expect(await gap_flags('> a\n>\n> b')).toEqual([false, true, false]);
   });
 
   it('a quote after a paragraph carries the gap on its first line', async () => {
@@ -116,8 +116,8 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-9)', () => {
     expect(await gap_flags('> - a\n> - b\n> next')).toEqual([false, false, true]);
   });
 
-  it('a quoted loose seam gaps the blank line and the marker under it, like unquoted', async () => {
-    expect(await gap_flags('> - a\n>\n> - b')).toEqual([false, true, true]);
+  it('a quoted loose seam gaps the blank line only, like unquoted (PARA-R-13)', async () => {
+    expect(await gap_flags('> - a\n>\n> - b')).toEqual([false, true, false]);
     // Seam-local rule inside quotes too: a quoted marker under a quoted
     // continuation line keeps the gap, so the in-quote merge is stable.
     expect(await gap_flags('> - a\n> x\n> - b')).toEqual([false, true, true]);

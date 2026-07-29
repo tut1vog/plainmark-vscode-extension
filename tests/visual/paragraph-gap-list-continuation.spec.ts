@@ -66,28 +66,30 @@ describe('paragraph gap on list lines (PARA-R-7 PARA-R-8 PARA-R-12)', () => {
     expect(await gap_flags('para\n- x\n- y')).toEqual([false, true, false]);
   });
 
-  it('the loose seam carries the gap on the blank line and the marker line under it', async () => {
-    expect(await gap_flags('- a\n\n- b')).toEqual([false, true, true]);
+  it('the loose seam carries the gap on the blank line only (PARA-R-13)', async () => {
+    expect(await gap_flags('- a\n\n- b')).toEqual([false, true, false]);
   });
 
-  it('typing a character between loose items changes no line eligibility (split direction)', async () => {
+  it('typing a character between loose items moves only the line below it (split direction)', async () => {
     // `x` typed on the middle blank line splits the one spanning list into
-    // two, reparsing every line of the run — the flags must not move: blank
-    // lines are eligible in or out of a list, and marker spacing keys on
-    // the seam, not the marker's first-of-list vs interior role.
-    expect(await gap_flags('- a\n\n\n\n\n- b')).toEqual([false, true, true, true, true, true]);
-    expect(await gap_flags('- a\n\nx\n\n\n- b')).toEqual([false, true, true, true, true, true]);
-    expect(await gap_flags('- abc\n\n\n- def')).toEqual([false, true, true, true]);
-    expect(await gap_flags('- abc\n\nx\n- def')).toEqual([false, true, true, true]);
+    // two, reparsing every line of the run — but the only flag allowed to
+    // move is the line directly below the edit (PARA-R-12): it sat under a
+    // blank seam and now sits under prose, so it re-takes the gap. Every
+    // other line keeps its flag through the reparse.
+    expect(await gap_flags('- a\n\n\n\n\n- b')).toEqual([false, true, false, false, false, false]);
+    expect(await gap_flags('- a\n\nx\n\n\n- b')).toEqual([false, true, false, true, false, false]);
+    expect(await gap_flags('- abc\n\n\n- def')).toEqual([false, true, false, false]);
+    expect(await gap_flags('- abc\n\nx\n- def')).toEqual([false, true, false, true]);
   });
 
-  it('lazy-continuation merges change no line eligibility (merge direction)', async () => {
+  it('lazy-continuation merges move only the line below the edit (merge direction)', async () => {
     // Typing on the blank directly under `- abc` absorbs that line — and
     // any prose below it — into the item, merging the two lists into one.
-    // Seam-local spacing keeps every flag identical across the merge.
-    expect(await gap_flags('- abc\n\n- def')).toEqual([false, true, true]);
+    // The line below the edit flips (its blank seam dissolved, PARA-R-12);
+    // the rest of the run keeps its flags across the merge.
+    expect(await gap_flags('- abc\n\n- def')).toEqual([false, true, false]);
     expect(await gap_flags('- abc\nx\n- def')).toEqual([false, true, true]);
-    expect(await gap_flags('- abc\n\nd\n- def')).toEqual([false, true, true, true]);
+    expect(await gap_flags('- abc\n\nd\n- def')).toEqual([false, true, false, true]);
     expect(await gap_flags('- abc\nx\nd\n- def')).toEqual([false, true, true, true]);
   });
 
@@ -96,7 +98,7 @@ describe('paragraph gap on list lines (PARA-R-7 PARA-R-8 PARA-R-12)', () => {
     expect(await gap_flags('- a\n  - b\n- c')).toEqual([false, false, false]);
   });
 
-  it('blank line ending a list and the paragraph after both carry the gap', async () => {
-    expect(await gap_flags('- a\n\nnext')).toEqual([false, true, true]);
+  it('blank line ending a list carries the seam gap; the paragraph after is bare', async () => {
+    expect(await gap_flags('- a\n\nnext')).toEqual([false, true, false]);
   });
 });

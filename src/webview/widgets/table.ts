@@ -1,5 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
+import { blank_seam_above } from '../decorations/paragraph_gap.js';
 import {
   EditorSelection,
   EditorState,
@@ -1066,7 +1067,8 @@ function build_table_decorations(state: EditorState): DecorationSet {
             info.to,
           );
           const csig = content_signature(info.cells, state.doc);
-          const gap_above = state.doc.lineAt(info.from).number > 1;
+          const gap_above =
+            state.doc.lineAt(info.from).number > 1 && !blank_seam_above(state.doc, info.from);
           ranges.push(
             Decoration.replace({
               block: true,
