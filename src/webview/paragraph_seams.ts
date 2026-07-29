@@ -21,6 +21,12 @@ const REPARSE_TRAP = /^ {0,3}(\d{1,9}[.)][ \t]|<|\|)|^( {4,}|\t)/;
 // blank line separating it from the paragraph above is removed.
 const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
 
+// A list may lose its guarding blank behind paragraph-like content only when
+// its first line can interrupt a paragraph (CommonMark): a non-empty bullet
+// item, or a non-empty ordered item numbered 1. An empty `-` item would
+// re-parse as a setext underline, and `2.`-style starts as paragraph text.
+const LIST_INTERRUPTS = /^ {0,3}([-+*]|1[.)])[ \t]+\S/;
+
 // Two trailing spaces or a trailing backslash: a CommonMark hard break — a
 // deliberate intra-paragraph newline both transforms preserve (PARA-E-1).
 const HARD_BREAK_END = /( {2}|\\)$/;
@@ -35,15 +41,18 @@ const CJK_START =
   /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303F\uFF01-\uFF60]/u;
 
 interface BlockSpan {
-  kind: 'para' | 'atx';
+  kind: 'para' | 'atx' | 'list';
   first: number;
   last: number;
 }
 
-// Paragraphs and ATX headings are the convertible blocks: both are safe on
-// either side of a seam edit (a heading is line-scoped, interrupts a
-// paragraph, and hard-terminates). Setext headings are excluded — removing
-// the blank above one absorbs the preceding paragraph into its content run.
+// Paragraphs, ATX headings, and lists are the convertible blocks. A heading
+// is safe on either side of a seam edit (line-scoped, interrupts a
+// paragraph, hard-terminates); a list is safe as the FOLLOWING block under
+// LIST_INTERRUPTS, and safe before a heading — but a paragraph directly
+// after a list lazily continues its last item, so that pairing never
+// converts. Setext headings are excluded entirely — removing the blank
+// above one absorbs the preceding paragraph into its content run.
 function top_level_blocks(state: EditorState): BlockSpan[] | null {
   const tree = ensureSyntaxTree(state, state.doc.length, PARSE_BUDGET_MS);
   if (!tree) return null;
@@ -51,9 +60,20 @@ function top_level_blocks(state: EditorState): BlockSpan[] | null {
   const spans: BlockSpan[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
     const kind =
-      node.name === 'Paragraph' ? 'para' : /^ATXHeading[1-6]$/.test(node.name) ? 'atx' : null;
+      node.name === 'Paragraph'
+        ? 'para'
+        : /^ATXHeading[1-6]$/.test(node.name)
+          ? 'atx'
+          : node.name === 'BulletList' || node.name === 'OrderedList'
+            ? 'list'
+            : null;
     if (!kind) continue;
-    spans.push({ kind, first: doc.lineAt(node.from).number, last: doc.lineAt(node.to).number });
+    let last = doc.lineAt(node.to);
+    // A node ending exactly at a line start spans through the previous line.
+    if (last.from === node.to && last.number > doc.lineAt(node.from).number) {
+      last = doc.line(last.number - 1);
+    }
+    spans.push({ kind, first: doc.lineAt(node.from).number, last: last.number });
   }
   return spans;
 }
@@ -64,6 +84,7 @@ export function expand_paragraph_seams_spec(state: EditorState): TransactionSpec
   const doc = state.doc;
   const changes: ChangeSpec[] = [];
   for (const span of spans) {
+    if (span.kind !== 'para') continue;
     for (let n = span.first; n < span.last; n++) {
       const line = doc.line(n);
       const next = doc.line(n + 1);
@@ -72,9 +93,10 @@ export function expand_paragraph_seams_spec(state: EditorState): TransactionSpec
       changes.push({ from: next.from, to: next.from, insert: '\n' });
     }
   }
-  // Directly adjacent convertible blocks (a heading on at least one side —
-  // adjacent paragraph lines are one Paragraph node) separate with a blank.
-  // Both positions are block-start contexts, so the parse is unchanged.
+  // Directly adjacent convertible blocks separate with a blank. Adjacent
+  // paragraph lines are one Paragraph node and a paragraph line after a list
+  // lazily continues it, so every adjacency seen here has a heading or a
+  // list boundary — block-start contexts on both sides; parse unchanged.
   for (let i = 0; i + 1 < spans.length; i++) {
     if (spans[i + 1].first !== spans[i].last + 1) continue;
     changes.push({
@@ -122,15 +144,18 @@ export function compact_paragraph_seams_spec(state: EditorState): TransactionSpe
       }
     }
     if (!all_blank) continue;
+    const a = spans[i].kind;
+    const b = spans[i + 1].kind;
+    // A paragraph directly after a list lazily continues its last item —
+    // that blank is semantic and never removable.
+    if (b === 'para' && a === 'list') continue;
     // Underline-lookalike paragraphs stay blank-guarded only behind another
     // paragraph — that is the pairing a collapse would fuse into a setext
     // heading; behind a heading the `=`/`-` run has nothing to underline.
-    if (
-      spans[i].kind === 'para' &&
-      spans[i + 1].kind === 'para' &&
-      SETEXT_UNDERLINE.test(next_first.text)
-    )
-      continue;
+    if (b === 'para' && a === 'para' && SETEXT_UNDERLINE.test(next_first.text)) continue;
+    // Behind paragraph-like content a list keeps its blank unless its first
+    // line interrupts; behind a heading anything starts fresh.
+    if (b === 'list' && a !== 'atx' && !LIST_INTERRUPTS.test(next_first.text)) continue;
     changes.push({ from: prev_last.to, to: next_first.from - 1 });
   }
   if (changes.length === 0) return null;

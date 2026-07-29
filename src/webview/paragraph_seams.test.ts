@@ -52,6 +52,20 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand('# t\none\ntwo\n## s\nthree\n')).toBe('# t\n\none\n\ntwo\n\n## s\n\nthree\n');
   });
 
+  it('separates lists from adjacent paragraphs and headings', () => {
+    expect(expand('para\n- x\n')).toBe('para\n\n- x\n');
+    expect(expand('para\n1. x\n')).toBe('para\n\n1. x\n');
+    expect(expand('# h\n- a\n- b\n')).toBe('# h\n\n- a\n- b\n');
+    expect(expand('- a\n# h\n')).toBe('- a\n\n# h\n');
+  });
+
+  it('never splits a list interior or a lazy continuation', () => {
+    expect(expand('- a\n- b\n')).toBeNull();
+    expect(expand('1. a\n2. b\n')).toBeNull();
+    expect(expand('- a\n\n- b\n')).toBeNull();
+    expect(expand('- a\ncont\n')).toBeNull();
+  });
+
   it('leaves setext headings and other constructs alone', () => {
     expect(expand('title\n===\n')).toBeNull();
     expect(expand('title\n===\npara\n')).toBeNull();
@@ -108,10 +122,30 @@ describe('PARA-I-6 compact_paragraph_seams_spec', () => {
     expect(compact('# t\n\none\nwrapped\n\n## s\n\ntwo\n')).toBe('# t\none wrapped\n## s\ntwo\n');
   });
 
-  it('touches only paragraph and ATX-heading blank runs', () => {
-    expect(compact('a\n\n- x\n')).toBeNull();
+  it('removes the blank before a list that can interrupt a paragraph', () => {
+    expect(compact('para\n\n- x\n')).toBe('para\n- x\n');
+    expect(compact('para\n\n1. a\n2. b\n')).toBe('para\n1. a\n2. b\n');
+    expect(compact('# h\n\n- x\n')).toBe('# h\n- x\n');
+  });
+
+  it('keeps the blank before a list that cannot interrupt a paragraph', () => {
+    expect(compact('para\n\n2. x\n')).toBeNull();
+    expect(compact('para\n\n-\n')).toBeNull();
+    // Behind a heading the interrupt rules do not apply.
+    expect(compact('# h\n\n2. x\n')).toBe('# h\n2. x\n');
+  });
+
+  it('removes the blank between a list and a following heading, never a following paragraph', () => {
+    expect(compact('- a\n\n# h\n')).toBe('- a\n# h\n');
+    // A paragraph directly after a list lazily continues its last item —
+    // that blank is semantic.
+    expect(compact('- a\n- b\n\npara\n')).toBeNull();
+  });
+
+  it('touches only convertible-block blank runs, never construct or list interiors', () => {
     expect(compact('a\n\n```\nx\n```\n')).toBeNull();
     expect(compact('> a\n>\n> b\n')).toBeNull();
+    expect(compact('- a\n\n- b\n')).toBeNull();
     expect(compact('\n\na\n')).toBeNull();
     expect(compact('a\n\n')).toBeNull();
   });
@@ -119,6 +153,13 @@ describe('PARA-I-6 compact_paragraph_seams_spec', () => {
   it('never merges a paragraph into a setext heading', () => {
     expect(compact('a\n\ntitle\n===\n')).toBeNull();
     expect(compact('# h\n\ntitle\n===\n')).toBeNull();
+  });
+
+  it('round-trips an AI-shaped document with headings, prose, and lists', () => {
+    const foreign = '# t\n\nintro\n\n- a\n- b\n\n## s\n\nmore\n';
+    const house = '# t\nintro\n- a\n- b\n## s\nmore\n';
+    expect(compact(foreign)).toBe(house);
+    expect(run(expand_paragraph_seams_spec, house)).toBe(foreign);
   });
 
   it('treats every single-newline seam as a wrap — a rerun joins house-style paragraphs', () => {
