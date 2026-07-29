@@ -1,5 +1,5 @@
 import { syntaxTree } from '@codemirror/language';
-import { type EditorState, RangeSetBuilder, type Text } from '@codemirror/state';
+import { type EditorState, RangeSetBuilder } from '@codemirror/state';
 import {
   Decoration,
   type DecorationSet,
@@ -42,20 +42,6 @@ const LIST_CONTEXTS = new Set(['BulletList', 'OrderedList']);
 
 const gap_line = Decoration.line({ class: 'plainmark-paragraph-gap' });
 
-// A blank line owns its seam's single gap (PARA-R-13): the line directly
-// below one — prose, marker, construct start, or another blank — takes none,
-// so a `\n\n` seam costs one gap and blank runs compact after the first.
-// "Blank" spans the lexical quote prefix so `>` separator lines count
-// (BQ-R-12's scan). Predecessor blankness changes only by editing that line,
-// keeping eligibility line-above-local (PARA-R-12).
-const BLANK_SEAM = /^[ \t>]*$/;
-
-export function blank_seam_above(doc: Text, pos: number): boolean {
-  const line = doc.lineAt(pos);
-  if (line.number === 1) return false;
-  return BLANK_SEAM.test(doc.line(line.number - 1).text);
-}
-
 // Gap-invariance across marker typing: `para\n-` parses as a setext underline,
 // `para\n* ` as paragraph text, `para\n* x` as a list — all transitional states
 // on the way to a bullet. Prose lines, blank lines, setext lines, AND the first
@@ -80,7 +66,6 @@ function gap_eligible(
   state: EditorState,
   line: { from: number; to: number; text: string },
 ): boolean {
-  if (blank_seam_above(state.doc, line.from)) return false;
   const tree = syntaxTree(state);
   // Skip the lexical quote prefix (`>` runs and whitespace, BQ-R-12's scan),
   // not just whitespace: probing at a bare `>` resolves to the QuoteMark,

@@ -85,14 +85,13 @@ describe('paragraph gap above block constructs (PARA-R-10 PARA-R-11)', () => {
   });
 
   describe('indented code (CBLK-R-5)', () => {
-    it('below a blank line, the blank carries the seam gap; the block keeps its own padding', async () => {
-      // PARA-R-13: indented code always follows a blank line after prose
-      // (CommonMark: it cannot interrupt a paragraph), so the blank owns the
-      // seam's single gap and the block takes only --plainmark-fenced-code-padding-y.
+    it('stacks the gap on the block’s own tinted top padding', async () => {
       const flags = await gap_flags('para\n\n    code');
-      expect(flags).toEqual([false, true, false]);
+      expect(flags).toEqual([false, true, true]);
       const lines = await mount('para\n\n    code');
-      expect(parseFloat(getComputedStyle(lines[2]).paddingTop)).toBeCloseTo(8, 0);
+      // (0,5,0): 12px gap + 8px --plainmark-fenced-code-padding-y = 20px.
+      expect(parseFloat(getComputedStyle(lines[2]).paddingTop)).toBeCloseTo(20, 0);
+      expect(getComputedStyle(lines[2]).backgroundPosition.split(' ')[1]).toBe('100%');
     });
   });
 
@@ -156,18 +155,8 @@ describe('paragraph gap above block constructs (PARA-R-10 PARA-R-11)', () => {
   });
 
   describe('block widgets (TBL-R-10 MATH-R-7)', () => {
-    it('a table widget below a blank line yields the seam gap to the blank', async () => {
-      // PARA-R-13 mirrored on the widget flag: the blank line above carries
-      // the gap, so the widget keeps only its --plainmark-table-margin top.
+    it('a non-doc-top table widget carries plainmark-block-gap-above', async () => {
       await mount('para\n\n| a |\n| - |\n| b |');
-      const widget = host.querySelector('.plainmark-table-block');
-      expect(widget).not.toBeNull();
-      expect(widget!.classList.contains('plainmark-block-gap-above')).toBe(false);
-      expect(parseFloat(getComputedStyle(widget!).paddingTop)).toBeCloseTo(8, 0);
-    });
-
-    it('a table widget directly below content carries plainmark-block-gap-above', async () => {
-      await mount('# h\n| a |\n| - |\n| b |');
       const widget = host.querySelector('.plainmark-table-block');
       expect(widget).not.toBeNull();
       expect(widget!.classList.contains('plainmark-block-gap-above')).toBe(true);
@@ -182,15 +171,8 @@ describe('paragraph gap above block constructs (PARA-R-10 PARA-R-11)', () => {
       expect(widget!.classList.contains('plainmark-block-gap-above')).toBe(false);
     });
 
-    it('a math block widget below a blank line yields the seam gap to the blank', async () => {
+    it('a non-doc-top math block widget carries plainmark-block-gap-above', async () => {
       await mount('para\n\n$$\nx\n$$');
-      const widget = host.querySelector('.plainmark-math-block');
-      expect(widget).not.toBeNull();
-      expect(widget!.classList.contains('plainmark-block-gap-above')).toBe(false);
-    });
-
-    it('a math block widget directly below content carries plainmark-block-gap-above', async () => {
-      await mount('# h\n$$\nx\n$$');
       const widget = host.querySelector('.plainmark-math-block');
       expect(widget).not.toBeNull();
       expect(widget!.classList.contains('plainmark-block-gap-above')).toBe(true);
@@ -205,11 +187,9 @@ describe('paragraph gap above block constructs (PARA-R-10 PARA-R-11)', () => {
       expect(widget!.classList.contains('plainmark-block-gap-above')).toBe(false);
     });
 
-    it('revealed math source below a blank matches the widget: no gap on the $$ line', async () => {
+    it('revealed math source carries the gap on its opening $$ line only', async () => {
       // Caret inside the block reveals the source lines (preview widget below).
-      // The $$ line and the widget agree on the seam (both gap-free below a
-      // blank), so caret entry/exit does not shift the layout.
-      expect(await gap_flags('para\n\n$$\nx\n$$', 8)).toEqual([false, true, false, false, false]);
+      expect(await gap_flags('para\n\n$$\nx\n$$', 8)).toEqual([false, true, true, false, false]);
     });
   });
 });

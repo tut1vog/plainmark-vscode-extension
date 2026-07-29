@@ -9,7 +9,6 @@ import {
 } from '@codemirror/state';
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
-import { blank_seam_above } from '../decorations/paragraph_gap.js';
 import {
   frozen_reveal_selection_field,
   pointer_down_field,
@@ -247,8 +246,7 @@ function build_decorations(state: EditorState): DecorationSet {
               info.alt,
               info.url,
               resolved,
-              state.doc.lineAt(info.from).number > 1 &&
-                !blank_seam_above(state.doc, info.from),
+              state.doc.lineAt(info.from).number > 1,
             ),
           }).range(info.from, info.to),
         );

@@ -233,11 +233,9 @@ describe('image_widgets_field — decoration emission', () => {
     expect(previews(state)).toHaveLength(0);
   });
 
-  it('IMG-R-11: gap_above only when directly below content — not doc-top, not below a blank', () => {
+  it('IMG-R-11: a non-doc-top widget carries gap_above; a doc-top one does not', () => {
     expect(decorations(make_state('![a](1.png)\n'))[0].widget.gap_above).toBe(false);
-    // PARA-R-13 mirrored on the widget flag: the blank line above carries
-    // the seam gap, so the widget takes none.
-    expect(decorations(make_state('para\n\n![a](1.png)\n'))[0].widget.gap_above).toBe(false);
+    expect(decorations(make_state('para\n\n![a](1.png)\n'))[0].widget.gap_above).toBe(true);
     // Line-scoped promotion: an image directly below a text line of the same
     // merged paragraph is still a non-doc-top line — it gaps too.
     expect(decorations(make_state('para\n![a](1.png)\n'))[0].widget.gap_above).toBe(true);
