@@ -2,6 +2,16 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] - 2026-07-31
+
+### Added
+
+- **New commands: "Add blank lines between paragraphs" and "Compact paragraphs"** — switch a file between Plainmark's single-newline paragraph style and the blank-line-separated style most other Markdown tools use, so you can prep a file for sharing elsewhere or bring one in without reformatting by hand. Both work across paragraph, heading, and list boundaries; "Add blank lines" also adds the blank needed when text follows a blockquote or callout.
+
+### Fixed
+
+- **Typing directly below a blockquote or callout no longer gets silently pulled into it** — a single newline after quoted text now exits the quote right away, the same as it does everywhere else in the editor.
+
 ## [1.8.5] - 2026-07-27
 
 ### Fixed
