@@ -23,7 +23,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **BQ-R-3** — When hidden (the caret is off the line), a `>` marker with no trailing space MUST hide only the `>` byte.
   _Example:_ `>hi` (no space), caret elsewhere → renders as `hi` with only the single `>` byte hidden.
 
-- **BQ-R-4** — Nesting depth MUST be computed per line (count of `QuoteMark` tokens, with an ancestor-walk fallback for lazy-continuation lines). Each depth level adds one visual bar and one indent step, capped at depth 6.
+- **BQ-R-4** — Nesting depth MUST be computed per line (count of `QuoteMark` tokens, with an ancestor-walk fallback for marker-less interior lines — the BQ-E-12 absorption carve-outs). Each depth level adds one visual bar and one indent step, capped at depth 6.
   _Example:_ `> > deep` → depth 2; `> a\n> > b\n> c` → per-line depths 1, 2, 1.
 
 - **BQ-R-5** `[smoke]` — Each nesting bar MUST be drawn by the corresponding `>` marker via an absolutely-positioned `::before` border-left (Obsidian's mechanism), coloured by `--plainmark-blockquote-border-color` at width `--plainmark-blockquote-border-width`. The bar's containing block MUST be the line element (`.plainmark-blockquote` is `position: relative`), not the inline marker, so the bar spans the line's FULL wrapped height (`top: 0; bottom: 0`) and stays continuous when a paragraph wraps across visual rows. The bar MUST NOT overshoot the line box: adjacent blockquote line boxes are flush (the collapse-adjacent rule zeroes inter-line padding), so the per-line bars meet exactly — a negative `top`/`bottom` overshoot would poke past the line background and double the (translucent) border colour into darker bands at every line boundary. Because each marker sits in normal inline flow at its natural width, the bar's static horizontal position lands it at its marker's left edge with no fixed-grid assumption. This matches Obsidian's `app.css` (`.cm-blockquote-border::before { position: absolute; top: 0; bottom: 0 }`).
@@ -65,7 +65,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 > _BQ-I-6, BQ-I-7, BQ-I-8 (the marker-insert redirect and atomic-range marker-skip clauses) were retired by the per-line-reveal rework. With per-line reveal the active line's `>` is ordinary editable text — the caret navigates and edits it like any character (Obsidian behavior), so the insert-redirect and atomic skip are removed. IDs not reused._
 
-> _BQ-I-9 (the lazy-continuation `\n`-prepend trap filter) was retired by the per-line-reveal rework. Native Obsidian Live Preview does NOT guard this path: typing on the empty line directly below a blockquote lazy-continues into the quote (CommonMark §5.1), and Plainmark now matches that. The explicit Enter empty-`> `-line outdent (BQ-I-2) removes one marker level in place with no inserted newline; Backspace is plain single-character deletion (BQ-I-4) — see those clauses. ID not reused._
+> _BQ-I-9 (the lazy-continuation `\n`-prepend trap filter) was retired by the per-line-reveal rework, and the trap itself was later removed at the parse layer: a marker-less line below a quote parses outside it (BQ-E-1), so text typed there can no longer be absorbed into the quote. The explicit Enter empty-`> `-line outdent (BQ-I-2) removes one marker level in place with no inserted newline; Backspace is plain single-character deletion (BQ-I-4) — see those clauses. ID not reused._
 
 - **BQ-I-10** `[accepted]` — No `Mod-Shift-B` blockquote-toggle shortcut ships in the MVP (deferred to a unified command surface).
   _Example:_ pressing Mod-Shift-B on a selection does nothing (no toggle command is bound).
@@ -89,8 +89,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## E · Edge cases
 
-- **BQ-E-1** — Lazy continuation `> a\nb` MUST apply depth-1 chrome to both lines (line 2 via the ancestor walk).
-  _Example:_ `> a\nb` → both `a` and `b` render inside one depth-1 blockquote.
+- **BQ-E-1** `[smoke]` — A line that lacks the `>` marker of an enclosing quote level MUST NOT lazily continue that quote's paragraph: the open paragraph ends on the line above, the unmatched quote levels close, and the line parses outside them, at the deepest level whose markers it does carry. CommonMark §5.1 laziness is defined over "paragraph continuation text", and under the hard-newline break model (PARA-E-5) a single `\n` already ends the paragraph — so there is nothing for laziness to continue. This deliberately diverges from conforming renderers (GitHub renders the marker-less line inside the quote); it is the same divergence family as PARA-E-5, paid the same way (explicit conversion, not render or edit tricks). Callouts share the exit — they are `Blockquote` nodes. List laziness is untouched: a line missing only list-item indentation continues the item (`- a\nb`; `> - a\n> b` inside a quote), while a line missing a QUOTE level exits the quote even out of a quoted list.
+  _Example:_ `> a\nb` → depth-1 quote holding `a`; `b` is a plain gapped paragraph outside it. `> > a\n> b` → `b` starts a new paragraph in the OUTER quote (depth 1). `> [!NOTE] t\nx` → `x` sits outside the callout. `> - a\nb` → `b` is a plain paragraph outside the quote and its list.
 
 - **BQ-E-2** — Empty single-level `> ` MUST render depth-1 chrome on the empty line.
   _Example:_ a lone `> ` shows a depth-1 bar on an otherwise empty line.
@@ -117,3 +117,6 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 - **BQ-E-11** — An empty `> ` line (marker-only) with the caret elsewhere MUST render its depth chrome with the `>` hidden; with the caret on it, the `>` MUST reveal as editable text. No caret-anchor widget is emitted (retired by the per-line-reveal rework).
   _Example:_ `> a\n> \n> b`, caret on line 1 → middle line shows depth-1 chrome, empty; caret on the middle line → it shows `> `.
+
+- **BQ-E-12** — Two absorption carve-outs remain lazy in the CommonMark sense: (a) a line indented four or more columns beyond the container base directly under a quote paragraph MUST still absorb into it — the block loop consults no paragraph interrupt for code-indented lines, mirroring CommonMark's "indented code cannot interrupt a paragraph"; (b) marker-less interior and closing lines of an open quote-nested `$$` leaf MUST still absorb, so display math keeps its lazy forms (MATH-E-13). Such lines carry no `QuoteMark` of their own and take their chrome via BQ-R-4's ancestor walk.
+  _Example:_ `> a\n    b` → one quoted paragraph spanning both lines; `> $$\nx\n$$` → one quote-nested math block, typeset inside the quote chrome.

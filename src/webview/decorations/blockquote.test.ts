@@ -2,13 +2,14 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
+import { quote_exit_extension } from '../grammar/quote_exit.js';
 import { blockquote_handlers } from './blockquote.js';
 import { build_inline_decorations, build_registry } from './inline_decorations.js';
 
 function make_state(doc: string, anchor: number): EditorState {
   return EditorState.create({
     doc,
-    extensions: [markdown({ extensions: [GFM] })],
+    extensions: [markdown({ extensions: [GFM, quote_exit_extension] })],
     selection: { anchor },
   });
 }
@@ -174,17 +175,16 @@ describe('BQ-R-4: nested blockquote', () => {
   });
 });
 
-describe('BQ-E-1: lazy continuation', () => {
-  // '> a\nb' — Blockquote[0,5], QuoteMark[0,1], Paragraph[2,5] spans both lines.
-  // Both lines are inside the blockquote; caret at 5 sits on the continuation
-  // line (line 2), so line 1's marker stays hidden.
+describe('BQ-E-1: marker-less line exits the quote', () => {
+  // '> a\nb' — Blockquote[0,3]; `b` parses as a plain paragraph outside the
+  // quote (quote laziness disabled), so line 2 carries no quote chrome. Caret
+  // at 5 sits on `b`, off line 1, so line 1's marker stays hidden.
   const doc = '> a\nb';
 
-  it('applies depth-1 chrome to both lines; line-1 marker hidden when caret on line 2', () => {
+  it('applies depth-1 chrome to the marked line only; none on the exited line', () => {
     expect(snapshot(make_state(doc, 5))).toEqual([
       line(0, 1),
       hide(0, 2),
-      line(4, 1),
     ]);
   });
 });

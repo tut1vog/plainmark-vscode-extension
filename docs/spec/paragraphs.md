@@ -93,8 +93,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **PARA-E-2** — Multiple consecutive blank lines between paragraphs MUST be preserved verbatim; Plainmark MUST NOT collapse them to a single blank line.
   _Example:_ `a\n\n\n\nb` keeps all three blank lines in source; only the first blank line is semantically the separator, but the extra blanks survive round-trip.
 
-- **PARA-E-3** — A paragraph lazily continuing into a blockquote follows the blockquote's lazy-continuation rules: the continuation line receives depth-1 chrome (cross-ref `blockquotes.md` BQ-E-1).
-  _Example:_ `> a\nb` → both `a` and `b` render inside one depth-1 blockquote (line 2 via the ancestor walk).
+- **PARA-E-3** — A marker-less line below a blockquote does not lazily continue into it: quote laziness is disabled (cross-ref `blockquotes.md` BQ-E-1), so the line parses as a plain paragraph outside the quote and carries the normal paragraph gap (PARA-R-7).
+  _Example:_ `> a\nb` → `a` quoted; `b` a plain gapped paragraph below the quote box.
 
 - **PARA-E-4** `[smoke]` — A very long paragraph line MUST soft-wrap within the centered prose column without horizontal scroll, breaking at the column max-width (`--plainmark-container-max-width`) folded into `.cm-content`.
   _Example:_ a paragraph longer than the viewport wraps inside the centered column; no horizontal scrollbar appears.

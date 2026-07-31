@@ -127,7 +127,7 @@ describe('paragraph gap inside blockquotes and callouts (PARA-R-9)', () => {
     expect(await gap_flags('> a\n> > b')).toEqual([false, true]);
   });
 
-  it('a lazy continuation line below a quote carries the gap', async () => {
+  it('a marker-less line below a quote exits it (BQ-E-1) and carries the gap', async () => {
     expect(await gap_flags('> a\nb')).toEqual([false, true]);
   });
 

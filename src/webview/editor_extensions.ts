@@ -67,6 +67,7 @@ import { text_styles_extension } from './decorations/text_styles.js';
 import { triple_click_select_line } from './decorations/triple_click_line.js';
 import { frontmatter_extension as frontmatter_grammar_extension } from './grammar/frontmatter.js';
 import { math_extension as math_grammar_extension } from './grammar/math.js';
+import { quote_exit_extension } from './grammar/quote_exit.js';
 import { image_extension } from './widgets/image.js';
 import { accept_latex_completion_on_tab, latex_completions } from './widgets/latex_autocomplete.js';
 import { math_extension } from './widgets/math.js';
@@ -262,7 +263,13 @@ const editor_extensions_core: Extension[] = [
   ),
   markdown({
     codeLanguages: match_code_language,
-    extensions: [GFM, math_grammar_extension, footnote_grammar_extension, frontmatter_grammar_extension],
+    extensions: [
+      GFM,
+      math_grammar_extension,
+      footnote_grammar_extension,
+      frontmatter_grammar_extension,
+      quote_exit_extension,
+    ],
   }),
   syntaxHighlighting(plainmark_highlight_style),
   image_extension,
