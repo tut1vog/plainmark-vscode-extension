@@ -67,6 +67,8 @@ Available from the Command Palette (`Ctrl/Cmd+Shift+P`):
 
 The two paragraph commands convert a document between blank-line-separated markdown (the conventional style most tools emit) and Plainmark's compact one-line-per-paragraph style. **Compact paragraphs** joins hard-wrapped lines (without inserting spaces between CJK characters) and removes the blank lines between paragraphs, headings, and lists; **Add blank lines between paragraphs** does the reverse, producing conventional spacing for sharing outside Plainmark. Both apply as a single undoable edit and skip anything a rewrite could change the meaning of — hard line breaks, code blocks, quotes, tables, and list interiors.
 
+In the compact style a single line break also ends a quote or callout: a line without the `>` marker starts a new paragraph below the quote, where conventional markdown would need a blank line and would otherwise fold that line into the quote. Lines that do carry the `>` marker continue the quote as usual, and list items still absorb their unmarked continuation lines.
+
 In-table editing shortcuts (insert/move/delete rows and columns, alignment) are configurable via `plainmark.tableKeybindings`.
 
 ## Settings
