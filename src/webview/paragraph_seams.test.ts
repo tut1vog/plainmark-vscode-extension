@@ -2,10 +2,14 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
+import { quote_exit_extension } from './grammar/quote_exit.js';
 import { compact_paragraph_seams_spec, expand_paragraph_seams_spec } from './paragraph_seams.js';
 
 function run(spec_fn: typeof expand_paragraph_seams_spec, doc: string): string | null {
-  const state = EditorState.create({ doc, extensions: [markdown({ extensions: [GFM] })] });
+  const state = EditorState.create({
+    doc,
+    extensions: [markdown({ extensions: [GFM, quote_exit_extension] })],
+  });
   const spec = spec_fn(state);
   if (!spec) return null;
   return state.update(spec).state.doc.toString();
@@ -42,7 +46,35 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand('- a\n  b\n')).toBeNull();
     expect(expand('- a\nlazy\n')).toBeNull();
     expect(expand('> a\n> b\n')).toBeNull();
-    expect(expand('> a\nlazy\n')).toBeNull();
+  });
+
+  it('inserts the conventional blank at a quote-exit seam', () => {
+    expect(expand('> a\nb\n')).toBe('> a\n\nb\n');
+    expect(expand('> a\n> b\nc\n')).toBe('> a\n> b\n\nc\n');
+    expect(expand('> [!note] t\nx\n')).toBe('> [!note] t\n\nx\n');
+    expect(expand('> - a\nb\n')).toBe('> - a\n\nb\n');
+    expect(expand('> a\n# h\n')).toBe('> a\n\n# h\n');
+  });
+
+  it('quote-exit insertion ignores the intra-paragraph guards', () => {
+    // Trailing whitespace on the quote's last line is not hard-break
+    // continuation, and the next line parses in a fresh block context behind
+    // the blank — same as the house parse — so neither guard applies.
+    expect(expand('> a  \nb\n')).toBe('> a  \n\nb\n');
+    expect(expand('> a\n2. x\n')).toBe('> a\n\n2. x\n');
+  });
+
+  it('leaves non-exit quote seams alone', () => {
+    // Already separated, doc-final, partial exit inside the outer quote, and
+    // the BQ-E-12 interior carve-out (indented line stays inside the node).
+    expect(expand('> a\n\nb\n')).toBeNull();
+    expect(expand('> a\n')).toBeNull();
+    expect(expand('> > a\n> b\n')).toBeNull();
+    expect(expand('> a\n    b\n')).toBeNull();
+  });
+
+  it('quote entry seams stay untouched (deferred residual)', () => {
+    expect(expand('para\n> q\n\nafter\n')).toBeNull();
   });
 
   it('separates paragraphs and ATX headings that sit directly adjacent', () => {

@@ -48,7 +48,7 @@
 | BQ-E-9 | tier-a + smoke | conforming | `lists.test.ts` |
 | BQ-E-10 | tier-b | conforming | `callout.spec.ts` |
 | BQ-E-11 | tier-a | conforming | `blockquote.test.ts` |
-| BQ-E-12 | tier-a | conforming | `quote_exit.test.ts` |
+| BQ-E-12 | tier-a | conforming | `quote_exit.test.ts`, `paragraph_seams.test.ts` |
 | BQ-I-1 | tier-a | conforming | `blockquote_keymap.test.ts` |
 | BQ-I-2 | tier-a + tier-b | conforming | `blockquote_keymap.test.ts`, `callout.spec.ts` |
 | BQ-I-3 | tier-a | conforming | `blockquote_keymap.test.ts` |

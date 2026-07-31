@@ -78,9 +78,38 @@ function top_level_blocks(state: EditorState): BlockSpan[] | null {
   return spans;
 }
 
+// A document-level blockquote or callout directly above a non-blank line is a
+// quote-exit seam: under the no-laziness parse (BQ-E-1) that line is already
+// outside the quote, so the blank is pure conventional surround — without it
+// conforming renderers absorb the line into the quote. The intra-paragraph
+// guards don't transfer: trailing whitespace on the quote's last line is not
+// hard-break continuation (the line below is a separate block), and behind
+// the blank a conforming renderer parses the next line in a fresh block
+// context — exactly the house parse — so no re-parse trap exists. Interior
+// carve-out lines (BQ-E-12) sit inside the quote node and never surface here.
+function quote_exit_seams(state: EditorState): number[] | null {
+  const tree = ensureSyntaxTree(state, state.doc.length, PARSE_BUDGET_MS);
+  if (!tree) return null;
+  const doc = state.doc;
+  const seams: number[] = [];
+  for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
+    if (node.name !== 'Blockquote') continue;
+    let last = doc.lineAt(node.to);
+    if (last.from === node.to && last.number > doc.lineAt(node.from).number) {
+      last = doc.line(last.number - 1);
+    }
+    if (last.number >= doc.lines) continue;
+    const next = doc.line(last.number + 1);
+    if (BLANK.test(next.text)) continue;
+    seams.push(next.from);
+  }
+  return seams;
+}
+
 export function expand_paragraph_seams_spec(state: EditorState): TransactionSpec | null {
   const spans = top_level_blocks(state);
-  if (!spans) return null;
+  const seams = quote_exit_seams(state);
+  if (!spans || !seams) return null;
   const doc = state.doc;
   const changes: ChangeSpec[] = [];
   for (const span of spans) {
@@ -92,6 +121,9 @@ export function expand_paragraph_seams_spec(state: EditorState): TransactionSpec
       if (REPARSE_TRAP.test(next.text)) continue;
       changes.push({ from: next.from, to: next.from, insert: '\n' });
     }
+  }
+  for (const from of seams) {
+    changes.push({ from, to: from, insert: '\n' });
   }
   // Directly adjacent convertible blocks separate with a blank. Adjacent
   // paragraph lines are one Paragraph node and a paragraph line after a list
