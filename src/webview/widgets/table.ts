@@ -29,6 +29,13 @@ import {
 } from './table_serialize.js';
 import { emit_table_cell } from './table_inline_emit.js';
 import { table_sync_annotation } from './table_sync_annotation.js';
+import type { OffsetRange } from '../ranges.js';
+import {
+  doc_change_regions,
+  frontier_growth,
+  merge_regions,
+  tree_rebuilt_unbounded,
+} from '../region_rebuild.js';
 import { create_logger } from '../../log.js';
 
 const log = create_logger('widget');
@@ -1043,11 +1050,16 @@ export function locate_table_extraction(
   return found;
 }
 
-function build_table_decorations(state: EditorState): DecorationSet {
+function build_table_ranges(
+  state: EditorState,
+  bounds?: OffsetRange,
+): Range<Decoration>[] {
   const cache = state.field(math_cache_field, false) ?? new Map<string, MathResult>();
   const image_base = state.field(image_base_field, false) ?? null;
   const ranges: Range<Decoration>[] = [];
   syntaxTree(state).iterate({
+    from: bounds?.from,
+    to: bounds?.to,
     enter(node) {
       if (node.name === 'Document') return;
       if (node.name === 'Table') {
@@ -1086,17 +1098,48 @@ function build_table_decorations(state: EditorState): DecorationSet {
       return;
     },
   });
-  return RangeSet.of(ranges, true);
+  return ranges;
 }
 
 export const table_widgets_field = StateField.define<DecorationSet>({
-  create: (state) => build_table_decorations(state),
+  create: (state) => RangeSet.of(build_table_ranges(state), true),
   update: (value, tr) => {
     const cache_effect = tr.effects.some((e) => e.is(set_typeset_effect));
-    // Lazy/background parsing extends the tree via effect-only transactions; rebuild on tree advance or a deep table never widgetizes until edited.
-    const tree_advanced = syntaxTree(tr.startState) !== syntaxTree(tr.state);
-    if (tr.docChanged || cache_effect || tree_advanced) return build_table_decorations(tr.state);
-    return value;
+    const tree_changed = syntaxTree(tr.startState) !== syntaxTree(tr.state);
+    if (!tr.docChanged && !cache_effect && !tree_changed) return value;
+    if (tree_rebuilt_unbounded(tr.startState, tr.state, tr.docChanged)) {
+      return RangeSet.of(build_table_ranges(tr.state), true);
+    }
+    let mapped = tr.docChanged ? value.map(tr.changes) : value;
+    const regions: OffsetRange[] = [];
+    if (tr.docChanged) {
+      for (const pair of doc_change_regions(tr.startState, tr.state, tr.changes)) {
+        regions.push(pair.new_region);
+      }
+    }
+    const growth = frontier_growth(
+      tr.startState,
+      tr.state,
+      tr.docChanged ? tr.changes : null,
+    );
+    if (growth) regions.push(growth);
+    if (cache_effect) {
+      // A typeset result can change any table's math fingerprint; existing
+      // table spans are few, so rebuild them all (eq() keeps unchanged DOM).
+      mapped.between(0, tr.state.doc.length, (from, to) => {
+        regions.push({ from, to });
+      });
+    }
+    for (const region of merge_regions(regions)) {
+      mapped = mapped.update({
+        filter: () => false,
+        filterFrom: region.from,
+        filterTo: region.to,
+        add: build_table_ranges(tr.state, region),
+        sort: true,
+      });
+    }
+    return mapped;
   },
   provide: (f) => EditorView.decorations.from(f),
 });

@@ -16,6 +16,12 @@ import {
   FOOTNOTE_HEAD_SLICE,
   REFERENCE_EXACT_RE,
 } from './footnote_parser.js';
+import type { OffsetRange } from '../ranges.js';
+import {
+  doc_change_regions,
+  frontier_growth,
+  tree_rebuilt_unbounded,
+} from '../region_rebuild.js';
 
 const FOOTNOTE_REF_ATTR = 'data-plainmark-footnote-ref';
 
@@ -69,6 +75,22 @@ function collect_definition_labels(state: EditorState): Set<string> {
   return labels;
 }
 
+// Definition labels within a region, duplicates preserved — compared across a
+// transaction to decide whether the doc-wide label set can be reused.
+function region_definition_labels(state: EditorState, region: OffsetRange): string[] {
+  const labels: string[] = [];
+  syntaxTree(state).iterate({
+    from: region.from,
+    to: region.to,
+    enter(node) {
+      if (node.name !== 'FootnoteDefinition') return;
+      const label = read_definition_label(state, node.from, node.to);
+      if (label) labels.push(label);
+    },
+  });
+  return labels;
+}
+
 function read_definition_label(
   state: EditorState,
   def_from: number,
@@ -98,9 +120,9 @@ function read_reference_label(
 function build_footnote_decorations(
   state: EditorState,
   visible_ranges: readonly { readonly from: number; readonly to: number }[],
+  defined_labels: Set<string>,
 ): DecorationSet {
   const decorations: Range<Decoration>[] = [];
-  const defined_labels = collect_definition_labels(state);
   const tree = syntaxTree(state);
 
   for (const { from, to } of visible_ranges) {
@@ -148,9 +170,15 @@ function build_footnote_decorations(
 
 class FootnoteDecorationsPlugin implements PluginValue {
   decorations: DecorationSet;
+  private defined_labels: Set<string>;
 
   constructor(view: EditorView) {
-    this.decorations = build_footnote_decorations(view.state, view.visibleRanges);
+    this.defined_labels = collect_definition_labels(view.state);
+    this.decorations = build_footnote_decorations(
+      view.state,
+      view.visibleRanges,
+      this.defined_labels,
+    );
   }
 
   update(update: ViewUpdate): void {
@@ -166,6 +194,7 @@ class FootnoteDecorationsPlugin implements PluginValue {
     // late-parsed regions stay raw until the next edit/scroll/selection.
     const tree_advanced =
       syntaxTree(update.startState) !== syntaxTree(update.state);
+    if (update.docChanged || tree_advanced) this.refresh_labels(update);
     if (
       update.docChanged ||
       update.viewportChanged ||
@@ -176,7 +205,45 @@ class FootnoteDecorationsPlugin implements PluginValue {
       this.decorations = build_footnote_decorations(
         update.view.state,
         update.view.visibleRanges,
+        this.defined_labels,
       );
+    }
+  }
+
+  // The doc-wide label recollection runs only when a bounded diff over the
+  // affected regions shows the definition set actually changed; pure
+  // parse-frontier growth just unions in the newly covered span's labels.
+  private refresh_labels(update: ViewUpdate): void {
+    if (tree_rebuilt_unbounded(update.startState, update.state, update.docChanged)) {
+      this.defined_labels = collect_definition_labels(update.state);
+      return;
+    }
+    if (update.docChanged) {
+      for (const pair of doc_change_regions(
+        update.startState,
+        update.state,
+        update.changes,
+      )) {
+        const before = region_definition_labels(update.startState, pair.old_region);
+        const after = region_definition_labels(update.state, pair.new_region);
+        if (
+          before.length !== after.length ||
+          before.sort().join('\x00') !== after.sort().join('\x00')
+        ) {
+          this.defined_labels = collect_definition_labels(update.state);
+          return;
+        }
+      }
+    }
+    const growth = frontier_growth(
+      update.startState,
+      update.state,
+      update.docChanged ? update.changes : null,
+    );
+    if (growth) {
+      for (const label of region_definition_labels(update.state, growth)) {
+        this.defined_labels.add(label);
+      }
     }
   }
 }
