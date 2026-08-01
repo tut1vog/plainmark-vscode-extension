@@ -21,6 +21,14 @@ import {
   WidgetType,
 } from '@codemirror/view';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
+import type { OffsetRange } from '../ranges.js';
+import {
+  doc_change_regions,
+  frontier_growth,
+  merge_regions,
+  reveal_regions,
+  tree_rebuilt_unbounded,
+} from '../region_rebuild.js';
 import { create_logger } from '../../log.js';
 
 const log = create_logger('widget');
@@ -370,9 +378,14 @@ export interface MermaidBlock {
   to: number;
 }
 
-export function find_mermaid_blocks(state: EditorState): MermaidBlock[] {
+export function find_mermaid_blocks(
+  state: EditorState,
+  bounds?: OffsetRange,
+): MermaidBlock[] {
   const blocks: MermaidBlock[] = [];
   syntaxTree(state).iterate({
+    from: bounds?.from,
+    to: bounds?.to,
     enter(node) {
       if (node.name !== 'FencedCode') return;
       const info_node = node.node.getChild('CodeInfo');
@@ -390,8 +403,11 @@ export function find_mermaid_blocks(state: EditorState): MermaidBlock[] {
   return blocks;
 }
 
-function build_decorations(state: EditorState): {
-  decorations: DecorationSet;
+function build_mermaid_ranges(
+  state: EditorState,
+  bounds?: OffsetRange,
+): {
+  ranges: Range<Decoration>[];
   pending: string[];
 } {
   const cache = state.field(mermaid_cache_field, false) ?? new Map<string, MermaidResult>();
@@ -400,7 +416,7 @@ function build_decorations(state: EditorState): {
   const ranges: Range<Decoration>[] = [];
   const pending: string[] = [];
 
-  for (const block of find_mermaid_blocks(state)) {
+  for (const block of find_mermaid_blocks(state, bounds)) {
     if (should_reveal_for_selection(state, block.from, block.to)) {
       if (sel.empty) {
         ranges.push(
@@ -422,15 +438,21 @@ function build_decorations(state: EditorState): {
       }).range(block.from, block.to),
     );
   }
-  return { decorations: RangeSet.of(ranges, true), pending };
+  return { ranges, pending };
 }
 
 export const mermaid_widgets_field = StateField.define<DecorationSet>({
-  create: (state) => build_decorations(state).decorations,
+  create: (state) => RangeSet.of(build_mermaid_ranges(state).ranges, true),
   update: (value, tr) => {
-    const relevant = tr.effects.some(
-      (e) => e.is(set_mermaid_result) || e.is(set_mermaid_theme),
-    );
+    const result_keys: string[] = [];
+    let theme_changed = false;
+    for (const e of tr.effects) {
+      if (e.is(set_mermaid_result)) {
+        result_keys.push(mermaid_cache_key(e.value.theme, e.value.src));
+      } else if (e.is(set_mermaid_theme)) {
+        theme_changed = true;
+      }
+    }
     // The press/release pointer-freeze flip lands as effects only (no doc or
     // selection change on release) — without this, the on-release reveal never
     // rebuilds. Mirrors math.ts / inline_decorations.ts.
@@ -439,15 +461,78 @@ export const mermaid_widgets_field = StateField.define<DecorationSet>({
         tr.state.field(frozen_reveal_selection_field, false) ||
       (tr.startState.field(pointer_down_field, false) ?? false) !==
         (tr.state.field(pointer_down_field, false) ?? false);
-    // Lazy/background parsing extends the tree via effect-only transactions; rebuild on tree advance or a deep mermaid block never widgetizes until edited.
-    const tree_advanced = syntaxTree(tr.startState) !== syntaxTree(tr.state);
-    if (tr.docChanged || tr.selection || relevant || reveal_gate_changed || tree_advanced) {
-      return build_decorations(tr.state).decorations;
+    const tree_changed = syntaxTree(tr.startState) !== syntaxTree(tr.state);
+    if (
+      !tr.docChanged &&
+      !tr.selection &&
+      result_keys.length === 0 &&
+      !theme_changed &&
+      !reveal_gate_changed &&
+      !tree_changed
+    ) {
+      return value;
     }
-    return value;
+    // A theme switch re-keys every widget; an unbounded reparse has no region.
+    if (theme_changed || tree_rebuilt_unbounded(tr.startState, tr.state, tr.docChanged)) {
+      return RangeSet.of(build_mermaid_ranges(tr.state).ranges, true);
+    }
+    let mapped = tr.docChanged ? value.map(tr.changes) : value;
+    const regions: OffsetRange[] = [];
+    if (tr.docChanged) {
+      for (const pair of doc_change_regions(tr.startState, tr.state, tr.changes)) {
+        regions.push(pair.new_region);
+      }
+    }
+    if (tr.selection || reveal_gate_changed || tr.docChanged) {
+      regions.push(
+        ...reveal_regions(tr.startState, tr.state, tr.docChanged ? tr.changes : null),
+      );
+    }
+    const growth = frontier_growth(
+      tr.startState,
+      tr.state,
+      tr.docChanged ? tr.changes : null,
+    );
+    if (growth) regions.push(growth);
+    if (result_keys.length > 0) {
+      // Key match alone — no pending check: a retry can overwrite an existing
+      // error result, and that widget must rebuild too.
+      mapped.between(0, tr.state.doc.length, (from, to, deco) => {
+        const w: unknown = deco.spec.widget;
+        if (
+          w instanceof MermaidWidget &&
+          result_keys.includes(mermaid_cache_key(w.theme, w.src))
+        ) {
+          regions.push({ from, to });
+        }
+      });
+    }
+    for (const region of merge_regions(regions)) {
+      mapped = mapped.update({
+        filter: () => false,
+        filterFrom: region.from,
+        filterTo: region.to,
+        add: build_mermaid_ranges(tr.state, region).ranges,
+        sort: true,
+      });
+    }
+    return mapped;
   },
   provide: (f) => EditorView.decorations.from(f),
 });
+
+// Unrendered diagrams in the current decoration set — the render plugin's work
+// list. Derived from the field instead of a doc-wide re-scan.
+function pending_from_field(state: EditorState): string[] {
+  const decos = state.field(mermaid_widgets_field, false);
+  const pending: string[] = [];
+  if (!decos) return pending;
+  decos.between(0, state.doc.length, (_from, _to, deco) => {
+    const w: unknown = deco.spec.widget;
+    if (w instanceof MermaidWidget && w.result === null) pending.push(w.src);
+  });
+  return pending;
+}
 
 interface MermaidRenderPluginValue extends PluginValue {
   in_flight: Set<string>;
@@ -499,7 +584,7 @@ const mermaid_render_plugin = ViewPlugin.fromClass(
     }
 
     private schedule(state: EditorState): void {
-      const { pending } = build_decorations(state);
+      const pending = pending_from_field(state);
       if (pending.length === 0 && this.load_failed.size === 0) return;
       const theme = state.field(mermaid_theme_field, false) ?? current_theme_name();
       load_mermaid()
@@ -527,7 +612,7 @@ const mermaid_render_plugin = ViewPlugin.fromClass(
 
     // `retry` re-renders diagrams whose cached result is a load-failure error, so a later successful load replaces it.
     private render_pending(theme: string, mermaid: MermaidApi, retry: string[] = []): void {
-      const { pending } = build_decorations(this.view.state);
+      const pending = pending_from_field(this.view.state);
       for (const src of new Set([...pending, ...retry])) {
         const key = mermaid_cache_key(theme, src);
         if (this.in_flight.has(key)) continue;

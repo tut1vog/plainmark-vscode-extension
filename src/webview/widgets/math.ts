@@ -9,6 +9,13 @@ import {
 } from '@codemirror/state';
 import { type OffsetRange, ranges_overlap } from '../ranges.js';
 import {
+  doc_change_regions,
+  frontier_growth,
+  merge_regions,
+  reveal_regions,
+  tree_rebuilt_unbounded,
+} from '../region_rebuild.js';
+import {
   Decoration,
   type DecorationSet,
   EditorView,
@@ -393,8 +400,11 @@ export function find_inline_math_source(
   return state.doc.sliceString(r.from, r.to);
 }
 
-function build_decorations(state: EditorState): {
-  decorations: DecorationSet;
+function build_math_ranges(
+  state: EditorState,
+  bounds?: OffsetRange,
+): {
+  ranges: Range<Decoration>[];
   pending: MathInfo[];
 } {
   const cache = state.field(math_cache_field, false) ?? new Map<string, MathResult>();
@@ -408,6 +418,8 @@ function build_decorations(state: EditorState): {
   const pending: MathInfo[] = [];
 
   syntaxTree(state).iterate({
+    from: bounds?.from,
+    to: bounds?.to,
     enter(node) {
       if (node.name === 'BlockMath') {
         const from = node.from;
@@ -485,28 +497,96 @@ function build_decorations(state: EditorState): {
     },
   });
 
-  return { decorations: RangeSet.of(ranges, true), pending };
+  return { ranges, pending };
 }
 
 export const math_widgets_field = StateField.define<DecorationSet>({
-  create: (state) => build_decorations(state).decorations,
+  create: (state) => RangeSet.of(build_math_ranges(state).ranges, true),
   update: (value, tr) => {
-    const cache_effect = tr.effects.some((e) => e.is(set_typeset_effect));
+    const typeset_keys: string[] = [];
+    for (const e of tr.effects) {
+      if (e.is(set_typeset_effect)) {
+        typeset_keys.push(math_cache_key(e.value.display, e.value.src));
+      }
+    }
     // The press/release frozen-selection flip lands as effects only (no doc or
     // selection change on release), so without this guard the on-release reveal
     // would never rebuild. Mirrors inline_decorations.ts.
     const frozen_changed =
       tr.startState.field(frozen_reveal_selection_field, false) !==
       tr.state.field(frozen_reveal_selection_field, false);
-    // Lazy/background parsing extends the tree via effect-only transactions; rebuild on tree advance or deep block math never widgetizes until edited.
-    const tree_advanced = syntaxTree(tr.startState) !== syntaxTree(tr.state);
-    if (tr.docChanged || tr.selection || cache_effect || frozen_changed || tree_advanced) {
-      return build_decorations(tr.state).decorations;
+    const tree_changed = syntaxTree(tr.startState) !== syntaxTree(tr.state);
+    if (
+      !tr.docChanged &&
+      !tr.selection &&
+      typeset_keys.length === 0 &&
+      !frozen_changed &&
+      !tree_changed
+    ) {
+      return value;
     }
-    return value;
+    if (tree_rebuilt_unbounded(tr.startState, tr.state, tr.docChanged)) {
+      return RangeSet.of(build_math_ranges(tr.state).ranges, true);
+    }
+    let mapped = tr.docChanged ? value.map(tr.changes) : value;
+    const regions: OffsetRange[] = [];
+    if (tr.docChanged) {
+      for (const pair of doc_change_regions(tr.startState, tr.state, tr.changes)) {
+        regions.push(pair.new_region);
+      }
+    }
+    if (tr.selection || frozen_changed || tr.docChanged) {
+      regions.push(
+        ...reveal_regions(tr.startState, tr.state, tr.docChanged ? tr.changes : null),
+      );
+    }
+    const growth = frontier_growth(
+      tr.startState,
+      tr.state,
+      tr.docChanged ? tr.changes : null,
+    );
+    if (growth) regions.push(growth);
+    if (typeset_keys.length > 0) {
+      // Key match alone — no pending check: a re-dispatched result for a key
+      // must rebuild a widget already carrying an older result.
+      mapped.between(0, tr.state.doc.length, (from, to, deco) => {
+        const w: unknown = deco.spec.widget;
+        if (
+          w instanceof MathWidget &&
+          typeset_keys.includes(math_cache_key(w.display, w.src))
+        ) {
+          regions.push({ from, to });
+        }
+      });
+    }
+    for (const region of merge_regions(regions)) {
+      mapped = mapped.update({
+        filter: () => false,
+        filterFrom: region.from,
+        filterTo: region.to,
+        add: build_math_ranges(tr.state, region).ranges,
+        sort: true,
+      });
+    }
+    return mapped;
   },
   provide: (f) => EditorView.decorations.from(f),
 });
+
+// Unresolved math in the current decoration set — the typeset plugin's work
+// list. Derived from the field instead of a doc-wide re-scan.
+function pending_from_field(state: EditorState): MathInfo[] {
+  const decos = state.field(math_widgets_field, false);
+  const pending: MathInfo[] = [];
+  if (!decos) return pending;
+  decos.between(0, state.doc.length, (from, to, deco) => {
+    const w: unknown = deco.spec.widget;
+    if (w instanceof MathWidget && w.result === null) {
+      pending.push({ display: w.display, src: w.src, from, to });
+    }
+  });
+  return pending;
+}
 
 interface MathTypesetPluginValue extends PluginValue {
   in_flight: Set<string>;
@@ -555,7 +635,7 @@ const math_typeset_plugin = ViewPlugin.fromClass(
     private schedule(state: EditorState): void {
       // requestAnimationFrame defers dispatch out of the StateField update cycle;
       // CM6 forbids dispatching from inside an update.
-      const { pending } = build_decorations(state);
+      const pending = pending_from_field(state);
       const mathjax = window.MathJax;
       if (!mathjax || !mathjax.tex2chtmlPromise) {
         if (pending.length > 0) this.request_bundle();
