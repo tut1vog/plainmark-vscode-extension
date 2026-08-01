@@ -2,6 +2,16 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.9.1] - 2026-08-01
+
+### Changed
+
+- **Editing large documents is noticeably faster** — typing in files with big tables, math expressions, diagrams, or footnotes no longer re-renders the whole document on every keystroke, so large files stay responsive as you edit.
+
+### Added
+
+- **A one-time suggestion for very large documents** — opening a file above roughly 2 MB now shows a one-time notification suggesting the built-in text editor as a smoother alternative; the file still opens fully rendered either way.
+
 ## [1.9.0] - 2026-07-31
 
 ### Added
