@@ -38,7 +38,7 @@ function line_snap(state: EditorState, from: number, to: number): OffsetRange {
 // (both resolve sides, so a construct ending exactly at `from` or starting
 // exactly at `to` counts), snapped to whole lines — block-widget decoration
 // spans extend past their node to line margins.
-export function expand_region(state: EditorState, from: number, to: number): OffsetRange {
+function expand_region(state: EditorState, from: number, to: number): OffsetRange {
   const a = top_level_span(state, from);
   const b = top_level_span(state, to);
   return line_snap(
