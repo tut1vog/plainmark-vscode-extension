@@ -85,6 +85,7 @@ In-table editing shortcuts (insert/move/delete rows and columns, alignment) are 
 
 - **Paste images** requires a saved document and a writable file system; it is unavailable in untitled documents and on read-only workspaces (including some vscode.dev folders).
 - **Custom CSS** (`plainmark.styles`) accepts local paths and `file:` URIs only — `http(s)://` stylesheets and remote `@font-face` `url()` are declined.
+- **Very large documents** (above ~2 MB) can make typing sluggish — the whole document stays live-rendered. Plainmark shows a one-time suggestion to reopen such files with the built-in text editor (right-click the editor tab → "Reopen Editor With…").
 
 ## License
 

@@ -25,6 +25,7 @@ import { read_table_keybindings } from './table_keybindings.js';
 import type { ResolvedTableKeybindings } from '../common/table_keybindings.js';
 import { register_outline } from './outline.js';
 import { count_words, word_count_label } from './word_count.js';
+import { large_file_warning_message, should_warn_large_file } from './large_file.js';
 import {
   dedupe_file_name,
   document_base_name,
@@ -43,6 +44,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
 
   private static active_panels = new Set<vscode.WebviewPanel>();
   private static last_active_panel: vscode.WebviewPanel | null = null;
+  private static large_file_warned = false;
   // Per-panel document map — `openInTextEditor` needs the document URI for the
   // panel that fired the title-bar button (no document arg from the button).
   private static panel_documents = new WeakMap<vscode.WebviewPanel, vscode.TextDocument>();
@@ -358,6 +360,12 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken,
   ): void {
+    // SHELL-C-16: advisory only — the document still opens fully rendered.
+    const doc_length = document.getText().length;
+    if (should_warn_large_file(doc_length, PlainmarkEditorProvider.large_file_warned)) {
+      PlainmarkEditorProvider.large_file_warned = true;
+      void vscode.window.showInformationMessage(large_file_warning_message(doc_length));
+    }
     const document_dir_uri = compute_document_dir_uri(document.uri);
     // Whitelist the document's workspace folder too, so images saved outside the document dir (e.g. via plainmark.imagePasteLocation) still load in the webview (IMG-I-3).
     const workspace_folder_uri = vscode.workspace.getWorkspaceFolder(document.uri)?.uri ?? null;
