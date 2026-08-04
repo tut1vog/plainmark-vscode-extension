@@ -1,6 +1,7 @@
 import { Transaction, type EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { native_to_lf } from '../sync/translate.js';
+import { quote_prefixed_paste_text } from './paste_quote.js';
 import {
   insert_pasted_table,
   paste_table_conversion_enabled,
@@ -86,8 +87,10 @@ export function create_clipboard_paste_controller(
           return;
         }
       }
+      // Menu paste shares the quote-aware re-prefix with the DOM paste path (BQ-I-13).
+      const insert = quote_prefixed_paste_text(view.state, lf_text) ?? lf_text;
       view.dispatch({
-        ...view.state.replaceSelection(lf_text),
+        ...view.state.replaceSelection(insert),
         annotations: [Transaction.userEvent.of('input.paste')],
         scrollIntoView: true,
       });

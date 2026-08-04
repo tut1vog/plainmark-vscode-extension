@@ -11,6 +11,7 @@ import { cjk_word_motion_keymap } from './cjk_word_motion.js';
 import { vertical_arrow_collapse_keymap } from './vertical_arrow_collapse.js';
 import { match_code_language } from './language_aliases.js';
 import { image_paste_extension } from './image_paste.js';
+import { quote_paste_extension } from './paste_quote.js';
 import { table_paste_extension } from './paste_table.js';
 import { editor_context_menu_extension } from './editor_context_menu.js';
 import {
@@ -448,6 +449,8 @@ export const editor_extensions: Extension[] = [
   image_paste_extension,
   // After the image sniff (IMG-I-6), main view only — a cell paste stays literal (TBL-I-19).
   table_paste_extension,
+  // After the table sniff — a multi-line text paste in a quote re-prefixes (BQ-I-13).
+  quote_paste_extension,
   // Main view only — table cells own their contextmenu; prose right-clicks open the editor menu.
   editor_context_menu_extension,
   scroller_theme,
