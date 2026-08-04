@@ -1,4 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
+import { ensureSyntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import { Decoration } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
@@ -17,11 +18,15 @@ import {
 // nodes a probe handler is actually invoked for.
 
 function make_state(doc: string, anchor = 0): EditorState {
-  return EditorState.create({
+  const state = EditorState.create({
     doc,
     extensions: [markdown({ extensions: [GFM, math_extension] })],
     selection: { anchor },
   });
+  // The init parse's 20ms wall-clock budget can expire under worker contention,
+  // leaving a partial tree; finish it and re-snapshot so syntaxTree is complete.
+  ensureSyntaxTree(state, state.doc.length, 10_000);
+  return state.update({}).state;
 }
 
 function make_probe(nodeNames: readonly string[]): {
