@@ -177,7 +177,7 @@ window.addEventListener('message', (event: MessageEvent) => {
     return;
   }
   if (msg.type === 'prettify_seams') {
-    prettify_seams(view);
+    prettify_seams(view, msg.seams);
     return;
   }
   if (msg.type === 'focus_editor') {

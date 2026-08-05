@@ -241,6 +241,17 @@
           },
           "markdownDescription": "Keyboard shortcuts for table structural operations, active while editing a table cell. Keys use CodeMirror syntax — `Mod` (⌘ on macOS, Ctrl elsewhere), `Alt` (⌥ on macOS), `Shift`, `Ctrl` — joined with `-`, e.g. `Mod-Shift-Backspace`. Every binding must include a modifier; set a value to `\"\"` to unbind. Recognized actions (defaults in parentheses): `insert_row_above` (`Alt-Shift-ArrowUp`), `insert_row_below` (`Mod-Enter`), `insert_column_left` (`Alt-Shift-ArrowLeft`), `insert_column_right` (`Alt-Shift-ArrowRight`), `delete_row` (`Mod-Shift-Backspace`), `delete_column` (unbound), `delete_table` (unbound), `swap_row_up` (`Alt-ArrowUp`), `swap_row_down` (`Alt-ArrowDown`), `swap_column_left` (`Alt-ArrowLeft`), `swap_column_right` (`Alt-ArrowRight`), `align_left`/`align_center`/`align_right`/`align_none` (unbound). Values that are invalid, modifier-less, duplicated, or that collide with editing/navigation keys (`Tab`, `Enter`, arrows, `Mod-z`) are ignored with a warning. Changing this setting reloads the editor view."
         },
+        "plainmark.prettify.seams": {
+          "type": "object",
+          "scope": "resource",
+          "default": {},
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "markdownDescription": "Blank lines the **Prettify document** command writes between two adjacent blocks, overriding its built-in matrix. Each key is an ordered pair `above>below`; each value is a blank-line count from `0` to `3`. Block kinds: `frontmatter`, `heading`, `paragraph`, `list`, `quote`, `code` (fenced), `indentedCode`, `table`, `math`, `rule`, `html`, `definition` (footnote or link reference). Use `*` on either side as a wildcard, e.g. `{ \"*>heading\": 1, \"heading>*\": 0 }`. A pair pinned on both sides wins over one wildcard, which wins over `*>*`; when only one side is pinned on each of two rules, the one naming the block *below* wins. Unlisted pairs keep Plainmark's default. A value is raised back up wherever removing the blank would change how the file parses — a paragraph below a table or list, anything below an HTML block — so this setting can loosen a seam but never corrupt one. Entries that are malformed, name an unknown kind, or fall outside `0`–`3` are ignored with a warning."
+        },
         "plainmark.imagePasteLocation": {
           "type": "string",
           "scope": "resource",

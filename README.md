@@ -69,7 +69,7 @@ Available from the Command Palette (`Ctrl/Cmd+Shift+P`):
 
 The two paragraph commands convert a document between blank-line-separated markdown (the conventional style most tools emit) and Plainmark's compact one-line-per-paragraph style. **Compact paragraphs** joins hard-wrapped lines (without inserting spaces between CJK characters) and removes the blank lines between paragraphs, headings, and lists; **Add blank lines between paragraphs** does the reverse, producing conventional spacing for sharing outside Plainmark. Both apply as a single undoable edit and skip anything a rewrite could change the meaning of — hard line breaks, code blocks, tables, and quote and list interiors.
 
-**Prettify document** takes the middle road between those two. It leaves every line break inside a paragraph exactly as you wrote it and only normalizes the blank lines *between* blocks: one blank above each heading and never one below it, one after a list, quote, table, or HTML block, and none anywhere else — collapsing doubled blank runs along the way. Where dropping a blank would change how the file parses (a table or indented code below a paragraph, a `---` that would turn the line above it into a heading), the blank stays. It applies to the whole document as a single undoable edit.
+**Prettify document** takes the middle road between those two. It leaves every line break inside a paragraph exactly as you wrote it and only normalizes the blank lines *between* blocks: one blank above each heading and never one below it, one after a list, quote, table, or HTML block, and none anywhere else — collapsing doubled blank runs along the way. Where dropping a blank would change how the file parses (a table or indented code below a paragraph, a `---` that would turn the line above it into a heading), the blank stays. It applies to the whole document as a single undoable edit, and `plainmark.prettify.seams` lets you re-pin any pair of adjacent blocks to the spacing you prefer.
 
 In the compact style a single line break also ends a quote or callout: a line without the `>` marker starts a new paragraph below the quote, where conventional markdown would need a blank line and would otherwise fold that line into the quote. Lines that do carry the `>` marker continue the quote as usual, and list items still absorb their unmarked continuation lines. **Add blank lines between paragraphs** restores that conventional blank after each quote and callout, so the paragraph below stays outside the quote wherever the file is rendered.
 
@@ -84,6 +84,7 @@ In-table editing shortcuts (insert/move/delete rows and columns, alignment) are 
 | `plainmark.tableKeybindings` | Customize the in-table structural-editing shortcuts. |
 | `plainmark.imagePasteLocation` | Folder for pasted images (default `.`, next to the document); supports `${documentWorkspaceFolder}` and `${documentBaseName}`. |
 | `plainmark.paste.convertTables` | Convert a copied spreadsheet range, web table, or tab-separated text into a Markdown table on paste (default on); turn off to always paste literally. |
+| `plainmark.prettify.seams` | Override how many blank lines **Prettify document** writes between two adjacent blocks, per ordered pair — `{ "table>heading": 0, "*>heading": 1 }`. |
 
 ## Known limitations
 

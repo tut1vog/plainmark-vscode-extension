@@ -6,6 +6,11 @@ import {
   type TransactionSpec,
 } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
+import {
+  lookup_seam_override,
+  type SeamKind,
+  type SeamOverride,
+} from '../common/prettify_seams_config.js';
 
 // A partial tree could misclassify a block's kind or span.
 const PARSE_BUDGET_MS = 1000;
@@ -19,33 +24,20 @@ const LIST_INTERRUPTS = /^ {0,3}([-+*]|1[.)])[ \t]+\S/;
 // A bare `=`/`-` run directly under paragraph text is a setext underline.
 const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
 
-type Kind =
-  | 'frontmatter'
-  | 'heading'
-  | 'para'
-  | 'list'
-  | 'quote'
-  | 'fence'
-  | 'indented_code'
-  | 'table'
-  | 'math'
-  | 'hr'
-  | 'html'
-  | 'definition'
-  | 'setext'
-  | 'opaque';
+// Seams touching these are never converted, so they carry no configurable kind.
+type Kind = SeamKind | 'setext' | 'opaque';
 
 const KIND_BY_NODE: Record<string, Kind> = {
   FrontMatter: 'frontmatter',
-  Paragraph: 'para',
+  Paragraph: 'paragraph',
   BulletList: 'list',
   OrderedList: 'list',
   Blockquote: 'quote',
-  FencedCode: 'fence',
-  CodeBlock: 'indented_code',
+  FencedCode: 'code',
+  CodeBlock: 'indentedCode',
   Table: 'table',
   BlockMath: 'math',
-  HorizontalRule: 'hr',
+  HorizontalRule: 'rule',
   HTMLBlock: 'html',
   CommentBlock: 'html',
   ProcessingInstructionBlock: 'html',
@@ -61,7 +53,7 @@ const KIND_BY_NODE: Record<string, Kind> = {
 const CLOSED_BY_BLANK: ReadonlySet<Kind> = new Set([
   'list',
   'quote',
-  'indented_code',
+  'indentedCode',
   'table',
   'html',
   'definition',
@@ -69,7 +61,7 @@ const CLOSED_BY_BLANK: ReadonlySet<Kind> = new Set([
 
 // Above a heading a blank reads as the section break; behind these three the
 // break already exists (doc top after frontmatter, a heading stack, a rule).
-const NO_BLANK_ABOVE_HEADING: ReadonlySet<Kind> = new Set(['frontmatter', 'heading', 'hr']);
+const NO_BLANK_ABOVE_HEADING: ReadonlySet<Kind> = new Set(['frontmatter', 'heading', 'rule']);
 
 interface Block {
   kind: Kind;
@@ -102,34 +94,63 @@ function top_level_blocks(state: EditorState): Block[] | null {
 function can_interrupt_paragraph(block: Block, state: EditorState): boolean {
   const first_line = state.doc.line(block.first).text;
   switch (block.kind) {
-    case 'indented_code':
+    case 'indentedCode':
     case 'table':
     case 'definition':
     case 'html':
       return false;
     case 'list':
       return LIST_INTERRUPTS.test(first_line);
-    case 'hr':
-    case 'para':
+    case 'rule':
+    case 'paragraph':
       return !SETEXT_UNDERLINE.test(first_line);
     default:
       return true;
   }
 }
 
-// Blank lines a seam should carry, or null when the seam is not convertible.
-function desired_blanks(above: Block, below: Block, state: EditorState): number | null {
-  if (above.kind === 'setext' || below.kind === 'setext') return null;
-  if (above.kind === 'opaque' || below.kind === 'opaque') return null;
+// The blank count below which the seam re-parses into something else. A
+// configured override may raise a seam above its default but never below this.
+function minimum_blanks(above: Block, below: Block, state: EditorState): number {
+  if (above.kind === 'html') return 1;
+  if (above.kind === 'definition') return below.kind === 'definition' ? 0 : 1;
+  // Two quotes fuse into one; every other merge below is the trailing-row or
+  // lazy-continuation kind, which the interrupt test already decides.
+  if (above.kind === 'quote' && below.kind === 'quote') return 1;
+  if (above.kind === 'quote' || above.kind === 'list' || above.kind === 'table') {
+    return below.kind !== 'paragraph' && can_interrupt_paragraph(below, state) ? 0 : 1;
+  }
+  if (above.kind === 'paragraph') return can_interrupt_paragraph(below, state) ? 0 : 1;
+  return 0;
+}
+
+// The shipped matrix: what the seam takes when the user has pinned nothing.
+function default_blanks(above: Block, below: Block, state: EditorState): number {
   if (above.kind === 'definition' && below.kind === 'definition') return 0;
   if (CLOSED_BY_BLANK.has(above.kind)) return 1;
   if (below.kind === 'heading') return NO_BLANK_ABOVE_HEADING.has(above.kind) ? 0 : 1;
   if (above.kind === 'heading') return 0;
-  if (above.kind === 'para' && !can_interrupt_paragraph(below, state)) return 1;
+  if (above.kind === 'paragraph' && !can_interrupt_paragraph(below, state)) return 1;
   return 0;
 }
 
-export function prettify_seams_spec(state: EditorState): TransactionSpec | null {
+function desired_blanks(
+  above: Block,
+  below: Block,
+  state: EditorState,
+  overrides: readonly SeamOverride[],
+): number | null {
+  if (above.kind === 'setext' || below.kind === 'setext') return null;
+  if (above.kind === 'opaque' || below.kind === 'opaque') return null;
+  const pinned = lookup_seam_override(overrides, above.kind, below.kind);
+  const want = pinned ?? default_blanks(above, below, state);
+  return Math.max(want, minimum_blanks(above, below, state));
+}
+
+export function prettify_seams_spec(
+  state: EditorState,
+  overrides: readonly SeamOverride[] = [],
+): TransactionSpec | null {
   const blocks = top_level_blocks(state);
   if (!blocks) return null;
   const doc = state.doc;
@@ -146,10 +167,10 @@ export function prettify_seams_spec(state: EditorState): TransactionSpec | null 
       }
     }
     if (!all_blank) continue;
-    const want = desired_blanks(above, below, state);
+    const want = desired_blanks(above, below, state, overrides);
     if (want === null || want === blanks) continue;
-    if (blanks === 0) {
-      changes.push({ from: doc.line(below.first).from, insert: '\n' });
+    if (want > blanks) {
+      changes.push({ from: doc.line(below.first).from, insert: '\n'.repeat(want - blanks) });
       continue;
     }
     // Drop the leading blank lines of the run, newline included, so the run
@@ -160,8 +181,8 @@ export function prettify_seams_spec(state: EditorState): TransactionSpec | null 
   return { changes, annotations: Transaction.userEvent.of('input') };
 }
 
-export function prettify_seams(view: EditorView): boolean {
-  const spec = prettify_seams_spec(view.state);
+export function prettify_seams(view: EditorView, overrides: readonly SeamOverride[] = []): boolean {
+  const spec = prettify_seams_spec(view.state, overrides);
   if (!spec) return false;
   view.dispatch(spec);
   return true;

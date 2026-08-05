@@ -2,6 +2,8 @@
 // the host (sync/loop.ts, host/provider.ts) and the webview (webview/sync.ts).
 // MUST stay dependency-free (no `vscode`, no CM6) so both build targets resolve it.
 
+import type { SeamOverride } from '../common/prettify_seams_config.js';
+
 // Line/character (both zero-based) — wire format avoids LF/CRLF byte counting.
 export interface CursorPosition {
   line: number;
@@ -94,8 +96,11 @@ interface HostCompactParagraphSeamsMessage {
   type: 'compact_paragraph_seams';
 }
 
+// The resolved `plainmark.prettify.seams` rides on the message: the transform
+// needs it only when the command fires, so no injection channel is warranted.
 interface HostPrettifySeamsMessage {
   type: 'prettify_seams';
+  seams: readonly SeamOverride[];
 }
 
 // Sent on tab reactivation so the webview refocuses CM6 — VS Code focuses the iframe, not the inner contenteditable, so the retained caret won't render otherwise.

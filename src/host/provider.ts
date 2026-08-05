@@ -21,6 +21,7 @@ import {
   type ResolvedStyle,
   type StyleWatchHandle,
 } from './styles.js';
+import { read_prettify_seams } from './prettify_seams.js';
 import { read_table_keybindings } from './table_keybindings.js';
 import type { ResolvedTableKeybindings } from '../common/table_keybindings.js';
 import { register_outline } from './outline.js';
@@ -203,8 +204,13 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       'tutivog.plainmark.prettifyDocument',
       () => {
         const panel = PlainmarkEditorProvider.get_active_panel();
-        void panel?.webview.postMessage({
+        if (!panel) return;
+        const uri = PlainmarkEditorProvider.panel_documents.get(panel)?.uri;
+        const { resolved, warnings } = read_prettify_seams(uri ?? vscode.Uri.parse('untitled:'));
+        for (const warning of warnings) init_log.warn(warning);
+        void panel.webview.postMessage({
           type: 'prettify_seams',
+          seams: resolved,
         } satisfies HostToWebviewMessage);
       },
     );

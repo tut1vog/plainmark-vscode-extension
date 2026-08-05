@@ -89,7 +89,7 @@ describe('wire protocol', () => {
       { type: 'normalize_list_indent' },
       { type: 'expand_paragraph_seams' },
       { type: 'compact_paragraph_seams' },
-      { type: 'prettify_seams' },
+      { type: 'prettify_seams', seams: [{ above: 'table', below: '*', blanks: 0 }] },
       { type: 'focus_editor' },
       { type: 'style_reload', href: 'file:///x.css' },
       { type: 'scroll_to_heading', line: 42, character: 3 },
