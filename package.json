@@ -98,7 +98,7 @@
       },
       {
         "command": "tutivog.plainmark.addBlankLinesBetweenParagraphs",
-        "title": "Plainmark: Add blank lines between paragraphs"
+        "title": "Plainmark: Convert to CommonMark (add blank lines between paragraphs)"
       },
       {
         "command": "tutivog.plainmark.compactParagraphs",
