@@ -2,13 +2,22 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
+import { Footnote } from './decorations/footnote_parser.js';
+import { frontmatter_extension } from './grammar/frontmatter.js';
+import { math_extension } from './grammar/math.js';
 import { quote_exit_extension } from './grammar/quote_exit.js';
 import { compact_paragraph_seams_spec, expand_paragraph_seams_spec } from './paragraph_seams.js';
 
 function run(spec_fn: typeof expand_paragraph_seams_spec, doc: string): string | null {
   const state = EditorState.create({
     doc,
-    extensions: [markdown({ extensions: [GFM, quote_exit_extension] })],
+    extensions: [
+      // Mirrors the editor's grammar list (editor_extensions.ts) — a reduced
+      // grammar reclassifies seams (a `$$` block would split as a paragraph).
+      markdown({
+        extensions: [GFM, math_extension, Footnote, frontmatter_extension, quote_exit_extension],
+      }),
+    ],
   });
   const spec = spec_fn(state);
   if (!spec) return null;
@@ -42,15 +51,52 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand('a\n| row |\n')).toBeNull();
   });
 
-  it('touches only document-level paragraphs, not list or quote interiors', () => {
+  it('never splits list interiors or lazy continuations inside containers', () => {
     expect(expand('- a\n  b\n')).toBeNull();
     expect(expand('- a\nlazy\n')).toBeNull();
-    expect(expand('> a\n> b\n')).toBeNull();
+    expect(expand('> - a\n> - b\n')).toBeNull();
+    expect(expand('> - a\n> b\n')).toBeNull();
+    expect(expand('- > a\n  > b\n')).toBeNull();
+  });
+
+  it('splits quote-interior paragraph seams with a quoted blank line', () => {
+    expect(expand('> a\n> b\n')).toBe('> a\n>\n> b\n');
+    expect(expand('> a\n> b\n> c\n')).toBe('> a\n>\n> b\n>\n> c\n');
+    expect(expand('> > a\n> > b\n')).toBe('> > a\n> >\n> > b\n');
+  });
+
+  it('keeps the callout marker tight above its first body line', () => {
+    expect(expand('> [!note] t\n> a\n> b\n')).toBe('> [!note] t\n> a\n>\n> b\n');
+    expect(expand('> [!note]\n> body\n')).toBeNull();
+  });
+
+  it('applies the intra-paragraph guards to marker-stripped quote content', () => {
+    expect(expand('> a  \n> b\n')).toBeNull();
+    expect(expand('> a\n> 2. x\n')).toBeNull();
+    expect(expand('> a\n> | x |\n')).toBeNull();
+    expect(expand('> a\n> <custom>\n')).toBeNull();
+    expect(expand('> a\n>     code\n')).toBeNull();
+    expect(expand('> a\n> *\n')).toBeNull();
+  });
+
+  it('separates a nested quote from its parent-quote exit line', () => {
+    expect(expand('> > a\n> b\n')).toBe('> > a\n>\n> b\n');
+    expect(expand('> > > a\n> > b\n')).toBe('> > > a\n> >\n> > b\n');
+  });
+
+  it('never turns a lone `+`/`*` paragraph line into a list', () => {
+    expect(expand('a\n+\n')).toBeNull();
+    expect(expand('a\n*\n')).toBeNull();
+  });
+
+  it('classifies under the full editor grammar (math and footnotes intact)', () => {
+    expect(expand('$$\nE = mc^2\n$$\nafter\n')).toBeNull();
+    expect(expand('prose\n[^1]: def\n')).toBeNull();
   });
 
   it('inserts the conventional blank at a quote-exit seam', () => {
     expect(expand('> a\nb\n')).toBe('> a\n\nb\n');
-    expect(expand('> a\n> b\nc\n')).toBe('> a\n> b\n\nc\n');
+    expect(expand('> a\n> b\nc\n')).toBe('> a\n>\n> b\n\nc\n');
     expect(expand('> [!note] t\nx\n')).toBe('> [!note] t\n\nx\n');
     expect(expand('> - a\nb\n')).toBe('> - a\n\nb\n');
     expect(expand('> a\n# h\n')).toBe('> a\n\n# h\n');
@@ -65,11 +111,10 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
   });
 
   it('leaves non-exit quote seams alone', () => {
-    // Already separated, doc-final, partial exit inside the outer quote, and
-    // the BQ-E-12 interior carve-out (indented line stays inside the node).
+    // Already separated, doc-final, and the BQ-E-12 interior carve-out (the
+    // marker-less indented line stays inside the node).
     expect(expand('> a\n\nb\n')).toBeNull();
     expect(expand('> a\n')).toBeNull();
-    expect(expand('> > a\n> b\n')).toBeNull();
     expect(expand('> a\n    b\n')).toBeNull();
   });
 
@@ -111,6 +156,10 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand(once as string)).toBeNull();
     const headings = expand('# h\npara\n');
     expect(expand(headings as string)).toBeNull();
+    const quotes = expand('> a\n> b\nc\n');
+    expect(expand(quotes as string)).toBeNull();
+    const nested = expand('> > a\n> b\n');
+    expect(expand(nested as string)).toBeNull();
   });
 });
 
