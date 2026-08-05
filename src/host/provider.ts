@@ -199,6 +199,15 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         } satisfies HostToWebviewMessage);
       },
     );
+    const prettify_seams = vscode.commands.registerCommand(
+      'tutivog.plainmark.prettifyDocument',
+      () => {
+        const panel = PlainmarkEditorProvider.get_active_panel();
+        void panel?.webview.postMessage({
+          type: 'prettify_seams',
+        } satisfies HostToWebviewMessage);
+      },
+    );
     // `vscode.openWith` with viewId `'default'` is the
     // documented way to switch a custom-editor tab back to VS Code's built-in
     // text editor. Plain
@@ -329,6 +338,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       normalize_list_indent,
       expand_paragraph_seams,
       compact_paragraph_seams,
+      prettify_seams,
       open_in_text_editor,
       open_in_plainmark,
       select_theme,

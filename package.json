@@ -105,6 +105,10 @@
         "title": "Plainmark: Compact paragraphs (join wrapped lines, remove blank lines)"
       },
       {
+        "command": "tutivog.plainmark.prettifyDocument",
+        "title": "Plainmark: Prettify document (normalize blank lines between blocks)"
+      },
+      {
         "command": "tutivog.plainmark.openInTextEditor",
         "title": "Plainmark: Open in Text Editor",
         "icon": "$(code)"

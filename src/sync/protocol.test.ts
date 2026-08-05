@@ -42,6 +42,8 @@ function host_tag(msg: HostToWebviewMessage): string {
       return 'expand_paragraph_seams';
     case 'compact_paragraph_seams':
       return 'compact_paragraph_seams';
+    case 'prettify_seams':
+      return 'prettify_seams';
     case 'focus_editor':
       return 'focus_editor';
     case 'style_reload':
@@ -87,6 +89,7 @@ describe('wire protocol', () => {
       { type: 'normalize_list_indent' },
       { type: 'expand_paragraph_seams' },
       { type: 'compact_paragraph_seams' },
+      { type: 'prettify_seams' },
       { type: 'focus_editor' },
       { type: 'style_reload', href: 'file:///x.css' },
       { type: 'scroll_to_heading', line: 42, character: 3 },

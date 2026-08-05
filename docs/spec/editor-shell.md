@@ -213,6 +213,9 @@ declared in `package.json` `contributes.commands` AND registered via
 - **SHELL-C-16** `[smoke]` — Resolving a document whose text length exceeds `2 * 1024 * 1024` UTF-16 code units MUST show an information notification recommending the built-in text editor for the file, at most once per extension-host session. The advisory MUST NOT block or degrade the editor: the document opens fully rendered regardless, and no further size behavior exists below VS Code's own 50 MB extension-sync wall (no hard refusal, no degraded mode, no long-line detection). The threshold decision is the pure `should_warn_large_file`; the once-per-session gate lives on the provider. Rationale: per-keystroke cost grows roughly linearly with document size and turns sluggish in the low-megabyte range, while Plainmark's custom-editor priority is `option`, so the default text editor stays one click away (right-click the tab → "Reopen Editor With…").
   _Example:_ opening a 3 MB markdown file in Plainmark pops "Plainmark: this document is 3.0 MB…" once; a second oversized file in the same session opens silently.
 
+- **SHELL-C-17** `[smoke]` — `tutivog.plainmark.prettifyDocument` MUST be registered and, when invoked, MUST post `{ type: 'prettify_seams' }` to the active Plainmark panel's webview. The document transform it triggers is owned by `PARA-I-7`.
+  _Example:_ Command Palette → "Plainmark: Prettify document (normalize blank lines between blocks)" → active panel receives `prettify_seams`.
+
 ## A — activation & dual host target
 
 Extension activation entry points and the dual Node / Web bundles. Section code
