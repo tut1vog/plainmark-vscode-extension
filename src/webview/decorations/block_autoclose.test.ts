@@ -285,7 +285,7 @@ describe('fence_autopair_input CBLK-I-11 CBLK-I-12 CBLK-SP-5 CBLK-E-2', () => {
     expect(applied).toHaveLength(0);
   });
 
-  it('(l) returns false past a 3-space indent cap (4 spaces is indented code)', () => {
+  it('(l) returns false past a 3-space indent cap (the CommonMark fence bound)', () => {
     const { view, applied } = make_view('    ``', 6);
     expect(fence_autopair_input(view, 6, 6, '`')).toBe(false);
     expect(applied).toHaveLength(0);

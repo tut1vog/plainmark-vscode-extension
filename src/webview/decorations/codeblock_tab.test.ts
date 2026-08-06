@@ -74,7 +74,7 @@ describe('codeblock_tab — 4-space Tab/Shift-Tab in fenced code CBLK-I-13', () 
     expect(applied).toHaveLength(0);
   });
 
-  it('(f) Tab declines inside an indented (non-fenced) code block', () => {
+  it('(f) Tab declines on a 4-space-indented line outside any fence', () => {
     const { view, applied } = make_view('    foo', 5);
     expect(codeblock_tab_indent(view)).toBe(false);
     expect(applied).toHaveLength(0);

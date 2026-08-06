@@ -35,7 +35,7 @@ describe('codeblock_completions — gating CBLK-I-15', () => {
     expect(codeblock_completions(context_at(doc, doc.length))).toBeNull();
   });
 
-  it('returns null at 4-space indent (indented code, not a fence)', () => {
+  it('returns null at 4-space indent (past the CommonMark fence bound)', () => {
     const doc = '    ```py';
     expect(codeblock_completions(context_at(doc, doc.length))).toBeNull();
   });

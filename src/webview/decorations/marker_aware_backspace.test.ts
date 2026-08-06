@@ -184,7 +184,7 @@ describe('marker_aware_backspace MRS-B-1 MRS-B-2 MRS-B-3 MRS-B-4 MRS-B-5 MRS-B-6
   describe('YIELDS — non-markdown contexts (false-positive guard)', () => {
     it('matched pattern inside a fenced code block returns false', () => {
       // The `>  hello` line lives inside ```\n...\n```, so the syntax tree
-      // resolves to CodeBlock / FencedCode — no Blockquote/ListItem ancestor.
+      // resolves to FencedCode — no Blockquote/ListItem ancestor.
       const doc = '```\n>  hello\n```';
       // Position the caret at col 2 of the `>  hello` line. The line starts
       // at offset 4 (after "```\n"), so col 2 is offset 6.

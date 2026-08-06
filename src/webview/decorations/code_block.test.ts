@@ -186,30 +186,6 @@ describe('fenced code block — unknown language', () => {
   });
 });
 
-describe('indented (4-space) code block', () => {
-  it('emits plainmark-indented-code line decorations', () => {
-    // A blank line is required before an indented code block per CommonMark.
-    const doc = 'paragraph\n\n    const x = 1;\n    const y = 2;\n';
-    const state = make_state(doc, 0);
-    const out = snapshot(state);
-
-    expect(out.length).toBe(2);
-    expect(out[0].class).toContain('plainmark-indented-code');
-    expect(out[0].class).toContain('plainmark-indented-code-first');
-    expect(out[1].class).toContain('plainmark-indented-code');
-    expect(out[1].class).toContain('plainmark-indented-code-last');
-  });
-
-  it('single-line indented block uses the first-line class', () => {
-    const doc = 'paragraph\n\n    const x = 1;\n';
-    const state = make_state(doc, 0);
-    const out = snapshot(state);
-
-    expect(out.length).toBe(1);
-    expect(out[0].class).toContain('plainmark-indented-code-first');
-  });
-});
-
 describe('plainmark_highlight_style', () => {
   it('is a defined HighlightStyle', () => {
     expect(plainmark_highlight_style).toBeInstanceOf(HighlightStyle);

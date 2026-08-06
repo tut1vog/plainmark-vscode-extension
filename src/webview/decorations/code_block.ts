@@ -14,7 +14,7 @@ const fenced_footer_deco = Decoration.line({
 });
 // Unclosed block — the last line is code content, not a closing fence, so it
 // carries no reserved-fence band; it gets the padding-y the closing-fence line
-// would otherwise have provided (parity with indented-code-last).
+// would otherwise have provided.
 const fenced_content_end_deco = Decoration.line({
   class: 'plainmark-fenced-code plainmark-fenced-code-content-end',
 });
@@ -22,13 +22,6 @@ const fenced_content_end_deco = Decoration.line({
 // drawSelection under lineWrapping (see headings.ts). The fence line
 // keeps its full height (no line-height collapse) so reveal/hide reflows nothing.
 const hide_fence = Decoration.mark({ class: 'plainmark-fenced-code-marker' });
-const indented_body_deco = Decoration.line({ class: 'plainmark-indented-code' });
-const indented_first_deco = Decoration.line({
-  class: 'plainmark-indented-code plainmark-indented-code-first',
-});
-const indented_last_deco = Decoration.line({
-  class: 'plainmark-indented-code plainmark-indented-code-last',
-});
 
 function fenced_code_handler(): NodeHandler {
   return {
@@ -101,31 +94,7 @@ function fenced_code_handler(): NodeHandler {
   };
 }
 
-function indented_code_handler(): NodeHandler {
-  return {
-    nodeNames: ['CodeBlock'],
-    handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
-      const decorations: Range<Decoration>[] = [];
-      const start_line_no = state.doc.lineAt(node.from).number;
-      const end_line_no = state.doc.lineAt(node.to).number;
-      for (let i = start_line_no; i <= end_line_no; i++) {
-        const line = state.doc.line(i);
-        let deco: Decoration;
-        if (start_line_no === end_line_no) deco = indented_first_deco;
-        else if (i === start_line_no) deco = indented_first_deco;
-        else if (i === end_line_no) deco = indented_last_deco;
-        else deco = indented_body_deco;
-        decorations.push(deco.range(line.from));
-      }
-      return decorations;
-    },
-  };
-}
-
-export const code_block_handlers: readonly NodeHandler[] = [
-  fenced_code_handler(),
-  indented_code_handler(),
-];
+export const code_block_handlers: readonly NodeHandler[] = [fenced_code_handler()];
 
 export const plainmark_highlight_style = HighlightStyle.define([
   {
@@ -229,21 +198,14 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
 
   const rules: Record<string, Record<string, string>> = {
     '.plainmark-fenced-code': shared_chrome,
-    '.plainmark-indented-code': shared_chrome,
     // Closed-block fence lines (header / footer) reserve a full line of height
     // even when collapsed, so that reserved line IS the top / bottom band — no
     // padding-y on top of it (option-a: no double spacing). The unclosed tail
-    // and indented blocks have no reserved fence line, so they keep padding-y.
+    // has no reserved fence line, so it keeps padding-y.
     '.plainmark-fenced-code-header': {
       position: 'relative',
     },
     '.plainmark-fenced-code-content-end': {
-      'padding-bottom': padding_y,
-    },
-    '.plainmark-indented-code-first': {
-      'padding-top': padding_y,
-    },
-    '.plainmark-indented-code-last': {
       'padding-bottom': padding_y,
     },
     // PARA-R-7: the opening fence line carries the paragraph gap above the
@@ -260,14 +222,6 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
     // The language label pins to the top of the TINTED band, not the padded box.
     '.plainmark-fenced-code-header.plainmark-paragraph-gap::before': {
       top: 'calc(0.25em + var(--plainmark-paragraph-gap, 0.75em))',
-    },
-    // Indented code: gap stacks on the block's own tinted top padding
-    // ((0,5,0) beats the tripled gap rule at (0,4,0) independent of source
-    // order); background skips the gap like the fenced header.
-    '.cm-line.cm-line.cm-line.plainmark-indented-code-first.plainmark-paragraph-gap': {
-      'padding-top': `calc(var(--plainmark-paragraph-gap, 0.75em) + ${padding_y})`,
-      'background-size': `calc(100% - ${margin_x}) calc(100% - var(--plainmark-paragraph-gap, 0.75em))`,
-      'background-position': `${margin_x} bottom`,
     },
     '.plainmark-fenced-code-header::before': {
       content: 'attr(data-language)',
@@ -294,7 +248,7 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
   // Syntax color rules scoped to code-block contexts only — the global highlight style
   // also tags markdown's own ListMark / CodeMark with tags.meta, which we leave uncolored.
   for (const t of syntax_token_classes) {
-    rules[`.plainmark-fenced-code .plainmark-syntax-${t}, .plainmark-indented-code .plainmark-syntax-${t}`] = {
+    rules[`.plainmark-fenced-code .plainmark-syntax-${t}`] = {
       color: syntax_token_color(t),
     };
   }

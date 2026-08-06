@@ -58,7 +58,7 @@ describe('fenced code block — line chrome', () => {
   });
 });
 
-describe('indented (4-space) code block — line chrome', () => {
+describe('4-space-indented lines — no code chrome (CBLK-E-1)', () => {
   let h: SetupHandle;
   beforeEach(() => {
     h = make_setup();
@@ -69,15 +69,13 @@ describe('indented (4-space) code block — line chrome', () => {
     h.container.remove();
   });
 
-  it('renders .plainmark-indented-code line decorations', async () => {
+  it('renders indented lines as plain prose with no code classes', async () => {
     const doc = 'paragraph\n\n    const x = 1;\n    const y = 2;\n';
     h.view = mount_editor(h.container, doc);
     move_cursor(h.view, 0);
     await next_frame();
-    const lines = Array.from(
-      h.container.querySelectorAll('.plainmark-indented-code'),
-    );
-    expect(lines.length).toBe(2);
+    expect(h.container.querySelectorAll('.plainmark-indented-code').length).toBe(0);
+    expect(h.container.querySelectorAll('.plainmark-fenced-code').length).toBe(0);
   });
 });
 

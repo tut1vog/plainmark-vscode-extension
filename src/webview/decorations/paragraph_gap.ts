@@ -23,7 +23,6 @@ import { detect_callout } from './callout_detect.js';
 // its opening `---` must never take a gap when an edit transiently reparses).
 const NON_PROSE_CONTEXTS = new Set([
   'FencedCode',
-  'CodeBlock',
   'BlockMath',
   'HTMLBlock',
   'CommentBlock',
@@ -201,9 +200,9 @@ const paragraph_gap_theme = EditorView.theme({
   //
   // Construct START lines (PARA-R-7) take this same padding as their default;
   // constructs that stack the gap on their own breathing room (quote first
-  // line, callout header, indented-code first, headings, HR) override it with
-  // (0,5,0) rules in their own themes — deliberately ABOVE this (0,4,0) so the
-  // stack never depends on theme source order.
+  // line, callout header, headings, HR) override it with (0,5,0) rules in
+  // their own themes — deliberately ABOVE this (0,4,0) so the stack never
+  // depends on theme source order.
   '.cm-line.plainmark-paragraph-gap.plainmark-paragraph-gap.plainmark-paragraph-gap': {
     paddingTop: 'var(--plainmark-paragraph-gap, 0.75em)',
   },

@@ -4,7 +4,7 @@ import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 
 // Guards PARA-R-10 / PARA-R-11: the FIRST line of every non-prose
-// block construct (fenced/indented code, HTML blocks, headings, HR, tables,
+// block construct (fenced code, HTML blocks, headings, HR, tables,
 // block math) joins the paragraph rhythm when the block sits below other
 // content — never on doc line 1, never inside a quote (BQ-R-13). Interior
 // construct lines stay gap-free. Constructs with a tinted line background
@@ -84,14 +84,13 @@ describe('paragraph gap above block constructs (PARA-R-10 PARA-R-11)', () => {
     });
   });
 
-  describe('indented code (CBLK-R-5)', () => {
-    it('stacks the gap on the block’s own tinted top padding', async () => {
+  describe('4-space-indented lines (CBLK-E-1)', () => {
+    it('takes the plain prose gap — no code padding stack, no tinted background', async () => {
       const flags = await gap_flags('para\n\n    code');
       expect(flags).toEqual([false, true, true]);
       const lines = await mount('para\n\n    code');
-      // (0,5,0): 12px gap + 8px --plainmark-fenced-code-padding-y = 20px.
-      expect(parseFloat(getComputedStyle(lines[2]).paddingTop)).toBeCloseTo(20, 0);
-      expect(getComputedStyle(lines[2]).backgroundPosition.split(' ')[1]).toBe('100%');
+      expect(parseFloat(getComputedStyle(lines[2]).paddingTop)).toBeCloseTo(12, 0);
+      expect(lines[2].classList.contains('plainmark-indented-code-first')).toBe(false);
     });
   });
 

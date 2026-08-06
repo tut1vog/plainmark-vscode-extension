@@ -3,7 +3,8 @@ import { Transaction, type EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import type { EditorView } from '@codemirror/view';
 
-// 0–3 leading spaces (4+ is an indented code block, not a fence) + a uniform
+// 0–3 leading spaces (CommonMark's fence bound — a 4-indent fence line is code
+// text to other renderers, so the affordance stays off it) + a uniform
 // run of 3+ backticks/tildes + an info string carrying no fence character.
 const OPEN_FENCE_RE = /^( {0,3})(`{3,}|~{3,})[^`~\n]*$/;
 const MATH_OPEN_RE = /^( {0,3})\$\$[ \t]*$/;
