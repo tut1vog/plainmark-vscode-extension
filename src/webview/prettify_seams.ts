@@ -24,12 +24,15 @@ const LIST_INTERRUPTS = /^ {0,3}([-+*]|1[.)])[ \t]+\S/;
 // A bare `=`/`-` run directly under paragraph text is a setext underline.
 const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
 
-// A ≥4-indent line is still indented code to CommonMark renderers even though
-// the house grammar no longer parses one; changing blanks beside such a line
-// could change that render, so the seam's bytes stay put.
+// A ≥4-indent line is indented code to CommonMark renderers; changing blanks
+// beside one could change that render. The inert CodeBlock node (CBLK-E-1)
+// already classifies as opaque below — this edge-line check is the byte-safety
+// backstop for indent-led lines inside other block shapes.
 const INDENT_LED = /^( {4,}|\t)/;
 
-// Seams touching these are never converted, so they carry no configurable kind.
+// Seams touching these are never converted, so they carry no configurable
+// kind. CodeBlock (inert indented code, CBLK-E-1) is deliberately unmapped —
+// it falls to 'opaque', freezing every seam that touches it.
 type Kind = SeamKind | 'setext' | 'opaque';
 
 const KIND_BY_NODE: Record<string, Kind> = {

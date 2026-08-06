@@ -9,8 +9,9 @@ kind: construct
 Covers block-level code — **fenced code blocks** (lezer `FencedCode`, opened/closed
 by a ` ``` ` or `~~~` run with an optional info string) — as handled by
 the code-block decoration handler. Fenced is the only block-code construct in
-the Plainmark dialect: indented (4-space / tab) code blocks are removed from
-the grammar (CBLK-E-1). Inline code (`` `code` ``) is a separate
+the Plainmark dialect: indented (4-space / tab) code blocks render as plain
+text, their parser surviving only as an inert shield against construct
+activation (CBLK-E-1). Inline code (`` `code` ``) is a separate
 construct (`inline-code.md`, prefix CODE).
 
 Code blocks are **decoration-only styled source**: the body bytes render verbatim
@@ -94,7 +95,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-I-6** — Pressing Enter at the end of an unclosed opening-fence line (empty selection, caret at line end, 0–3 leading spaces, a run of ≥3 backticks or tildes, info string with no further fence char, and the `FencedCode` node holding a single `CodeMark`) MUST auto-append a blank line plus a closing fence copying the opener's fence char, length, and indent; the caret stays on the (now-empty) body line. The same command also auto-closes a `$$` math block.
   _Example:_ ` ```ts|` → Enter → ` ```ts\n|\n``` `.
 
-- **CBLK-I-7** — The Enter auto-close MUST NOT fire on a 4-space-indented fence-like line (the 0–3-space cap keeps the affordance CommonMark-conservative: a 4-indent fence line is code text to conforming renderers even though the house grammar parses it as a live fence — CBLK-E-1) and MUST NOT fire when the block already has a matching closing `CodeMark` (`marks.length > 1`).
+- **CBLK-I-7** — The Enter auto-close MUST NOT fire on a 4-space-indented fence-like line (the 0–3-space cap matches the parse: at 4+ the line is an inert indented-code region — CBLK-E-1 — and code text to conforming renderers) and MUST NOT fire when the block already has a matching closing `CodeMark` (`marks.length > 1`).
   _Example:_ ` ```ts\nfoo\n```| ` already closed → Enter inserts an ordinary newline, no extra fence.
 
 - **CBLK-I-8** — Backspace on the empty content line of a three-line fully-closed empty block (opener / blank / closer) MUST delete the whole block — opener and closer together — rather than orphaning the closing fence. The match requires the previous line to parse as an opening fence and the next line to be a closing fence of the same char and ≥ length.
@@ -143,8 +144,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## E · Edge cases
 
-- **CBLK-E-1** `[smoke]` — Indented (4-space / tab) code blocks are REMOVED from the Plainmark dialect: the grammar drops the `IndentedCode` block parser, so no `CodeBlock` node is ever produced and a ≥4-indent line carries no code chrome. Behind a blank line such a line parses as whatever its content starts — a list item, quote, heading, fence, horizontal rule, or plain paragraph; under an open paragraph it still lazily continues it (the BQ-E-12 absorption carve-out is unchanged). Rationale: the construct is authoring-dead in modern editors (Typora renders fenced only), and it silently turned a 4-space continuation line inside a list into a code block. Conforming CommonMark renderers still parse indented code, so such content renders as code there and as prose or live constructs here — an accepted divergence; in exchange, the seam-conversion commands never add, remove, or collapse a blank line adjacent to a ≥4-indent line, so a Plainmark edit cannot change what those renderers show (PARA-I-5 / PARA-I-6 / PARA-I-7).
-  _Example:_ `paragraph\n\n    const x = 1;` → the indented line renders as plain prose, no code chrome; `- a\n\n    b` keeps `b` as list-item prose, not code.
+- **CBLK-E-1** `[smoke]` — Indented (4-space / tab) code blocks are NOT a Plainmark construct: a ≥4-indent region takes no code chrome, no monospace, no label, and no affordance — it renders as plain text showing its bytes verbatim (inline markup inside it is not styled, matching renderers that read the region as code). The `IndentedCode` parser stays in the grammar solely as an inert SHIELD: first in block order, it claims every ≥4-indent block start (indent measured beyond the container base), so such a line never activates another construct — `    - x` is no list, `    1. x` no ordered list, `    > q` no quote, `    # h` no heading, a 4-indent ` ``` ` opens no fence, `    ---` is no rule. Markers at 0–3 spaces activate normally (the CommonMark bound), and under an open paragraph a ≥4-indent line still lazily continues it (the BQ-E-12 absorption carve-out is unchanged). Rationale: the construct is authoring-dead in modern editors (Typora renders fenced only), its code styling silently swallowed indented prose, and re-parsing indented content as live constructs would be its own surprise — inert is the quiet middle. Conforming CommonMark renderers still parse indented code, so the region renders as code there and plain text here — an accepted divergence; in exchange, the seam-conversion commands treat the region as untouchable and never add, remove, or collapse a blank line beside it, so a Plainmark edit cannot change what those renderers show (PARA-I-5 / PARA-I-6 / PARA-I-7).
+  _Example:_ `paragraph\n\n    const x = 1;` → the indented line renders as plain text, no code chrome; `a\n\n    - x` shows a literal `- x`, no bullet; `- a\n\n    b` keeps `b` as list-item prose (the item-relative bound is 4 past the item's content indent).
 
 - **CBLK-E-2** — A `~~~`-fenced block MUST be handled identically to a ` ``` `-fenced block (lezer emits `FencedCode` for both); the Enter auto-close copies whichever fence char (`` ` `` or `~`) the opener used.
   _Example:_ `~~~py|` → Enter → `~~~py\n|\n~~~` (tilde fence preserved, not converted to backticks).

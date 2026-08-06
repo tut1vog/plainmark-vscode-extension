@@ -18,9 +18,10 @@ const PARSE_BUDGET_MS = 1000;
 // renderers see.
 const REPARSE_TRAP = /^ {0,3}(\d{1,9}[.)][ \t]|<|\|)|^( {4,}|\t)/;
 
-// A ≥4-indent line is still indented code to CommonMark renderers even though
-// the house grammar no longer parses one: a paragraph STARTING indent-led is a
-// code block there, so its lines never join and its guarding blanks stay put.
+// A ≥4-indent region is indented code to CommonMark renderers and an inert
+// CodeBlock here (CBLK-E-1). The node is non-convertible, which already keeps
+// the transforms off it — these guards are the byte-safety backstop should a
+// grammar change ever reclassify such a region as a paragraph again.
 const INDENT_LED = /^( {4,}|\t)/;
 
 // A paragraph consisting of `=`/`-` runs becomes a setext heading when the

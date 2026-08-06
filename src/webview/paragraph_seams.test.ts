@@ -41,12 +41,11 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand('a\n| row |\n')).toBeNull();
   });
 
-  it('the indent trap guards the line below the blank, never the region above it', () => {
-    // The house grammar no longer parses indented code, but other renderers
-    // do: a blank ABOVE `    code` would materialize a code block there, so
-    // that seam never splits; a blank BELOW the region ends the code block on
-    // those renderers whether or not it exists, so that seam may split.
-    expect(expand('para\n\n    code\nnext\n')).toBe('para\n\n    code\n\nnext\n');
+  it('never touches the bytes around an inert indented-code region', () => {
+    // The region parses as an inert CodeBlock (CBLK-E-1) — not a convertible
+    // block — so no seam beside it is ever split; the intra-paragraph trap
+    // still guards an ABSORBED indent line inside a prose paragraph.
+    expect(expand('para\n\n    code\nnext\n')).toBeNull();
     expect(expand('a\nb\n    absorbed\nc\n')).toBe('a\n\nb\n    absorbed\n\nc\n');
   });
 

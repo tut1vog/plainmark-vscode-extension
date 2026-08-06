@@ -28,7 +28,7 @@ function inside_code(tree: Tree, pos: number): boolean {
     node;
     node = node.parent
   ) {
-    if (node.name === 'FencedCode') return true;
+    if (node.name === 'FencedCode' || node.name === 'CodeBlock') return true;
   }
   return false;
 }

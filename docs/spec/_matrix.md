@@ -134,7 +134,7 @@
 
 | Clause | Coverage | Conformance | Tests |
 |---|---|---|---|
-| CBLK-E-1 | tier-a + tier-b + smoke | conforming | `markdown_config.test.ts`, `code_block.spec.ts`, `paragraph-gap-blocks.spec.ts` |
+| CBLK-E-1 | tier-a + tier-b + smoke | conforming | `markdown_config.test.ts`, `paragraph_seams.test.ts`, `code_block.spec.ts`, `paragraph-gap-blocks.spec.ts` |
 | CBLK-E-2 | tier-a | conforming | `block_autoclose.test.ts` |
 | CBLK-E-3 | smoke | conforming | — |
 | CBLK-E-4 | UNCOVERED | conforming | — |

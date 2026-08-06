@@ -14,9 +14,9 @@ export const markdown_grammar_extensions: MarkdownExtension = [
   Footnote,
   frontmatter_extension,
   quote_exit_extension,
-  // Fenced-only dialect: without IndentedCode a ≥4-indent line behind a blank
-  // parses as whatever its content starts (list, quote, heading, fence, HR, or
-  // paragraph) — other renderers still read it as code, so transforms must not
-  // change blanks adjacent to indent-led lines (PARA-I-5's indent trap).
-  { remove: ['IndentedCode'] },
+  // IndentedCode stays in the grammar as an inert SHIELD (CBLK-E-1): first in
+  // parser order it claims every ≥4-indent block start, so `    - x` never
+  // activates a construct — but its CodeBlock node gets no chrome and renders
+  // as plain text. Other renderers still read the region as code, so
+  // transforms must not change blanks adjacent to it (PARA-I-5's indent trap).
 ];
