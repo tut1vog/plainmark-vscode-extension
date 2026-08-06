@@ -2,6 +2,20 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.0] - 2026-08-06
+
+### Added
+
+- **New command: "Prettify document"** — normalizes the blank lines between top-level blocks like headings, lists, tables, and code blocks to match Plainmark's spacing conventions, without ever touching text inside a paragraph. Spacing between any two block types can be customized with the new `plainmark.prettify.seams` setting.
+
+### Changed
+
+- **"Add blank lines between paragraphs" is now "Convert to CommonMark"** — same command, existing keybindings still work; the new name better reflects what it does.
+
+### Fixed
+
+- **Convert to CommonMark now keeps paragraph breaks inside quotes and callouts intact** — lines like `> a` followed by `> b` used to merge into a single paragraph once blank lines were added; each now stays its own paragraph, matching what Plainmark already displays.
+
 ## [1.9.2] - 2026-08-04
 
 ### Fixed
