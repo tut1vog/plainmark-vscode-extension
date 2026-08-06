@@ -1,15 +1,16 @@
 ---
 prefix: CBLK
-title: Code blocks (fenced + indented)
+title: Code blocks (fenced)
 kind: construct
 ---
 
 # Code blocks
 
 Covers block-level code — **fenced code blocks** (lezer `FencedCode`, opened/closed
-by a ` ``` ` or `~~~` run with an optional info string) and **indented (4-space)
-code blocks** (lezer `CodeBlock`) — as handled by
-the code-block decoration handler. Inline code (`` `code` ``) is a separate
+by a ` ``` ` or `~~~` run with an optional info string) — as handled by
+the code-block decoration handler. Fenced is the only block-code construct in
+the Plainmark dialect: indented (4-space / tab) code blocks are removed from
+the grammar (CBLK-E-1). Inline code (`` `code` ``) is a separate
 construct (`inline-code.md`, prefix CODE).
 
 Code blocks are **decoration-only styled source**: the body bytes render verbatim
@@ -34,14 +35,11 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-R-2** — The opening fence line MUST carry class `plainmark-fenced-code plainmark-fenced-code-header`; interior body lines `plainmark-fenced-code`; the closing-fence line `plainmark-fenced-code plainmark-fenced-code-footer`. In an unclosed block (no closing `CodeMark`) the last line is code content, not a fence, and receives class `plainmark-fenced-code plainmark-fenced-code-content-end`, which carries the `padding-y` band the reserved closing-fence line would otherwise provide (CBLK-R-5).
   _Example:_ ` ```ts\nfoo\n``` ` → header on line 1, body (`plainmark-fenced-code`, no `-header`/`-footer`) on line 2, footer on line 3.
 
-- **CBLK-R-3** — Each line spanned by an indented `CodeBlock` node MUST receive one `Decoration.line` with class `plainmark-indented-code`; the first line additionally `plainmark-indented-code-first` and the last line `plainmark-indented-code-last`. A single-line indented block receives the `-first` class.
-  _Example:_ `paragraph\n\n    a\n    b\n` → 2 line decorations: `plainmark-indented-code-first` then `plainmark-indented-code-last`.
-
-- **CBLK-R-4** `[smoke]` — Block chrome (`.plainmark-fenced-code` and `.plainmark-indented-code` share one rule object) MUST apply a background tint, monospace font, body foreground color, configured line-height, font-size, and left/right padding. The background is painted as a stacked `linear-gradient` via `background-image` (not `margin`), inset by `--plainmark-fenced-code-margin-x`, to avoid desyncing CM6's height map.
+- **CBLK-R-4** `[smoke]` — Block chrome (`.plainmark-fenced-code`) MUST apply a background tint, monospace font, body foreground color, configured line-height, font-size, and left/right padding. The background is painted as a stacked `linear-gradient` via `background-image` (not `margin`), inset by `--plainmark-fenced-code-margin-x`, to avoid desyncing CM6's height map.
   _Example:_ a ` ```js ` block renders as a shaded monospace surface spanning the content width.
 
-- **CBLK-R-5** `[smoke]` — The vertical inset (`padding-bottom` on `-content-end`, `padding-top` on `-indented-code-first`, `padding-bottom` on `-indented-code-last`) MUST resolve from `--plainmark-fenced-code-padding-y` (implementation fallback `0.5em`); horizontal padding from `--plainmark-fenced-code-padding-x` (fallback `1em`); line-height `--plainmark-fenced-code-line-height` (fallback `1.45`); font-size `--plainmark-fenced-code-size` (fallback `1em`). The closed-block header and footer carry NO `padding-y` — their reserved full-height fence line is the top / bottom band (CBLK-I-2). A non-doc-top block additionally carries the paragraph gap on its FIRST line (PARA-R-7), rendered as clear space above the block: the gapped header keeps its plain-gap padding-top with the code background bottom-anchored past the gap (`calc(100% − gap)`, position bottom) and the language label offset below it; a gapped `-indented-code-first` stacks `gap + padding-y` at (0,5,0) with the same background skip.
-  _Example:_ overriding `--plainmark-fenced-code-padding-y` to `1em` thickens the band of indented blocks and the unclosed-fence tail; a closed fenced block's band is the reserved fence line, unaffected. `para` directly above a fence shows one clear paragraph gap before the code background begins; two stacked fenced blocks separate by the same gap.
+- **CBLK-R-5** `[smoke]` — The vertical inset (`padding-bottom` on `-content-end`) MUST resolve from `--plainmark-fenced-code-padding-y` (implementation fallback `0.5em`); horizontal padding from `--plainmark-fenced-code-padding-x` (fallback `1em`); line-height `--plainmark-fenced-code-line-height` (fallback `1.45`); font-size `--plainmark-fenced-code-size` (fallback `1em`). The closed-block header and footer carry NO `padding-y` — their reserved full-height fence line is the top / bottom band (CBLK-I-2). A non-doc-top block additionally carries the paragraph gap on its FIRST line (PARA-R-7), rendered as clear space above the block: the gapped header keeps its plain-gap padding-top with the code background bottom-anchored past the gap (`calc(100% − gap)`, position bottom) and the language label offset below it.
+  _Example:_ overriding `--plainmark-fenced-code-padding-y` to `1em` thickens the band of the unclosed-fence tail; a closed fenced block's band is the reserved fence line, unaffected. `para` directly above a fence shows one clear paragraph gap before the code background begins; two stacked fenced blocks separate by the same gap.
 
 - **CBLK-R-6** `[smoke]` — The block background MUST resolve from `--plainmark-code-background` (chaining `--vscode-textCodeBlock-background` → `--vscode-textPreformat-background` → transparent), foreground from `--plainmark-code-color` (chaining `--vscode-foreground` → inherit), and font from `--plainmark-font-code` (fallback `monospace`). These shared `--plainmark-code-*` primitives also feed inline code, so setting one knob recolors both surfaces.
   _Example:_ setting `--plainmark-code-background` once via `plainmark.styles` tints both fenced blocks and inline-code chips.
@@ -52,13 +50,13 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-R-8** — The language label MUST show the user's RAW info string verbatim, never the canonical language name. The handler slices `CodeInfo` and `.trim()`s it for the attribute; no alias resolution or canonicalization is applied to the displayed/stored value.
   _Example:_ ` ```ts ` shows the label `ts`, not `typescript`; an unrecognized ` ```doesnotexist ` shows `doesnotexist`.
 
-- **CBLK-R-9** — An empty info string MUST produce no `data-language` attribute, hence no label (CSS `::before` resolves to empty). Indented code blocks never carry a label (they have no info string).
+- **CBLK-R-9** — An empty info string MUST produce no `data-language` attribute, hence no label (CSS `::before` resolves to empty).
   _Example:_ ` ```\nfoo\n``` ` → header line with no `data-language`, no corner label.
 
 - **CBLK-R-10** `[smoke]` — Inner code tokens surfaced by the `codeLanguages` `parseMixed` overlay on `CodeText` MUST receive their color from the bundled `plainmark_highlight_style`, which maps ~30 lezer tags into 12 classes (`plainmark-syntax-keyword`, `-comment`, `-string`, `-number`, `-function`, `-variable`, `-type`, `-property`, `-tag`, `-meta`, `-punctuation`, `-invalid`). Each class's color comes from the matching `--plainmark-syntax-<class>-color` variable with a light-palette hex inline fallback (the shared syntax-palette helper; THEME-V-5 / THEME-D-6), so tokens stay colored even if the `:root` defaults injection is absent.
   _Example:_ inside a ` ```js ` block, `const` colors as `var(--plainmark-syntax-keyword-color, #0000ff)` and `"x"` as `var(--plainmark-syntax-string-color, #a31515)`.
 
-- **CBLK-R-11** `[smoke]` — Syntax-color CSS rules MUST be scoped under `.plainmark-fenced-code` / `.plainmark-indented-code` parents, NOT applied globally. The global `HighlightStyle` also tags markdown's own `ListMark` / `CodeMark` with `tags.meta`; scoping prevents list bullets and fence ticks from being recolored.
+- **CBLK-R-11** `[smoke]` — Syntax-color CSS rules MUST be scoped under `.plainmark-fenced-code` parents, NOT applied globally. The global `HighlightStyle` also tags markdown's own `ListMark` / `CodeMark` with `tags.meta`; scoping prevents list bullets and fence ticks from being recolored.
   _Example:_ a `tags.meta`-tagged `ListMark` outside any code block stays unstyled; the same tag inside a fenced block colors as `--plainmark-syntax-meta-color`.
 
 - **CBLK-R-12** `[smoke]` — Syntax highlighting MUST be wired globally via `syntaxHighlighting(plainmark_highlight_style)`, with `markdown({ codeLanguages: match_code_language })` providing the per-language sub-parser: the `@codemirror/language-data` registry front-loaded with the CBLK-R-16 fence-tag alias layer. `defaultCodeLanguage` is left undefined, so untagged or unrecognized fences render as un-tokenized monospace.
@@ -96,7 +94,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-I-6** — Pressing Enter at the end of an unclosed opening-fence line (empty selection, caret at line end, 0–3 leading spaces, a run of ≥3 backticks or tildes, info string with no further fence char, and the `FencedCode` node holding a single `CodeMark`) MUST auto-append a blank line plus a closing fence copying the opener's fence char, length, and indent; the caret stays on the (now-empty) body line. The same command also auto-closes a `$$` math block.
   _Example:_ ` ```ts|` → Enter → ` ```ts\n|\n``` `.
 
-- **CBLK-I-7** — The Enter auto-close MUST NOT fire on a 4-space-indented fence-like line (the 0–3-space cap keeps it off indented code blocks) and MUST NOT fire when the block already has a matching closing `CodeMark` (`marks.length > 1`).
+- **CBLK-I-7** — The Enter auto-close MUST NOT fire on a 4-space-indented fence-like line (the 0–3-space cap keeps the affordance CommonMark-conservative: a 4-indent fence line is code text to conforming renderers even though the house grammar parses it as a live fence — CBLK-E-1) and MUST NOT fire when the block already has a matching closing `CodeMark` (`marks.length > 1`).
   _Example:_ ` ```ts\nfoo\n```| ` already closed → Enter inserts an ordinary newline, no extra fence.
 
 - **CBLK-I-8** — Backspace on the empty content line of a three-line fully-closed empty block (opener / blank / closer) MUST delete the whole block — opener and closer together — rather than orphaning the closing fence. The match requires the previous line to parse as an opening fence and the next line to be a closing fence of the same char and ≥ length.
@@ -114,13 +112,13 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-I-12** — The CBLK-I-11 auto-pair MUST be suppressed when the immediate next line is already a matching closing fence (same fence char, run length ≥ the opener's); the keystroke then inserts the lone fence char with no closer, so adding a fence above existing code does not orphan a duplicate. Only the immediate next line is consulted — a closer further down does not suppress (the accepted heuristic boundary; the wider case is the papercut Obsidian itself ships).
   _Example:_ ` ``|\n``` ` → type ``` ` ``` → ` ```|\n``` ` (no second closer). ` ``|\n~~~ ` → type ``` ` ``` → still fires (different fence char).
 
-- **CBLK-I-13** — Inside a `FencedCode` node, Tab MUST indent by four spaces and Shift-Tab MUST strip up to four leading spaces, independent of the editor's 2-space `indentUnit` (LIST-I-11). With an empty selection Tab inserts four spaces at the caret — not the line start — and advances the caret past them; with a selection Tab prepends four spaces to each selected line and Shift-Tab removes up to four leading spaces from each. This is the sole code-block exception to CBLK-I-9. Outside a fenced code block, or for a multi-range selection, Tab/Shift-Tab fall through to the editor-wide whole-line indent (`indentWithTab` → `indentMore`/`indentLess`). Indented (non-fenced) code blocks are unaffected.
+- **CBLK-I-13** — Inside a `FencedCode` node, Tab MUST indent by four spaces and Shift-Tab MUST strip up to four leading spaces, independent of the editor's 2-space `indentUnit` (LIST-I-11). With an empty selection Tab inserts four spaces at the caret — not the line start — and advances the caret past them; with a selection Tab prepends four spaces to each selected line and Shift-Tab removes up to four leading spaces from each. This is the sole code-block exception to CBLK-I-9. Outside a fenced code block, or for a multi-range selection, Tab/Shift-Tab fall through to the editor-wide whole-line indent (`indentWithTab` → `indentMore`/`indentLess`).
   _Example:_ caret at `let x|=1` inside a code fence → Tab → `let x    |=1` (four spaces at the caret, not the line start).
 
 - **CBLK-I-14** — Inside a `FencedCode` node, Backspace with a collapsed caret MUST delete exactly one character (`deleteCharBackwardStrict`), never a whole indent unit. CM6's default `deleteCharBackward` deletes back to the previous `indentUnit` tab stop when the caret is in leading whitespace, which after the four-space code indent (CBLK-I-13) strips two spaces per press; the strict delete keeps code backspacing predictable. The empty-block delete (CBLK-I-8) still takes precedence on a truly empty block body; elsewhere Backspace keeps the editor default.
   _Example:_ four-space indent inside a code fence, caret after the spaces → Backspace → three spaces (one removed, not a 2-space indent unit).
 
-- **CBLK-I-15** — A fence-tag autocomplete affordance MUST be wired (`codeblock_completions`, registered in the single `autocompletion({ override: [...] })` call in the editor's extension wiring). It MUST trigger when the text before the caret matches an opening fence — optional blockquote markers, 0–3 spaces of indent, a run of ≥3 backticks or tildes — followed by a partial first-word tag with the caret at its end, and MUST stay silent on auto-trigger while the tag is empty: a bare fence pops no list, so Enter stays a plain newline into the CBLK-I-11 pair instead of accepting a spurious language (explicit invoke still offers the full list). `from` MUST be the tag start, replacing the typed prefix. A second info-string word, a sub-3 fence run, or 4+ spaces of indent (an indented code block) MUST NOT trigger.
+- **CBLK-I-15** — A fence-tag autocomplete affordance MUST be wired (`codeblock_completions`, registered in the single `autocompletion({ override: [...] })` call in the editor's extension wiring). It MUST trigger when the text before the caret matches an opening fence — optional blockquote markers, 0–3 spaces of indent, a run of ≥3 backticks or tildes — followed by a partial first-word tag with the caret at its end, and MUST stay silent on auto-trigger while the tag is empty: a bare fence pops no list, so Enter stays a plain newline into the CBLK-I-11 pair instead of accepting a spurious language (explicit invoke still offers the full list). `from` MUST be the tag start, replacing the typed prefix. A second info-string word, a sub-3 fence run, or 4+ spaces of indent (past the CommonMark fence bound) MUST NOT trigger.
   _Example:_ ` ```p| ` → list filtered to python / perl / php / …; ` ```| ` → nothing on typing, full list on Ctrl-Space; ` ```python foo| ` → no completions.
 
 - **CBLK-I-16** — The suggestion list MUST be derived from the registries the CBLK-R-12/R-16 matcher resolves — every stock `@codemirror/language-data` name and alias plus every surviving CBLK-R-16 alias-layer tag, lower-cased and deduplicated, plus `mermaid` for the CBLK-E-3 diagram widget — never a separately curated list. Each option MUST be labeled with the fence tag and detailed with the canonical language name. Fuzzy filtering MUST stay enabled (no `filter: false`).
@@ -145,8 +143,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 ## E · Edge cases
 
-- **CBLK-E-1** — Indented code blocks MUST be styled identically to fenced (CommonMark conformance; matches Obsidian), minus the language-label affordance. The known papercut — 4 leading spaces inside a list silently becoming a `CodeBlock` — is acknowledged; an opt-out setting is deferred.
-  _Example:_ `paragraph\n\n    const x = 1;` → the indented line renders with `.plainmark-indented-code` chrome.
+- **CBLK-E-1** `[smoke]` — Indented (4-space / tab) code blocks are REMOVED from the Plainmark dialect: the grammar drops the `IndentedCode` block parser, so no `CodeBlock` node is ever produced and a ≥4-indent line carries no code chrome. Behind a blank line such a line parses as whatever its content starts — a list item, quote, heading, fence, horizontal rule, or plain paragraph; under an open paragraph it still lazily continues it (the BQ-E-12 absorption carve-out is unchanged). Rationale: the construct is authoring-dead in modern editors (Typora renders fenced only), and it silently turned a 4-space continuation line inside a list into a code block. Conforming CommonMark renderers still parse indented code, so such content renders as code there and as prose or live constructs here — an accepted divergence; in exchange, the seam-conversion commands never add, remove, or collapse a blank line adjacent to a ≥4-indent line, so a Plainmark edit cannot change what those renderers show (PARA-I-5 / PARA-I-6 / PARA-I-7).
+  _Example:_ `paragraph\n\n    const x = 1;` → the indented line renders as plain prose, no code chrome; `- a\n\n    b` keeps `b` as list-item prose, not code.
 
 - **CBLK-E-2** — A `~~~`-fenced block MUST be handled identically to a ` ``` `-fenced block (lezer emits `FencedCode` for both); the Enter auto-close copies whichever fence char (`` ` `` or `~`) the opener used.
   _Example:_ `~~~py|` → Enter → `~~~py\n|\n~~~` (tilde fence preserved, not converted to backticks).
