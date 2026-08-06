@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.0] - 2026-08-06
+
+### Changed
+
+- **Indented code blocks no longer render as code** — a line indented 4+ spaces or a tab (with no triple backticks) used to display as a code block; it now displays as plain text, exactly as typed. Other Markdown tools such as GitHub still treat that text as code, so a document using this style may look different here than it does elsewhere — use fenced (triple-backtick) code blocks to keep the same look everywhere.
+
 ## [1.10.0] - 2026-08-06
 
 ### Added
