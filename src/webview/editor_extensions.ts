@@ -2,7 +2,6 @@ import { autocompletion } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab, redo } from '@codemirror/commands';
 import { indentUnit, syntaxHighlighting } from '@codemirror/language';
 import { insertNewlineContinueMarkupCommand, markdown } from '@codemirror/lang-markdown';
-import { GFM } from '@lezer/markdown';
 import { type Extension, Prec } from '@codemirror/state';
 import { EditorView, drawSelection, keymap } from '@codemirror/view';
 import { search, searchKeymap } from '@codemirror/search';
@@ -43,7 +42,6 @@ import {
   footnote_theme,
 } from './decorations/footnote.js';
 import { footnote_popover_extension } from './decorations/footnote_popover.js';
-import { Footnote as footnote_grammar_extension } from './decorations/footnote_parser.js';
 import { frontmatter_extension } from './decorations/frontmatter.js';
 import { headings_extension } from './decorations/headings.js';
 import { horizontal_rule_extension } from './decorations/horizontal_rule.js';
@@ -66,9 +64,7 @@ import { selection_wrap_extension } from './decorations/selection_wrap.js';
 import { spacing_extension } from './decorations/spacing.js';
 import { text_styles_extension } from './decorations/text_styles.js';
 import { triple_click_select_line } from './decorations/triple_click_line.js';
-import { frontmatter_extension as frontmatter_grammar_extension } from './grammar/frontmatter.js';
-import { math_extension as math_grammar_extension } from './grammar/math.js';
-import { quote_exit_extension } from './grammar/quote_exit.js';
+import { markdown_grammar_extensions } from './grammar/markdown_config.js';
 import { image_extension } from './widgets/image.js';
 import { accept_latex_completion_on_tab, latex_completions } from './widgets/latex_autocomplete.js';
 import { math_extension } from './widgets/math.js';
@@ -264,13 +260,7 @@ const editor_extensions_core: Extension[] = [
   ),
   markdown({
     codeLanguages: match_code_language,
-    extensions: [
-      GFM,
-      math_grammar_extension,
-      footnote_grammar_extension,
-      frontmatter_grammar_extension,
-      quote_exit_extension,
-    ],
+    extensions: markdown_grammar_extensions,
   }),
   syntaxHighlighting(plainmark_highlight_style),
   image_extension,

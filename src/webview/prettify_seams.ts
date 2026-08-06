@@ -24,6 +24,11 @@ const LIST_INTERRUPTS = /^ {0,3}([-+*]|1[.)])[ \t]+\S/;
 // A bare `=`/`-` run directly under paragraph text is a setext underline.
 const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
 
+// A ≥4-indent line is still indented code to CommonMark renderers even though
+// the house grammar no longer parses one; changing blanks beside such a line
+// could change that render, so the seam's bytes stay put.
+const INDENT_LED = /^( {4,}|\t)/;
+
 // Seams touching these are never converted, so they carry no configurable kind.
 type Kind = SeamKind | 'setext' | 'opaque';
 
@@ -34,7 +39,6 @@ const KIND_BY_NODE: Record<string, Kind> = {
   OrderedList: 'list',
   Blockquote: 'quote',
   FencedCode: 'code',
-  CodeBlock: 'indentedCode',
   Table: 'table',
   BlockMath: 'math',
   HorizontalRule: 'rule',
@@ -53,7 +57,6 @@ const KIND_BY_NODE: Record<string, Kind> = {
 const CLOSED_BY_BLANK: ReadonlySet<Kind> = new Set([
   'list',
   'quote',
-  'indentedCode',
   'table',
   'html',
   'definition',
@@ -94,7 +97,6 @@ function top_level_blocks(state: EditorState): Block[] | null {
 function can_interrupt_paragraph(block: Block, state: EditorState): boolean {
   const first_line = state.doc.line(block.first).text;
   switch (block.kind) {
-    case 'indentedCode':
     case 'table':
     case 'definition':
     case 'html':
@@ -167,6 +169,8 @@ export function prettify_seams_spec(
       }
     }
     if (!all_blank) continue;
+    if (INDENT_LED.test(doc.line(above.last).text) || INDENT_LED.test(doc.line(below.first).text))
+      continue;
     const want = desired_blanks(above, below, state, overrides);
     if (want === null || want === blanks) continue;
     if (want > blanks) {

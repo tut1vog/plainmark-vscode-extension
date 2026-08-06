@@ -1,27 +1,19 @@
 import { markdown } from '@codemirror/lang-markdown';
 import { ensureSyntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
-import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import {
   resolve_prettify_seams,
   SEAM_KINDS,
   type SeamKind,
 } from '../common/prettify_seams_config.js';
-import { Footnote } from './decorations/footnote_parser.js';
-import { frontmatter_extension } from './grammar/frontmatter.js';
-import { math_extension } from './grammar/math.js';
-import { quote_exit_extension } from './grammar/quote_exit.js';
+import { markdown_grammar_extensions } from './grammar/markdown_config.js';
 import { prettify_seams_spec } from './prettify_seams.js';
 
 function make_state(doc: string): EditorState {
   return EditorState.create({
     doc,
-    extensions: [
-      markdown({
-        extensions: [GFM, math_extension, Footnote, frontmatter_extension, quote_exit_extension],
-      }),
-    ],
+    extensions: [markdown({ extensions: markdown_grammar_extensions })],
   });
 }
 
@@ -109,6 +101,24 @@ describe('PARA-I-7 prettify_seams_spec', () => {
     });
   });
 
+  describe('indent-adjacent seams stay byte-frozen', () => {
+    it('never collapses the blank run beside a ≥4-indent edge line', () => {
+      expect(prettify('    code\n\n\npara\n')).toBeNull();
+      expect(prettify('\tcode\n\n\npara\n')).toBeNull();
+      expect(prettify('para\n\n\n    code\n')).toBeNull();
+    });
+
+    it('keeps a blank that is interior to an indented run on other renderers', () => {
+      expect(prettify('    a\n\n    b\n')).toBeNull();
+      expect(prettify('    a\n\n\n    b\n')).toBeNull();
+    });
+
+    it('an override cannot thaw an indent-adjacent seam', () => {
+      expect(prettify('    code\n\n\npara\n', { '*>*': 0 })).toBeNull();
+      expect(prettify('para\n\n    code\n', { '*>*': 0 })).toBeNull();
+    });
+  });
+
   describe('blocks with an explicit closer', () => {
     it('closes the seam below a fence or math block', () => {
       expect(prettify('```\nx\n```\n\npara\n')).toBe('```\nx\n```\npara\n');
@@ -189,21 +199,15 @@ describe('PARA-I-7 prettify_seams_spec', () => {
       list: '- item one\n- item two',
       quote: '> quoted line',
       code: '```js\ncode();\n```',
-      indentedCode: '    code();',
       table: '| a | b |\n| - | - |\n| 1 | 2 |',
       math: '$$\nx^2\n$$',
       rule: '***',
       html: '<div>html</div>',
       definition: '[^1]: note body',
     };
-    // No two-top-level-block form exists: a 4-space-indented block below a list
-    // is that list's own continuation, and two same-shaped blocks around a blank
-    // are one block with the blank inside it.
-    const UNREPRESENTABLE = new Set([
-      'list>indentedCode',
-      'list>list',
-      'indentedCode>indentedCode',
-    ]);
+    // No two-top-level-block form exists: two lists around a blank are one
+    // loose list with the blank inside it.
+    const UNREPRESENTABLE = new Set(['list>list']);
     // The one seam whose whole purpose is to merge: PARA-E-5's house model shows
     // the single-newline break that CommonMark folds away.
     const MERGES_BY_DESIGN = new Set(['paragraph>paragraph']);

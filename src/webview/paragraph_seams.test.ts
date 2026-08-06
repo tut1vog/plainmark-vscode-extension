@@ -1,23 +1,13 @@
 import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
-import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
-import { Footnote } from './decorations/footnote_parser.js';
-import { frontmatter_extension } from './grammar/frontmatter.js';
-import { math_extension } from './grammar/math.js';
-import { quote_exit_extension } from './grammar/quote_exit.js';
+import { markdown_grammar_extensions } from './grammar/markdown_config.js';
 import { compact_paragraph_seams_spec, expand_paragraph_seams_spec } from './paragraph_seams.js';
 
 function run(spec_fn: typeof expand_paragraph_seams_spec, doc: string): string | null {
   const state = EditorState.create({
     doc,
-    extensions: [
-      // Mirrors the editor's grammar list (editor_extensions.ts) — a reduced
-      // grammar reclassifies seams (a `$$` block would split as a paragraph).
-      markdown({
-        extensions: [GFM, math_extension, Footnote, frontmatter_extension, quote_exit_extension],
-      }),
-    ],
+    extensions: [markdown({ extensions: markdown_grammar_extensions })],
   });
   const spec = spec_fn(state);
   if (!spec) return null;

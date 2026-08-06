@@ -11,7 +11,6 @@ export const SEAM_KINDS = [
   'list',
   'quote',
   'code',
-  'indentedCode',
   'table',
   'math',
   'rule',
