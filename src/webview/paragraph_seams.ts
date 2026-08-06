@@ -18,6 +18,11 @@ const PARSE_BUDGET_MS = 1000;
 // renderers see.
 const REPARSE_TRAP = /^ {0,3}(\d{1,9}[.)][ \t]|<|\|)|^( {4,}|\t)/;
 
+// A ≥4-indent line is still indented code to CommonMark renderers even though
+// the house grammar no longer parses one: a paragraph STARTING indent-led is a
+// code block there, so its lines never join and its guarding blanks stay put.
+const INDENT_LED = /^( {4,}|\t)/;
+
 // A paragraph consisting of `=`/`-` runs becomes a setext heading when the
 // blank line separating it from the paragraph above is removed.
 const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
@@ -230,6 +235,7 @@ export function compact_paragraph_seams_spec(state: EditorState): TransactionSpe
   const changes: ChangeSpec[] = [];
   for (const span of spans) {
     if (span.kind !== 'para') continue;
+    if (INDENT_LED.test(doc.line(span.first).text)) continue;
     for (let n = span.first; n < span.last; n++) {
       const line = doc.line(n);
       const next = doc.line(n + 1);
@@ -260,6 +266,10 @@ export function compact_paragraph_seams_spec(state: EditorState): TransactionSpe
     if (!all_blank) continue;
     const a = spans[i].kind;
     const b = spans[i + 1].kind;
+    // Indented code on other renderers: below, the blank is what makes the
+    // region code at all; above, the region's bytes stay untouched wholesale.
+    if (INDENT_LED.test(next_first.text)) continue;
+    if (a === 'para' && INDENT_LED.test(doc.line(spans[i].first).text)) continue;
     // A paragraph directly after a list lazily continues its last item —
     // that blank is semantic and never removable.
     if (b === 'para' && a === 'list') continue;

@@ -41,6 +41,19 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand('a\n| row |\n')).toBeNull();
   });
 
+  it('the indent trap guards the line below the blank, never the region above it', () => {
+    // The house grammar no longer parses indented code, but other renderers
+    // do: a blank ABOVE `    code` would materialize a code block there, so
+    // that seam never splits; a blank BELOW the region ends the code block on
+    // those renderers whether or not it exists, so that seam may split.
+    expect(expand('para\n\n    code\nnext\n')).toBe('para\n\n    code\n\nnext\n');
+    expect(expand('a\nb\n    absorbed\nc\n')).toBe('a\n\nb\n    absorbed\n\nc\n');
+  });
+
+  it('a nested quote’s indent-led follow line is absorbed, never a seam to split', () => {
+    expect(expand('> > a\n>     b\n')).toBeNull();
+  });
+
   it('never splits list interiors or lazy continuations inside containers', () => {
     expect(expand('- a\n  b\n')).toBeNull();
     expect(expand('- a\nlazy\n')).toBeNull();
@@ -224,6 +237,22 @@ describe('PARA-I-6 compact_paragraph_seams_spec', () => {
   it('never merges a paragraph into a setext heading', () => {
     expect(compact('a\n\ntitle\n===\n')).toBeNull();
     expect(compact('# h\n\ntitle\n===\n')).toBeNull();
+  });
+
+  it('freezes bytes around indent-led regions (indented code on other renderers)', () => {
+    // The house grammar parses these as paragraphs; CommonMark renderers
+    // parse them as indented code. Removing the guarding blank would dissolve
+    // the code block there; joining the region's lines would rewrite its code.
+    expect(compact('para\n\n    code\n')).toBeNull();
+    expect(compact('para\n\n\tcode\n')).toBeNull();
+    expect(compact('    a\n    b\n\npara\n')).toBeNull();
+    expect(compact('para\n\n    a\n    b\n')).toBeNull();
+  });
+
+  it('still joins an absorbed indent continuation of a prose paragraph', () => {
+    // `    b` after an open paragraph line is prose on every renderer (lazy
+    // continuation), so the join is byte-safe there.
+    expect(compact('a\n    b\n\nc\n')).toBe('a b\nc\n');
   });
 
   it('round-trips an AI-shaped document with headings, prose, and lists', () => {
