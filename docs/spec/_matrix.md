@@ -354,7 +354,7 @@
 | FM-R-9 | UNCOVERED | conforming | — |
 | FM-SP-1 | tier-a + tier-b + inherited | conforming | — |
 | FM-SP-2 | tier-a + tier-b + inherited | conforming | — |
-| FM-SP-3 | tier-a + inherited | conforming | — |
+| FM-SP-3 | tier-a + tier-b + inherited | conforming | — |
 | FM-SP-4 | tier-a + tier-b + inherited | conforming | — |
 
 ## `docs/spec/headings.md`
@@ -508,7 +508,7 @@
 | INV-SP-1 | tier-a + tier-b | conforming | `no-edit-cycle.test.ts`, `lone-cr-eol.test.ts`, `table-edit-cycle.test.ts`, `paste-flow.spec.ts`, `source-preservation-fuzz.spec.ts`, `math-in-quote.spec.ts` |
 | INV-SP-2 | tier-a + tier-b | conforming | `table-edit-cycle.test.ts`, `source-preservation-fuzz.spec.ts` |
 | INV-SP-3 | tier-a + tier-b + smoke | conforming | `full_replace.test.ts`, `host-write-path.test.ts` |
-| INV-SP-4 | tier-a | conforming | `full_replace.test.ts`, `no-edit-cycle.test.ts`, `lone-cr-eol.test.ts` |
+| INV-SP-4 | tier-a + tier-b | conforming | `full_replace.test.ts`, `malformed.test.ts`, `no-edit-cycle.test.ts`, `lone-cr-eol.test.ts`, `malformed.spec.ts` |
 | INV-UNDO-1 | tier-b | conforming | `table_keymap.spec.ts` |
 | INV-UNDO-2 | tier-b | conforming | `host-smoke.test.ts` |
 
@@ -792,7 +792,7 @@
 | SYNC-P-2 | tier-b + smoke | conforming | `host-smoke.test.ts`, `host-write-path.test.ts` |
 | SYNC-P-3 | UNCOVERED | conforming | — |
 | SYNC-P-4 | smoke + accepted | accepted | — |
-| SYNC-P-5 | tier-a + smoke + inherited | conforming | — |
+| SYNC-P-5 | tier-a + tier-b + smoke + inherited | conforming | — |
 | SYNC-P-6 | tier-a + tier-b + smoke + inherited | conforming | `full_replace.test.ts`, `host-write-path.test.ts` |
 | SYNC-P-7 | tier-a + build + inherited | conforming | — |
 | SYNC-P-8 | UNCOVERED | conforming | — |
