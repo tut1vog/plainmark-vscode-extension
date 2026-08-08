@@ -330,6 +330,6 @@
     "@lezer/markdown": "1.6.3",
     "@mathjax/mathjax-newcm-font": "4.1.2",
     "@mathjax/src": "4.1.2",
-    "mermaid": "11.15.0"
+    "mermaid": "11.16.1"
   }
 }
