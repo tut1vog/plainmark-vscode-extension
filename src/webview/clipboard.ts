@@ -43,11 +43,14 @@ export async function copy_selection(view: EditorView): Promise<boolean> {
 }
 
 export async function cut_selection(view: EditorView): Promise<boolean> {
+  const pre_state = view.state;
   const written = await copy_selection(view);
   // Never delete what didn't reach the clipboard.
   if (!written) return false;
+  // A dispatch during the async write (e.g. a host sync) remaps the selection — deleting then destroys uncopied text.
+  if (view.state !== pre_state) return false;
   view.dispatch({
-    changes: view.state.selection.ranges
+    changes: pre_state.selection.ranges
       .filter((r) => !r.empty)
       .map((r) => ({ from: r.from, to: r.to })),
     annotations: [Transaction.userEvent.of('delete.cut')],
