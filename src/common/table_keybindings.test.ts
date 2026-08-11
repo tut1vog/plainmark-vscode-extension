@@ -94,12 +94,34 @@ describe('TBL-I-30: table keybinding resolution and validation', () => {
     expect(resolved.delete_column).toBeNull();
   });
 
-  it('unbinds the later action on a duplicate, by canonical order', () => {
-    // align_left (later) collides with insert_row_above's default (earlier).
+  it('an explicit binding wins a default combo; the default holder is unbound with a warning', () => {
+    // align_left explicitly takes insert_row_above's default combo.
     const { resolved, warnings } = resolve_table_keybindings({ align_left: 'Alt-Shift-ArrowUp' });
-    expect(resolved.insert_row_above).toBe('Alt-Shift-ArrowUp');
-    expect(resolved.align_left).toBeNull();
+    expect(resolved.align_left).toBe('Alt-Shift-ArrowUp');
+    expect(resolved.insert_row_above).toBeNull();
+    expect(warnings.some((w) => w.includes('reassigned'))).toBe(true);
+  });
+
+  it('a duplicate between two explicit entries keeps the earlier canonical action and the later default', () => {
+    const { resolved, warnings } = resolve_table_keybindings({
+      insert_row_above: 'Mod-Shift-k',
+      delete_row: 'Mod-Shift-k',
+    });
+    expect(resolved.insert_row_above).toBe('Mod-Shift-k');
+    // The rejected entry behaves like any other invalid value: default kept.
+    expect(resolved.delete_row).toBe('Mod-Shift-Backspace');
     expect(warnings.some((w) => w.includes('already bound'))).toBe(true);
+  });
+
+  it('a restored default that another explicit entry claims stays unbound', () => {
+    const { resolved } = resolve_table_keybindings({
+      insert_row_above: 'Mod-Shift-k',
+      delete_row: 'Mod-Shift-k',
+      swap_row_up: 'Mod-Shift-Backspace',
+    });
+    expect(resolved.insert_row_above).toBe('Mod-Shift-k');
+    expect(resolved.swap_row_up).toBe('Mod-Shift-Backspace');
+    expect(resolved.delete_row).toBeNull();
   });
 
   it('lets a reassigned key free up its slot for another action', () => {

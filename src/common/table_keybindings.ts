@@ -105,6 +105,9 @@ export interface TableKeybindingResolution {
 export function resolve_table_keybindings(raw: unknown): TableKeybindingResolution {
   const resolved: ResolvedTableKeybindings = { ...TABLE_KEYBINDING_DEFAULTS };
   const warnings: string[] = [];
+  // Actions whose binding came from an accepted user entry — user assignments
+  // outrank defaults when combos collide.
+  const explicit = new Set<TableActionId>();
 
   if (raw !== undefined && raw !== null) {
     if (typeof raw !== 'object' || Array.isArray(raw)) {
@@ -145,13 +148,36 @@ export function resolve_table_keybindings(raw: unknown): TableKeybindingResoluti
         continue;
       }
       resolved[action] = value;
+      explicit.add(action);
     }
   }
 
-  // Deduplicate in canonical action order — the first claimant keeps the key,
-  // later collisions are unbound.
+  // Deduplicate. User entries first, in canonical action order: the earlier
+  // action keeps the combo, a later duplicate entry is ignored like any other
+  // rejected value — its default is restored and re-checked below.
   const claimed = new Map<string, TableActionId>();
   for (const action of TABLE_ACTION_IDS) {
+    if (!explicit.has(action)) continue;
+    const key = resolved[action];
+    if (key === null) continue;
+    const parsed = parse_combo(key);
+    if (!parsed) continue;
+    const normalized = normalize_combo(parsed);
+    const owner = claimed.get(normalized);
+    if (owner === undefined) {
+      claimed.set(normalized, action);
+    } else {
+      resolved[action] = TABLE_KEYBINDING_DEFAULTS[action];
+      explicit.delete(action);
+      warnings.push(
+        `plainmark.tableKeybindings.${action}: "${key}" already bound to "${owner}" — kept default.`,
+      );
+    }
+  }
+  // Then default-sourced bindings: a default whose combo a user entry claimed
+  // is unbound — the user reassigned that combo away from it.
+  for (const action of TABLE_ACTION_IDS) {
+    if (explicit.has(action)) continue;
     const key = resolved[action];
     if (key === null) continue;
     const parsed = parse_combo(key);
@@ -163,7 +189,7 @@ export function resolve_table_keybindings(raw: unknown): TableKeybindingResoluti
     } else {
       resolved[action] = null;
       warnings.push(
-        `plainmark.tableKeybindings.${action}: "${key}" already bound to "${owner}" — unbound.`,
+        `plainmark.tableKeybindings: default "${key}" of "${action}" is reassigned to "${owner}" — "${action}" is now unbound.`,
       );
     }
   }
