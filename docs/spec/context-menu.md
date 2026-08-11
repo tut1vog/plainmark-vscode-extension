@@ -40,8 +40,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
   _Example:_ `a\n|\nb` → Bulleted List → `a\n- |\nb`.
 - **CTX-I-9** — Numbered List MUST number touched lines sequentially from 1, skipping blank lines without resetting.
   _Example:_ `one\ntwo\n\nthree` (all selected) → Numbered List → `1. one\n2. two\n\n3. three`.
-- **CTX-I-10** — Insert items MUST insert their block on its own line(s) at the caret — a mid-line caret pushes the block to a fresh line, a mid-line split gets a trailing newline — and place the caret for immediate typing: Code Block and Math Block between the delimiters, Horizontal Rule on the line below the rule. Table and Footnote reuse their existing insert commands.
-  _Example:_ `hello|` → Code Block → ```` hello\n```\n|\n``` ````.
+- **CTX-I-10** — Insert items MUST insert their block on its own line(s) at the caret — a mid-line caret pushes the block to a fresh line, a mid-line split gets a trailing newline — and place the caret for immediate typing: Code Block and Math Block between the delimiters, Horizontal Rule on the line below the rule. Horizontal Rule MUST additionally guarantee a blank line above the `---`: directly under a non-blank line it would parse as that line's setext H2 underline, not a rule. Table and Footnote reuse their existing insert commands.
+  _Example:_ `hello|` → Code Block → ```` hello\n```\n|\n``` ````; `hello|` → Horizontal Rule → `hello\n\n---\n|`.
 
 ## SP — source preservation
 
