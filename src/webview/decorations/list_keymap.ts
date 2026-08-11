@@ -3,7 +3,10 @@ import type { EditorState } from '@codemirror/state';
 import { type ChangeSpec, Transaction } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 
-const EMPTY_BULLET_LINE_RE = /^[ \t]*[-*+][ \t]*$/;
+// Checkbox form kept in lockstep with marker_aware_backspace's
+// MARKER_PREFIX_RE — an empty `- [ ] ` must take the same two-stage exit as
+// an empty `- `.
+const EMPTY_BULLET_LINE_RE = /^[ \t]*[-*+](?: {1,4}\[[ xX]\])?[ \t]*$/;
 const INDENT_ONLY_LINE_RE = /^[ \t]+$/;
 
 // A quoted list line, split at the two positions Tab/Shift-Tab care about:

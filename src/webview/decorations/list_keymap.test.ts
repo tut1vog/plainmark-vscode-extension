@@ -91,6 +91,29 @@ describe('list_empty_bullet_backspace LIST-I-8 LIST-I-9 LIST-SP-2 LIST-SP-3', ()
     expect(applied).toHaveLength(0);
   });
 
+  it('(f2) removes the marker from an empty task item `- [ ] ` (checkbox is part of the marker)', () => {
+    // Enter-continuation leaves '- [ ] ' on the new line; Backspace must take
+    // the same two-stage exit as an empty '- ' (parity with MARKER_PREFIX_RE).
+    const { view, applied, doc, head } = make_view('- [ ] a\n- [ ] ', 14);
+    expect(list_empty_bullet_backspace(view)).toBe(true);
+    expect(applied).toHaveLength(1);
+    expect(doc()).toBe('- [ ] a\n');
+    expect(head()).toBe(8);
+  });
+
+  it('(f3) removes the marker from an empty nested checked task, keeping the indentation', () => {
+    const { view, doc, head } = make_view('- [ ] a\n  - [x] ', 16);
+    expect(list_empty_bullet_backspace(view)).toBe(true);
+    expect(doc()).toBe('- [ ] a\n  ');
+    expect(head()).toBe(10);
+  });
+
+  it('(f4) returns false on a task item with content after the checkbox', () => {
+    const { view, applied } = make_view('- [ ] a', 7);
+    expect(list_empty_bullet_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
   it('(g) returns false on a plain blank line', () => {
     const { view, applied } = make_view('hello\n', 6);
     expect(list_empty_bullet_backspace(view)).toBe(false);
