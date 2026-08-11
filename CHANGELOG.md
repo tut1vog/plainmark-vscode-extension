@@ -2,6 +2,30 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.2] - 2026-08-11
+
+### Changed
+
+- **Arrow-key navigation through tables is much faster** — entering a table and moving row to row activates the cell immediately instead of several frames later, and the cost no longer grows with document size.
+- **Table shortcut conflicts now resolve in your favor** — a duplicated assignment keeps the affected action's default binding instead of unbinding it, and assigning a combo that another action holds by default moves the combo to your choice (the other action is unbound, with a warning).
+- **Inserted tables keep their distance from the text below** — pasting or inserting a table directly above a line of text adds a blank separator, so that line stays a paragraph instead of being absorbed as a table row.
+
+### Fixed
+
+- **Smoother typing and caret movement on busy documents** — inline styling now makes one pass per keystroke instead of ten.
+- **An outside edit near a table can no longer be silently reverted** — a change arriving from another editor pane or from disk right after an undo used to be overwritten by the next keystroke inside a cell.
+- **Cut can no longer delete text that never reached the clipboard** — if the document changes in the instant before the clipboard write completes, the deletion is skipped.
+- **A failed image paste no longer blocks all later ones** — an invalid image-save-location setting now shows a warning each attempt instead of silently wedging image pasting until the window reloads.
+- **Pasting a table with uneven rows keeps all your data** — a copied table whose rows have differing cell counts pastes as plain text instead of silently dropping the extra cells.
+- **Tables with partially filled rows redraw reliably** — moving content between short rows could leave the table displaying cells in their old positions.
+- **Tab inside a code block can no longer break the block** — indenting or outdenting a selection that touches the opening or closing fence line leaves the fence lines in place.
+- **Insert → Horizontal Rule under a paragraph now draws a rule** — it previously turned the paragraph into a heading with no visible rule at all.
+- **The Paragraph menu leaves code alone** — applying a list or heading style to lines inside a code block or an indented code region no longer rewrites them.
+- **Mermaid diagrams no longer stick to the wrong color theme** — an unlucky sequence of theme switches while a diagram was being edited could cache the old palette for the rest of the session.
+- **Clicking rendered math in a table cell reveals it immediately** — the source now appears the moment you release the mouse instead of after the next keystroke.
+- **The outline always matches the active tab** — switching documents quickly could leave the previous file's headings in the outline panel.
+- **Backspace on an empty task item exits in one press** — an empty `- [ ]` line left by Enter sheds its whole marker, matching plain bullets, instead of turning into stray spaces.
+
 ## [1.11.1] - 2026-08-11
 
 ### Fixed
