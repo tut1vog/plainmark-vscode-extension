@@ -739,18 +739,19 @@ async function handle_paste_image(
     return;
   }
 
-  const template =
-    vscode.workspace
-      .getConfiguration('plainmark', document.uri)
-      .get<string>('imagePasteLocation') ?? '.';
-  const plan = plan_save_dir(template, document_base_name(document.uri.path));
-  const ws_folder = vscode.workspace.getWorkspaceFolder(document.uri)?.uri ?? null;
-  const base_uri = plan.base === 'workspace' ? (ws_folder ?? doc_dir) : doc_dir;
-  const save_dir = plan.relative
-    ? vscode.Uri.joinPath(base_uri, ...plan.relative.split('/'))
-    : base_uri;
-
+  // Every throwable step must reply from the catch — the webview awaits the reply with no timeout, so a missing reply wedges all later image pastes.
   try {
+    const template =
+      vscode.workspace
+        .getConfiguration('plainmark', document.uri)
+        .get<string>('imagePasteLocation') ?? '.';
+    const plan = plan_save_dir(template, document_base_name(document.uri.path));
+    const ws_folder = vscode.workspace.getWorkspaceFolder(document.uri)?.uri ?? null;
+    const base_uri = plan.base === 'workspace' ? (ws_folder ?? doc_dir) : doc_dir;
+    const save_dir = plan.relative
+      ? vscode.Uri.joinPath(base_uri, ...plan.relative.split('/'))
+      : base_uri;
+
     const bytes = decode_base64(msg.data);
     await vscode.workspace.fs.createDirectory(save_dir);
     const name = dedupe_file_name(image_file_name(new Date(), msg.mime), await read_dir_names(save_dir));
