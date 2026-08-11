@@ -305,20 +305,22 @@ export function find_tables(state: EditorState): TableInfo[] {
   return tables;
 }
 
-// Inherits find_tables' IL1 asymmetry: may resolve a cell in a widget-less nested table.
+// Inherits find_tables' IL1 asymmetry: may resolve a cell in a widget-less
+// nested table. Runs per cell activation — resolves the one table at
+// table_from instead of scanning every table in the document.
 export function lookup_cell_range(
   state: EditorState,
   table_from: number,
   row_index: number,
   col_index: number,
 ): { cell_from: number; cell_to: number } | null {
-  for (const t of find_tables(state)) {
-    if (t.from !== table_from) continue;
-    const c = t.cells.find((cc) => cc.row_index === row_index && cc.col_index === col_index);
-    if (!c) return null;
-    return { cell_from: c.cell_from, cell_to: c.cell_to };
-  }
-  return null;
+  const extraction = locate_table_extraction(state, table_from);
+  if (!extraction) return null;
+  const c = extraction.info.cells.find(
+    (cc) => cc.row_index === row_index && cc.col_index === col_index,
+  );
+  if (!c) return null;
+  return { cell_from: c.cell_from, cell_to: c.cell_to };
 }
 
 function alignment_signature(alignment: Alignment[]): string {
@@ -1062,12 +1064,18 @@ export function request_cell_focus(
 }
 
 // Like find_tables, skips the IL1 guard — may locate a widget-less nested table.
+// Bounded to the table's own offset: this sits on the per-keystroke and
+// per-hop paths (cell edits, nav guards, activation), where a from-doc-start
+// scan is O(document) each call. The bounded iterate visits only the ancestor
+// chain at table_from, so the descent rules reach the same node set.
 export function locate_table_extraction(
   state: EditorState,
   table_from: number,
 ): TableExtraction | null {
   let found: TableExtraction | null = null;
   syntaxTree(state).iterate({
+    from: table_from,
+    to: Math.min(table_from + 1, state.doc.length),
     enter(node) {
       if (found) return false;
       if (node.name === 'Document') return;
