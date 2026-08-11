@@ -1,6 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import type { ChangeDesc, EditorSelection, EditorState } from '@codemirror/state';
-import { frozen_reveal_selection_field } from './decorations/pointer_state.js';
+import { frozen_reveal_selection_field, pointer_down_field } from './decorations/pointer_state.js';
 import type { OffsetRange } from './ranges.js';
 
 // Shared region math for incremental block-widget StateFields: instead of a
@@ -105,6 +105,18 @@ export function reveal_regions(
   const new_ranges = effective(state).ranges;
   const out: OffsetRange[] = [];
   const map = (pos: number): number => (changes ? changes.mapPos(pos, 1) : pos);
+  // A pointer press/release toggles should_reveal_for_selection's hard
+  // suppression at an UNCHANGED effective selection (the subview seeding path
+  // latches pointer_down with no frozen selection), so the selection diff
+  // below sees nothing — rebuild every touched range outright.
+  const pointer_flip =
+    (start_state.field(pointer_down_field, false) ?? false) !==
+    (state.field(pointer_down_field, false) ?? false);
+  if (pointer_flip) {
+    for (const r of old_ranges) out.push(expand_region(state, map(r.from), map(r.to)));
+    for (const r of new_ranges) out.push(expand_region(state, r.from, r.to));
+    return out;
+  }
   if (old_ranges.length === new_ranges.length) {
     for (let i = 0; i < new_ranges.length; i++) {
       const o = old_ranges[i];

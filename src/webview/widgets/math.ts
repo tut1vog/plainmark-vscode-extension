@@ -24,7 +24,7 @@ import {
   type ViewUpdate,
   WidgetType,
 } from '@codemirror/view';
-import { frozen_reveal_selection_field } from '../decorations/pointer_state.js';
+import { frozen_reveal_selection_field, pointer_down_field } from '../decorations/pointer_state.js';
 import { should_reveal_for_selection } from '../decorations/selection_reveal.js';
 import { load_mathjax, mathjax_loadable } from './mathjax_loader.js';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
@@ -509,18 +509,22 @@ export const math_widgets_field = StateField.define<DecorationSet>({
         typeset_keys.push(math_cache_key(e.value.display, e.value.src));
       }
     }
-    // The press/release frozen-selection flip lands as effects only (no doc or
-    // selection change on release), so without this guard the on-release reveal
-    // would never rebuild. Mirrors inline_decorations.ts.
-    const frozen_changed =
+    // The press/release pointer-freeze flip lands as effects only (no doc or
+    // selection change on release) — without this, the on-release reveal never
+    // rebuilds. Mirrors mermaid.ts / inline_decorations.ts; pointer_down_field
+    // matters because should_reveal_for_selection suppresses reveal while the
+    // pointer is down, so the release alone must trigger the rebuild.
+    const reveal_gate_changed =
       tr.startState.field(frozen_reveal_selection_field, false) !==
-      tr.state.field(frozen_reveal_selection_field, false);
+        tr.state.field(frozen_reveal_selection_field, false) ||
+      (tr.startState.field(pointer_down_field, false) ?? false) !==
+        (tr.state.field(pointer_down_field, false) ?? false);
     const tree_changed = syntaxTree(tr.startState) !== syntaxTree(tr.state);
     if (
       !tr.docChanged &&
       !tr.selection &&
       typeset_keys.length === 0 &&
-      !frozen_changed &&
+      !reveal_gate_changed &&
       !tree_changed
     ) {
       return value;
@@ -535,7 +539,7 @@ export const math_widgets_field = StateField.define<DecorationSet>({
         regions.push(pair.new_region);
       }
     }
-    if (tr.selection || frozen_changed || tr.docChanged) {
+    if (tr.selection || reveal_gate_changed || tr.docChanged) {
       regions.push(
         ...reveal_regions(tr.startState, tr.state, tr.docChanged ? tr.changes : null),
       );

@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { math_extension as math_grammar_extension } from '../grammar/math.js';
 import {
   frozen_reveal_selection_field,
+  pointer_down_field,
   set_frozen_reveal_selection,
+  set_pointer_down,
 } from '../decorations/pointer_state.js';
 import {
   MathBlockPreviewWidget,
@@ -557,5 +559,33 @@ describe('math_widgets_field — pointer-down reveal freeze MATH-I-9', () => {
     let state = make_gated_state(DOC, DOC.length);
     state = state.update({ selection: { anchor: DOC.length, head: 0 } }).state;
     expect(decorations(state).some((d) => d.block)).toBe(false);
+  });
+
+  it('a pointer_down-only flip rebuilds: suppression on press, reveal on release (MRS-P-1)', () => {
+    // Subview seeding path: pointer_down latches with NO frozen selection, so
+    // should_reveal_for_selection hard-suppresses; both flips arrive as
+    // effects-only transactions and must not be swallowed by the no-op gate.
+    const doc = 'a $x+y$ b';
+    let state = EditorState.create({
+      doc,
+      extensions: [
+        markdown({ extensions: [GFM, math_grammar_extension] }),
+        math_cache_field,
+        frozen_reveal_selection_field,
+        pointer_down_field,
+        math_widgets_field,
+      ],
+      selection: { anchor: 4 },
+    });
+    // Caret inside $x+y$: revealed, no inline widget.
+    expect(decorations(state)).toHaveLength(0);
+
+    state = state.update({ effects: set_pointer_down.of(true) }).state;
+    expect(decorations(state)).toHaveLength(1);
+
+    state = state.update({
+      effects: [set_pointer_down.of(false), set_frozen_reveal_selection.of(null)],
+    }).state;
+    expect(decorations(state)).toHaveLength(0);
   });
 });
