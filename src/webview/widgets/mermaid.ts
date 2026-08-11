@@ -146,6 +146,18 @@ function configure_mermaid_theme(mermaid: MermaidApi, is_dark: boolean): void {
   });
 }
 
+// mermaid.initialize() is a global singleton shared by the render plugin and
+// every block preview — one shared tracker, or one actor's switch lets the
+// other skip reconfiguration and cache a wrong-palette SVG under the correct
+// theme key (mermaid_cache_field only ever adds entries).
+let configured_theme: string | null = null;
+
+function ensure_mermaid_theme(mermaid: MermaidApi, theme: string): void {
+  if (configured_theme === theme) return;
+  configure_mermaid_theme(mermaid, theme === 'dark');
+  configured_theme = theme;
+}
+
 export function mermaid_cache_key(theme: string, src: string): string {
   return `${theme}:${src}`;
 }
@@ -250,7 +262,6 @@ interface PreviewRenderState {
   timer: ReturnType<typeof setTimeout> | null;
   generation: number;
   last_good_svg: string | null;
-  configured_theme: string | null;
   destroyed: boolean;
 }
 
@@ -289,10 +300,7 @@ function render_block_preview(
       if (state.destroyed || gen !== state.generation) return;
       const mermaid = get_mermaid();
       if (!mermaid) return;
-      if (state.configured_theme !== theme) {
-        configure_mermaid_theme(mermaid, theme === 'dark');
-        state.configured_theme = theme;
-      }
+      ensure_mermaid_theme(mermaid, theme);
       log.debug('mermaid block preview render', { src_len: src.length });
       mermaid
         .render(`plainmark-mermaid-preview-${preview_render_seq++}`, src)
@@ -349,7 +357,6 @@ export class MermaidBlockPreviewWidget extends WidgetType {
       timer: null,
       generation: 0,
       last_good_svg: null,
-      configured_theme: null,
       destroyed: false,
     };
     preview_render_states.set(container, state);
@@ -545,7 +552,6 @@ const mermaid_render_plugin = ViewPlugin.fromClass(
   class implements MermaidRenderPluginValue {
     in_flight = new Set<string>();
     load_failed = new Set<string>();
-    configured_theme: string | null = null;
     theme_observer: MutationObserver | null = null;
 
     constructor(readonly view: EditorView) {
@@ -591,10 +597,7 @@ const mermaid_render_plugin = ViewPlugin.fromClass(
         .then(() => {
           const mermaid = get_mermaid();
           if (!mermaid) return;
-          if (this.configured_theme !== theme) {
-            configure_mermaid_theme(mermaid, theme === 'dark');
-            this.configured_theme = theme;
-          }
+          ensure_mermaid_theme(mermaid, theme);
           const retry = [...this.load_failed];
           this.load_failed.clear();
           this.render_pending(theme, mermaid, retry);
