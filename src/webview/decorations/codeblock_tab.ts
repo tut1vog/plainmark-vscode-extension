@@ -18,6 +18,27 @@ function in_fenced_code(state: EditorState, pos: number): boolean {
   return false;
 }
 
+// A fence delimiter shifted to 4+ indent stops being a fence — indent/dedent must never move those lines.
+function is_fence_delimiter_line(
+  state: EditorState,
+  line: { from: number; to: number },
+): boolean {
+  let found = false;
+  syntaxTree(state).iterate({
+    from: line.from,
+    to: line.to,
+    enter(node) {
+      if (found) return false;
+      if (node.name === 'CodeMark' && node.node.parent?.name === 'FencedCode') {
+        found = true;
+        return false;
+      }
+      return;
+    },
+  });
+  return found;
+}
+
 // Line span a selection covers; a selection ending exactly at a line start excludes that line (mirrors CM6).
 function selected_lines(state: EditorState): { first: number; last: number } {
   const { main } = state.selection;
@@ -46,13 +67,18 @@ export const codeblock_tab_indent: Command = (view) => {
   const { first, last } = selected_lines(state);
   const changes: ChangeSpec[] = [];
   for (let n = first; n <= last; n++) {
-    changes.push({ from: state.doc.line(n).from, insert: CODE_INDENT });
+    const line = state.doc.line(n);
+    if (is_fence_delimiter_line(state, line)) continue;
+    changes.push({ from: line.from, insert: CODE_INDENT });
   }
-  view.dispatch({
-    changes,
-    scrollIntoView: true,
-    annotations: [Transaction.userEvent.of('input.indent')],
-  });
+  // Consume the key even with nothing to indent — falling through would hand the fence lines to indentMore.
+  if (changes.length > 0) {
+    view.dispatch({
+      changes,
+      scrollIntoView: true,
+      annotations: [Transaction.userEvent.of('input.indent')],
+    });
+  }
   return true;
 };
 
@@ -66,6 +92,7 @@ export const codeblock_tab_dedent: Command = (view) => {
   const changes: ChangeSpec[] = [];
   for (let n = first; n <= last; n++) {
     const line = state.doc.line(n);
+    if (is_fence_delimiter_line(state, line)) continue;
     const lead = /^ {1,4}/.exec(line.text);
     if (lead) changes.push({ from: line.from, to: line.from + lead[0].length, insert: '' });
   }

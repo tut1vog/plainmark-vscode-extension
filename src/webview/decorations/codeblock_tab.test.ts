@@ -79,6 +79,27 @@ describe('codeblock_tab — 4-space Tab/Shift-Tab in fenced code CBLK-I-13', () 
     expect(codeblock_tab_indent(view)).toBe(false);
     expect(applied).toHaveLength(0);
   });
+
+  it('(g) Tab skips fence delimiter lines when the selection touches them', () => {
+    // select from "a" through the closing ``` line
+    const { view, doc } = make_view('```js\na\nb\n```', 6, 13);
+    expect(codeblock_tab_indent(view)).toBe(true);
+    expect(doc()).toBe('```js\n    a\n    b\n```');
+  });
+
+  it('(h) Tab consumes the key without changes when only fence lines are selected', () => {
+    // header-only selection: caret range inside the opening ``` line... use closing line
+    const { view, applied, doc } = make_view('```js\na\n```', 8, 11);
+    expect(codeblock_tab_indent(view)).toBe(true);
+    expect(applied).toHaveLength(0);
+    expect(doc()).toBe('```js\na\n```');
+  });
+
+  it('(i) Shift-Tab skips fence delimiter lines when the selection touches them', () => {
+    const { view, doc } = make_view(' ```js\n    a\n ```', 8, 17);
+    expect(codeblock_tab_dedent(view)).toBe(true);
+    expect(doc()).toBe(' ```js\na\n ```');
+  });
 });
 
 describe('codeblock_backspace — strict single-char Backspace in fenced code CBLK-I-14', () => {
