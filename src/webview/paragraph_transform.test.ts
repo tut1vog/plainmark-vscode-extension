@@ -1,5 +1,8 @@
+import { markdown } from '@codemirror/lang-markdown';
+import { ensureSyntaxTree } from '@codemirror/language';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import { describe, expect, it } from 'vitest';
+import { markdown_grammar_extensions } from './grammar/markdown_config.js';
 import {
   classify_line,
   paragraph_transform_spec,
@@ -136,5 +139,47 @@ describe('CTX-I-7 CTX-I-9 CTX-E-2 paragraph_transform_spec — multi-line', () =
 
   it('a selection ending exactly at a line start does not touch that line', () => {
     expect(apply('one\ntwo\n', 0, 4, 'heading_1')).toBe('# one\ntwo\n');
+  });
+});
+
+describe('CBLK-E-1 paragraph_transform_spec — code regions are never rewritten', () => {
+  // The production grammar is required: the guard consults the syntax tree.
+  function apply_md(
+    doc: string,
+    anchor: number,
+    head: number,
+    style: ParagraphStyle,
+  ): string | null {
+    let state = EditorState.create({
+      doc,
+      selection: EditorSelection.single(anchor, head),
+      extensions: [markdown({ extensions: [markdown_grammar_extensions] })],
+    });
+    ensureSyntaxTree(state, state.doc.length, 10_000);
+    state = state.update({}).state;
+    const spec = paragraph_transform_spec(state, style);
+    if (!spec) return null;
+    return state.update(spec).state.doc.toString();
+  }
+
+  it('caret on an inert ≥4-indent CodeBlock line is a no-op (marker bytes are code)', () => {
+    const doc = 'para\n\n    - x';
+    expect(apply_md(doc, 8, 8, 'bulleted_list')).toBeNull();
+    expect(apply_md(doc, 8, 8, 'heading_1')).toBeNull();
+  });
+
+  it('a mixed selection transforms prose lines and leaves the code region untouched', () => {
+    const doc = 'plain\n\n    - x';
+    expect(apply_md(doc, 0, doc.length, 'bulleted_list')).toBe('- plain\n\n    - x');
+  });
+
+  it('fenced code body lines are skipped too', () => {
+    const doc = '```\n- x\n```';
+    expect(apply_md(doc, 5, 5, 'bulleted_list')).toBeNull();
+  });
+
+  it('deep-indented nested list items still transform (the guard is tree-based, not an indent cap)', () => {
+    const doc = '- x\n    - y';
+    expect(apply_md(doc, 9, 9, 'bulleted_list')).toBe('- x\n    y');
   });
 });

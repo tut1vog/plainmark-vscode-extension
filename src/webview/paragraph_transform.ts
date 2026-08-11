@@ -1,3 +1,4 @@
+import { syntaxTree } from '@codemirror/language';
 import { Transaction, type EditorState, type TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 
@@ -63,6 +64,28 @@ export function classify_line(text: string): LineShape {
   };
 }
 
+// A "marker" inside an inert CodeBlock (the ≥4-indent shield, CBLK-E-1) or a
+// FencedCode body is literal code bytes, never an active construct — those
+// lines must be skipped. Tree-based on purpose: a regex indent cap would also
+// catch legitimately deep-indented nested list items. Intersection, not a
+// line-start resolve: a CodeBlock node begins after the indent, mid-line.
+function in_code_region(state: EditorState, line: { from: number; to: number }): boolean {
+  let found = false;
+  syntaxTree(state).iterate({
+    from: line.from,
+    to: line.to,
+    enter(node) {
+      if (found) return false;
+      if (node.name === 'CodeBlock' || node.name === 'FencedCode') {
+        found = true;
+        return false;
+      }
+      return;
+    },
+  });
+  return found;
+}
+
 function heading_level_of(style: ParagraphStyle): number {
   return style.startsWith('heading_') ? Number(style.slice(-1)) : 0;
 }
@@ -116,12 +139,14 @@ export function paragraph_transform_spec(
 
   const lines = [...line_numbers].sort((a, b) => a - b).map((n) => doc.line(n));
   const shapes = lines.map((line) => classify_line(line.text));
-  const eligible = shapes.filter((s) => !s.blank);
+  const inert = lines.map((line) => in_code_region(state, line));
+  const visible = shapes.filter((_, i) => !inert[i]);
+  const eligible = visible.filter((s) => !s.blank);
   // Blank lines are skipped only while a non-blank line is in the selection
   // (don't decorate separator blanks) — a caret on an empty paragraph still
   // takes the prefix, Typora/Obsidian style.
   const all_blank = eligible.length === 0;
-  const considered = all_blank ? shapes : eligible;
+  const considered = all_blank ? visible : eligible;
   const active_all = considered.every((s) => is_active(s, style));
 
   const main = state.selection.main;
@@ -134,6 +159,7 @@ export function paragraph_transform_spec(
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const shape = shapes[i];
+    if (inert[i]) continue;
     if (shape.blank) {
       if (!all_blank) continue;
       if (style === 'blockquote' && active_all) {
