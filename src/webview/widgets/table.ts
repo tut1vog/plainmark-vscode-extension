@@ -328,9 +328,11 @@ function alignment_signature(alignment: Alignment[]): string {
 // Cells' trimmed text — included in eq() so swaps and any other content-only
 // change invalidate the widget and force updateDOM (which also refreshes the
 // container's widget ref, keeping listeners' widget_from_td lookups fresh).
+// Keyed by row/col: placeholders append at the END of `cells`, so a bare text
+// join collides across edits that move content between underfilled rows.
 function content_signature(cells: TableCellInfo[], doc: Text): string {
   return cells
-    .map((c) => doc.sliceString(c.cell_from, c.cell_to).trim())
+    .map((c) => `${c.row_index},${c.col_index}=${doc.sliceString(c.cell_from, c.cell_to).trim()}`)
     .join('\x01');
 }
 

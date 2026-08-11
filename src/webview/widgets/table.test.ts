@@ -345,6 +345,22 @@ describe('TBL-R-11 TableWidget.eq', () => {
   it('returns true when the fingerprint matches', () => {
     expect(widget(make_info(), 'inline:x^2').eq(widget(make_info(), 'inline:x^2'))).toBe(true);
   });
+
+  it('returns false when content moves between underfilled rows (placeholders must not mask position)', () => {
+    const field_widget = (doc: string): TableWidget => {
+      const state = make_state(doc);
+      let w: TableWidget | null = null;
+      state.field(table_widgets_field).between(0, state.doc.length, (_f, _t, deco) => {
+        w = deco.spec.widget as TableWidget;
+      });
+      if (!w) throw new Error(`no table widget for: ${JSON.stringify(doc)}`);
+      return w;
+    };
+    // Same cell text multiset, same dimensions — only the row placement differs.
+    const a = field_widget('| h1 | h2 |\n|----|----|\n| a | b |\n| c |\n');
+    const b = field_widget('| h1 | h2 |\n|----|----|\n| a |\n| b | c |\n');
+    expect(a.eq(b)).toBe(false);
+  });
 });
 
 describe('TBL-R-1 table_widgets_field — decoration emission', () => {
