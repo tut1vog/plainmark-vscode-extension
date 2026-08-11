@@ -2,7 +2,7 @@ import type { CompletionContext, CompletionResult } from '@codemirror/autocomple
 import { Transaction } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { request_cell_focus } from './table.js';
-import { type TableModel, serialize_table } from './table_serialize.js';
+import { type TableModel, serialize_table, table_insert_suffix } from './table_serialize.js';
 
 export function make_starter_table_markdown(): string {
   const model: TableModel = {
@@ -31,14 +31,10 @@ export function table_completions(context: CompletionContext): CompletionResult 
         label: 'Insert table (3×3)',
         apply: (view: EditorView, _completion, from: number, to: number) => {
           const table = make_starter_table_markdown();
-          const doc_len = view.state.doc.length;
-          // TA2 — inject one trailing `\n` only when there's no `\n` immediately
-          // after the insertion point (mirrors table.ts handle_cell_edit).
-          const next_byte = to < doc_len ? view.state.doc.sliceString(to, to + 1) : '';
-          const ta2_needed = next_byte !== '\n';
           // Symmetric leading-\n when the new table would sit at offset 0 — gives ArrowUp / click-above a caret-targetable source line.
           const lead_needed = from === 0;
-          const insert = (lead_needed ? '\n' : '') + table + (ta2_needed ? '\n' : '');
+          const insert =
+            (lead_needed ? '\n' : '') + table + table_insert_suffix(view.state.doc, to);
           const table_from = from + (lead_needed ? 1 : 0);
           view.dispatch({
             changes: { from, to, insert },

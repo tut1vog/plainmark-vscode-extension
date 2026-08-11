@@ -1,7 +1,24 @@
+import type { Text } from '@codemirror/state';
+
 export interface TableModel {
   rows: string[][];
   alignment: ('left' | 'center' | 'right' | null)[];
   header_row_count: 1;
+}
+
+// Trailing separation for a serialize_table insertion ending at `pos` (TA2 +
+// GFM absorption): the table must be followed by doc end or a blank line —
+// GFM absorbs a directly-following non-blank line into the table as a
+// one-cell row. Shared by paste, the insert-table command, and the `|`
+// autocomplete so the three surfaces cannot drift.
+export function table_insert_suffix(doc: Text, pos: number): string {
+  if (pos >= doc.length) return '\n';
+  const has_newline = doc.sliceString(pos, pos + 1) === '\n';
+  const after = has_newline ? pos + 1 : pos;
+  if (after >= doc.length) return has_newline ? '' : '\n';
+  const line = doc.lineAt(after);
+  const following_line_blank = /^[ \t]*$/.test(doc.sliceString(after, line.to));
+  return (has_newline ? '' : '\n') + (following_line_blank ? '' : '\n');
 }
 
 const encoder = new TextEncoder();

@@ -116,6 +116,21 @@ describe('TBL-I-35 paste dispatch inserts the converted table on its own lines',
     expect(view.state.selection.main.head).toBe(table_end + 1);
   });
 
+  it('a mid-word paste separates the table from the line remainder with a blank line', () => {
+    // Caret inside "paragraph." — the remainder must not be absorbed as a table row.
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: SEED_DOC },
+      selection: { anchor: CARET_OFFSET - 4 },
+    });
+    view.contentDOM.focus();
+    const dt = new DataTransfer();
+    dt.setData('text/plain', 'A\tB\nC\tD');
+    view.contentDOM.dispatchEvent(
+      new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }),
+    );
+    expect(view.state.doc.toString()).toContain('| C   | D   |\n\naph.');
+  });
+
   it('the HTML flavor wins over the TSV flavor (formatting kept)', () => {
     paste('A\tB\nC\tD', '<table><tr><th>A</th><th>B</th></tr><tr><td><b>C</b></td><td>D</td></tr></table>');
     expect(view.state.doc.toString()).toContain('**C**');

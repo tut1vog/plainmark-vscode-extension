@@ -1,6 +1,6 @@
 import { type Extension, Transaction } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { serialize_table } from './widgets/table_serialize.js';
+import { serialize_table, table_insert_suffix } from './widgets/table_serialize.js';
 
 declare global {
   interface Window {
@@ -133,13 +133,12 @@ export function insert_pasted_table(view: EditorView, table_markdown: string): v
   const { from, to } = view.state.selection.main;
   const line = view.state.doc.lineAt(from);
   const prefix = from === 0 ? '\n' : from === line.from ? '' : '\n';
-  const doc_len = view.state.doc.length;
-  const next_char = to < doc_len ? view.state.doc.sliceString(to, to + 1) : '';
-  const suffix = next_char === '\n' ? '' : '\n';
+  const suffix = table_insert_suffix(view.state.doc, to);
   const insert = prefix + table_markdown + suffix;
   view.dispatch({
     changes: { from, to, insert },
-    selection: { anchor: from + insert.length + (suffix === '' ? 1 : 0) },
+    // Start of the line directly after the table: past the first trailing newline, inserted or pre-existing.
+    selection: { anchor: from + prefix.length + table_markdown.length + 1 },
     annotations: [Transaction.userEvent.of('input.paste')],
     scrollIntoView: true,
   });

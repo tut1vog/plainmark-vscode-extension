@@ -1,9 +1,11 @@
+import { Text } from '@codemirror/state';
 import { describe, expect, it } from 'vitest';
 import {
   type TableModel,
   escape_cell_text,
   parse_cell_text,
   serialize_table,
+  table_insert_suffix,
 } from './table_serialize.js';
 
 function model(
@@ -390,5 +392,33 @@ describe('TBL-SP-9 serialize_table — round-trip stability (AC6)', () => {
     for (const src of sources) {
       expect(escape_cell_text(parse_cell_text(src))).toBe(src);
     }
+  });
+});
+
+describe('table_insert_suffix — table must end at doc end or before a blank line', () => {
+  const suffix = (doc: string, pos: number) => table_insert_suffix(Text.of(doc.split('\n')), pos);
+
+  it('appends one newline at end of document (TA2)', () => {
+    expect(suffix('abc', 3)).toBe('\n');
+  });
+
+  it('appends nothing when a newline and blank line already follow', () => {
+    expect(suffix('abc\n\nDEF', 3)).toBe('');
+  });
+
+  it('appends nothing when the trailing newline is the last byte', () => {
+    expect(suffix('abc\n', 3)).toBe('');
+  });
+
+  it('doubles the newline when splitting a line before non-blank text (GFM absorption)', () => {
+    expect(suffix('abcDEF', 3)).toBe('\n\n');
+  });
+
+  it('adds the missing blank line when a newline exists but the next line is non-blank', () => {
+    expect(suffix('abc\nDEF', 3)).toBe('\n');
+  });
+
+  it('treats a whitespace-only following line as blank', () => {
+    expect(suffix('abc\n  \nDEF', 3)).toBe('');
   });
 });
