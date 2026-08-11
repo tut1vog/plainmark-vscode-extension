@@ -1,4 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
+import { ensureSyntaxTree } from '@codemirror/language';
 import { EditorState, StateEffect } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
@@ -332,6 +333,15 @@ describe('TBL-R-11 TableWidget.eq', () => {
     expect(widget(make_info(), 'inline:x^2').eq(widget(make_info(), 'inline:y^3'))).toBe(false);
   });
 
+  it('returns false against a widget whose last draw failed extraction', () => {
+    const a = widget(make_info());
+    const b = widget(make_info());
+    expect(a.eq(b)).toBe(true);
+    b.draw_failed = true;
+    expect(a.eq(b)).toBe(false);
+    expect(b.eq(a)).toBe(false);
+  });
+
   it('returns true when the fingerprint matches', () => {
     expect(widget(make_info(), 'inline:x^2').eq(widget(make_info(), 'inline:x^2'))).toBe(true);
   });
@@ -384,6 +394,44 @@ describe('TBL-R-1 table_widgets_field — decoration emission', () => {
     const initial = state.field(table_widgets_field);
     state = state.update({ selection: { anchor: 0 } }).state;
     expect(state.field(table_widgets_field)).toBe(initial);
+  });
+});
+
+describe('TBL-R-16 table_widgets_field — offset remap on outside edits', () => {
+  function settle(state: EditorState): EditorState {
+    ensureSyntaxTree(state, state.doc.length, 10_000);
+    return state.update({}).state;
+  }
+
+  function table_decos(state: EditorState): Array<{ from: number; widget: TableWidget }> {
+    const found: Array<{ from: number; widget: TableWidget }> = [];
+    state.field(table_widgets_field).between(0, state.doc.length, (from, _to, deco) => {
+      found.push({ from, widget: deco.spec.widget as TableWidget });
+    });
+    return found;
+  }
+
+  it('recreates a shifted widget so table.from tracks the mapped decoration', () => {
+    let state = settle(make_state('intro paragraph\n\n| A | B |\n|---|---|\n| 1 | 2 |\n'));
+    const before = table_decos(state);
+    expect(before).toHaveLength(1);
+    expect(before[0].widget.table.from).toBe(before[0].from);
+
+    state = settle(state.update({ changes: { from: 0, to: 0, insert: 'XX' } }).state);
+
+    const after = table_decos(state);
+    expect(after).toHaveLength(1);
+    expect(after[0].from).toBe(before[0].from + 2);
+    expect(after[0].widget.table.from).toBe(after[0].from);
+    expect(locate_table_extraction(state, after[0].widget.table.from)).not.toBeNull();
+  });
+
+  it('maps cell ranges along with the table span', () => {
+    let state = settle(make_state('x\n\n| ab | cd |\n|----|----|\n| 11 | 22 |\n'));
+    state = settle(state.update({ changes: { from: 0, to: 0, insert: 'yy' } }).state);
+    const [deco] = table_decos(state);
+    const cell = deco.widget.table.cells.find((c) => c.row_index === 1 && c.col_index === 1)!;
+    expect(state.doc.sliceString(cell.cell_from, cell.cell_to)).toBe(' 22 ');
   });
 });
 

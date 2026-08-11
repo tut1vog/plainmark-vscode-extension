@@ -490,6 +490,8 @@ const TABLE_ROW_HEIGHT_PX = 37;
 
 export class TableWidget extends WidgetType {
   private active: ActiveSubview | null = null;
+  // eq() input: a draw whose tree lookup missed must not compare equal to a fresh rebuild, else the empty DOM is reused forever.
+  draw_failed = false;
   // Activation is rAF-deferred; a later activation in the same frame must abort
   // the earlier one before it builds a subview, else the first leaks (orphaned
   // EditorView + DOM whose focusout handler no longer matches the live active).
@@ -512,6 +514,8 @@ export class TableWidget extends WidgetType {
 
   eq(other: TableWidget): boolean {
     return (
+      !this.draw_failed &&
+      !other.draw_failed &&
       other.table.from === this.table.from &&
       other.table.row_count === this.table.row_count &&
       other.table.col_count === this.table.col_count &&
@@ -551,6 +555,7 @@ export class TableWidget extends WidgetType {
       const tag = (r: number) => (r === 0 ? 'th' : 'td');
 
       const extraction = locate_table_extraction(view.state, this.table.from);
+      this.draw_failed = !extraction;
       for (const cell of this.table.cells) {
         const td = document.createElement(tag(cell.row_index)) as HTMLTableCellElement;
         td.dataset.rowIndex = String(cell.row_index);
@@ -565,8 +570,9 @@ export class TableWidget extends WidgetType {
       }
 
       container.appendChild(table);
-      remember_block_height(this.content_signature, container);
+      if (extraction) remember_block_height(this.content_signature, container);
     } catch (reason) {
+      this.draw_failed = true;
       log.warn('table widget toDOM failed', {
         from: this.table.from,
         to: this.table.to,
@@ -606,6 +612,7 @@ export class TableWidget extends WidgetType {
     set_container_widget(dom, this);
     try {
       const extraction = locate_table_extraction(view.state, this.table.from);
+      this.draw_failed = !extraction;
       const tds = dom.querySelectorAll<HTMLTableCellElement>('th, td');
       for (const td of Array.from(tds)) {
         const r = Number(td.dataset.rowIndex ?? '-1');
@@ -686,25 +693,27 @@ export class TableWidget extends WidgetType {
         precomputed !== undefined
           ? precomputed
           : locate_table_extraction(view.state, this.table.from);
-      if (!extraction) return;
-      const all = [...extraction.header_cells, ...extraction.body_cells];
-      const fresh = all.find(
-        (c) => c.row_index === cell.row_index && c.col_index === cell.col_index,
-      );
-      if (!fresh) return;
-
-      while (td.firstChild) td.removeChild(td.firstChild);
-      if (fresh.cell_node && fresh.cell_node.name === 'TableCell') {
-        const fragment = emit_table_cell(
-          fresh.cell_node,
-          view.state.doc,
-          this.math_cache,
-          this.image_base,
-        );
-        td.appendChild(fragment);
+      const fresh = extraction
+        ? [...extraction.header_cells, ...extraction.body_cells].find(
+            (c) => c.row_index === cell.row_index && c.col_index === cell.col_index,
+          )
+        : undefined;
+      if (fresh) {
+        while (td.firstChild) td.removeChild(td.firstChild);
+        if (fresh.cell_node && fresh.cell_node.name === 'TableCell') {
+          const fragment = emit_table_cell(
+            fresh.cell_node,
+            view.state.doc,
+            this.math_cache,
+            this.image_base,
+          );
+          td.appendChild(fragment);
+        }
       }
       // Empty cells render as zero-height boxes without a line-box anchor; a
-      // zero-width space gives the cell one line-height worth of content.
+      // zero-width space gives the cell one line-height worth of content \u2014
+      // also on the failed-lookup path, where a childless fresh <td> would
+      // otherwise collapse the row.
       if (!td.hasChildNodes() || td.textContent === '') {
         td.appendChild(document.createTextNode('\u200B'));
       }
@@ -1138,6 +1147,50 @@ export const table_widgets_field = StateField.define<DecorationSet>({
         add: build_table_ranges(tr.state, region),
         sort: true,
       });
+    }
+    // RangeSet.map moves ranges only — a widget keeping its pre-edit offsets would miss toDOM's exact-offset tree lookup and render every cell empty.
+    if (tr.docChanged) {
+      const shifted: Range<Decoration>[] = [];
+      mapped.between(0, tr.state.doc.length, (from, to, deco) => {
+        const widget = deco.spec.widget;
+        if (!(widget instanceof TableWidget) || widget.table.from === from) return;
+        const map = (pos: number): number => tr.changes.mapPos(pos);
+        const info: TableInfo = {
+          from,
+          to,
+          cells: widget.table.cells.map((c) => ({
+            ...c,
+            cell_from: map(c.cell_from),
+            cell_to: map(c.cell_to),
+          })),
+          row_count: widget.table.row_count,
+          col_count: widget.table.col_count,
+          alignment: widget.table.alignment,
+        };
+        shifted.push(
+          Decoration.replace({
+            block: true,
+            widget: new TableWidget(
+              info,
+              widget.math_cache,
+              widget.image_base,
+              widget.math_fingerprint,
+              widget.content_signature,
+              tr.state.doc.lineAt(from).number > 1,
+            ),
+          }).range(from, to),
+        );
+      });
+      if (shifted.length) {
+        mapped = mapped.update({
+          filter: (from, _to, deco) => {
+            const widget = deco.spec.widget;
+            return !(widget instanceof TableWidget) || widget.table.from === from;
+          },
+          add: shifted,
+          sort: true,
+        });
+      }
     }
     return mapped;
   },
