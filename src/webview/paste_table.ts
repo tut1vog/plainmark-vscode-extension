@@ -76,7 +76,8 @@ function cell_markdown(cell: Element): string {
 }
 
 // HTML gate (TBL-I-36): the payload must be essentially one <table> — no
-// non-whitespace text outside it, no row/col spans, at least two cells.
+// non-whitespace text outside it, no row/col spans, equal row widths, at
+// least two cells.
 export function table_markdown_from_html(html: string): string | null {
   if (typeof DOMParser === 'undefined') return null;
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -98,6 +99,8 @@ export function table_markdown_from_html(html: string): string | null {
     rows.push(cells.map(cell_markdown));
   }
   if (rows.length === 0) return null;
+  // Ragged rows would silently lose cells to serialize_table's header-wins policy — decline like the TSV gate.
+  if (rows.some((row) => row.length !== rows[0].length)) return null;
   if (rows.length < 2 && rows[0].length < 2) return null;
   return serialize_table({
     rows,

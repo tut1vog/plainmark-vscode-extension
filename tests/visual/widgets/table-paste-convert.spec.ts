@@ -60,6 +60,14 @@ describe('TBL-I-36 table_markdown_from_html qualification gate', () => {
     expect(table_markdown_from_html('<table><tr><td>only</td></tr></table>')).toBeNull();
     expect(table_markdown_from_html('no table at all')).toBeNull();
   });
+
+  it('declines ragged rows (unequal cell counts, no spans)', () => {
+    expect(
+      table_markdown_from_html(
+        '<table><tr><td>a</td><td>b</td></tr><tr><td>1</td><td>2</td><td>3</td></tr></table>',
+      ),
+    ).toBeNull();
+  });
 });
 
 describe('TBL-I-35 paste dispatch inserts the converted table on its own lines', () => {
