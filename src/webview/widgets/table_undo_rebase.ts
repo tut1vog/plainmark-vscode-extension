@@ -190,21 +190,24 @@ export const table_undo_rebase = ViewPlugin.fromClass(
         return;
       }
 
-      const post_ext = locate_post_table(snapshot.table_from, tr.changes, post);
+      const pre_table_from = snapshot.table_from;
+      const post_ext = locate_post_table(pre_table_from, tr.changes, post);
       if (post_ext === null) {
         // Table no longer exists post-undo (e.g., reverting EB autocomplete).
         // TableWidget.destroy clears the snapshot during the decoration update.
         return;
       }
+      // Keep the snapshot resolvable for the next sync/undo after the table shifts.
+      snapshot.table_from = post_ext.info.from;
 
-      const pre_ext = locate_table_extraction(pre, snapshot.table_from);
+      const pre_ext = locate_table_extraction(pre, pre_table_from);
       const diff =
         pre_ext !== null ? find_differing_cell(pre, pre_ext, post, post_ext) : null;
 
       // No detectable cell change — content already matches; nothing to do.
       if (diff === null) return;
 
-      const same_table = post_ext.info.from === snapshot.table_from;
+      const same_table = post_ext.info.from === pre_table_from;
       const same_cell =
         same_table && diff.row === snapshot.row && diff.col === snapshot.col;
 
