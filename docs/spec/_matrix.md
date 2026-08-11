@@ -602,7 +602,7 @@
 | MRS-B-9 | tier-a + tier-b + inherited | conforming | — |
 | MRS-B-10 | tier-a | conforming | `marker_aware_backspace.test.ts` |
 | MRS-L-1 | tier-b + smoke | conforming | `triple-click-line.spec.ts` |
-| MRS-P-1 | tier-a + tier-b | conforming | `selection_reveal.test.ts`, `clipped-selection-hidden-tail.spec.ts`, `marker-reveal-after-mouseup.spec.ts` |
+| MRS-P-1 | tier-a + tier-b | conforming | `selection_reveal.test.ts`, `math.test.ts`, `clipped-selection-hidden-tail.spec.ts`, `marker-reveal-after-mouseup.spec.ts` |
 | MRS-P-2 | tier-a | conforming | `selection_reveal.test.ts` |
 | MRS-P-3 | UNCOVERED | conforming | — |
 | MRS-P-4 | smoke | conforming | — |

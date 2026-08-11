@@ -37,6 +37,10 @@ export interface CellKeymapContext {
   table_from: number;
   get_active: () => { row_index: number; col_index: number } | null;
   request_focus: (row: number, col: number) => void;
+  // Same-task activation for pure keyboard moves (no pending table rebuild) —
+  // the deferred request_focus path costs 2+ frames per hop, felt as lag when
+  // holding an arrow key. Post-structural-op refocus must stay on request_focus.
+  request_focus_nav: (row: number, col: number) => void;
   // Synchronous teardown — bypasses the setTimeout(0) in the focusout handler.
   // The deferred path exists to give cell-to-cell Tab transitions time for the
   // next activate_cell to claim widget.active; keymap-driven cell-to-main
@@ -204,7 +208,7 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
   const focus = (row: number, col: number): void => ctx.request_focus(row, col);
 
   const move_to = (row: number, col: number): boolean => {
-    focus(row, col);
+    ctx.request_focus_nav(row, col);
     return true;
   };
 
@@ -373,8 +377,7 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
           exit_before_table_with_injection(ctx);
           return true;
         }
-        focus(active.row_index - 1, active.col_index);
-        return true;
+        return move_to(active.row_index - 1, active.col_index);
       },
     },
     {
@@ -388,8 +391,7 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
           exit_after_table_with_injection(ctx);
           return true;
         }
-        focus(active.row_index + 1, active.col_index);
-        return true;
+        return move_to(active.row_index + 1, active.col_index);
       },
     },
     {
@@ -494,7 +496,7 @@ const main_view_table_entry_bindings: KeyBinding[] = [
       const table_from = find_table_starting_at(view.state, next_line.from);
       if (table_from === null) return false;
       if (!table_widget_rendered(view, table_from)) return false;
-      request_cell_focus(view, table_from, 0, 0);
+      request_cell_focus(view, table_from, 0, 0, { nav: true });
       return true;
     },
   },
@@ -516,7 +518,7 @@ const main_view_table_entry_bindings: KeyBinding[] = [
       const cells = extraction.info.cells;
       if (cells.length === 0) return false;
       const last = last_cell_by_position(cells);
-      request_cell_focus(view, table.from, last.row_index, last.col_index);
+      request_cell_focus(view, table.from, last.row_index, last.col_index, { nav: true });
       return true;
     },
   },
@@ -555,7 +557,7 @@ const main_view_table_entry_bindings: KeyBinding[] = [
       const table_from = find_table_starting_at(view.state, next_line.from);
       if (table_from === null) return false;
       if (!table_widget_rendered(view, table_from)) return false;
-      request_cell_focus(view, table_from, 0, 0);
+      request_cell_focus(view, table_from, 0, 0, { nav: true });
       return true;
     },
   },
@@ -577,7 +579,7 @@ function enter_last_cell_from_below(view: EditorView): boolean {
   const cells = extraction.info.cells;
   if (cells.length === 0) return false;
   const last = last_cell_by_position(cells);
-  request_cell_focus(view, table.from, last.row_index, last.col_index);
+  request_cell_focus(view, table.from, last.row_index, last.col_index, { nav: true });
   return true;
 }
 

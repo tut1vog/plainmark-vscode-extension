@@ -777,11 +777,12 @@ export class TableWidget extends WidgetType {
     row_index: number,
     col_index: number,
     click_pos?: { x: number; y: number },
+    opts?: { immediate?: boolean },
   ): void {
     if (this.active) this.teardown_active(main_view);
 
     const token = ++this.activation_token;
-    requestAnimationFrame(() => {
+    const build = (): void => {
       if (token !== this.activation_token) return;
       if (!td.isConnected) return;
       const range = lookup_cell_range(main_view.state, this.table.from, row_index, col_index);
@@ -858,7 +859,10 @@ export class TableWidget extends WidgetType {
         col: col_index,
         sub_view: sub,
       });
-    });
+    };
+    // Pointer activation keeps the AC3 rAF boundary (TBL-I-1; the TBL-I-26 drag machinery depends on mount-a-frame-later); keyboard navigation runs same-task — the deferral there is pure per-hop latency.
+    if (opts?.immediate) build();
+    else requestAnimationFrame(build);
   }
 
   private build_cell_subview(args: {
@@ -902,6 +906,8 @@ export class TableWidget extends WidgetType {
           };
         },
         request_focus: (row, col) => request_cell_focus(main_view, live_table_from(), row, col),
+        request_focus_nav: (row, col) =>
+          request_cell_focus(main_view, live_table_from(), row, col, { nav: true }),
         teardown_now: () => {
           // look the widget up at event time so updateDOM-driven swaps reach us
           const widget = widget_from_td(td) ?? this;
@@ -1016,17 +1022,36 @@ export class TableWidget extends WidgetType {
 }
 
 // requestMeasure straddles the rebuild — read phase queries the post-rebuild DOM, write phase activates.
+// `nav`: keyboard navigation has no pending rebuild, so the measure frame plus
+// the AC3 rAF is pure per-hop latency (2+ frames per row while holding an
+// arrow key). Activate in a setTimeout(0) task instead — after the key event
+// finishes dispatching, same frame — and fall back to the measure straddle if
+// the td is not in the DOM after all.
 export function request_cell_focus(
   main_view: EditorView,
   table_from: number,
   row: number,
   col: number,
+  opts?: { nav?: boolean },
 ): void {
+  const find_td = (): HTMLTableCellElement | null =>
+    main_view.dom.querySelector(
+      `.plainmark-table-block[data-table-from="${table_from}"] [data-row-index="${row}"][data-col-index="${col}"]`,
+    ) as HTMLTableCellElement | null;
+  if (opts?.nav) {
+    setTimeout(() => {
+      const td = find_td();
+      const widget = td ? widget_from_td(td) : null;
+      if (td && widget) {
+        widget.activate_cell(td, main_view, row, col, undefined, { immediate: true });
+      } else {
+        request_cell_focus(main_view, table_from, row, col);
+      }
+    }, 0);
+    return;
+  }
   main_view.requestMeasure({
-    read: () =>
-      main_view.dom.querySelector(
-        `.plainmark-table-block[data-table-from="${table_from}"] [data-row-index="${row}"][data-col-index="${col}"]`,
-      ) as HTMLTableCellElement | null,
+    read: find_td,
     write: (td) => {
       if (!td) return;
       const widget = widget_from_td(td);
