@@ -308,8 +308,9 @@ describe('table autocomplete — accept path', () => {
     ].join('\n');
     // The completion's `from`..`to` covers the `|` line (positions 0..1).
     // Fix 5 prepends a leading `\n` because from === 0. The next byte at
-    // `to` is `\n` (from the original `\nhello`), so TA2 does NOT inject an
-    // extra trailing `\n` — single `\n` between table and `hello`.
-    expect(doc).toBe('\n' + starter + '\nhello');
+    // `to` is `\n` (from the original `\nhello`), so TA2 injects no extra
+    // row-terminating `\n` — but `hello` is non-blank, so the suffix adds
+    // the blank separator that keeps GFM from absorbing it as a table row.
+    expect(doc).toBe('\n' + starter + '\n\nhello');
   });
 });

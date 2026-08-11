@@ -71,7 +71,9 @@ describe('insert_table_at_caret — ED command webview path', () => {
     view.dispatch({ selection: { anchor: 'hello'.length } });
     insert_table_at_caret(view);
     await next_frame();
-    expect(view.state.doc.toString()).toBe('hello\n' + STARTER + '\n' + ' world');
+    // The remainder line is non-blank → blank separator, not a single \n,
+    // so GFM cannot absorb it into the table as a one-cell row.
+    expect(view.state.doc.toString()).toBe('hello\n' + STARTER + '\n\n world');
   });
 
   it('TBL-I-17: omits the leading newline when caret is at line-start of a non-first line', async () => {
@@ -83,7 +85,7 @@ describe('insert_table_at_caret — ED command webview path', () => {
     insert_table_at_caret(view);
     await next_frame();
     expect(view.state.doc.toString()).toBe(
-      'first line\n' + STARTER + '\n' + 'second line',
+      'first line\n' + STARTER + '\n\n' + 'second line',
     );
   });
 
@@ -92,8 +94,9 @@ describe('insert_table_at_caret — ED command webview path', () => {
     view.dispatch({ selection: { anchor: 'hello'.length } });
     insert_table_at_caret(view);
     await next_frame();
-    // next_char === '\n' → suffix is ''. No double newline introduced.
-    expect(view.state.doc.toString()).toBe('hello\n' + STARTER + '\nworld');
+    // next_char === '\n' → no row-terminating \n injected; the non-blank
+    // 'world' line still gets the blank separator (absorption guard).
+    expect(view.state.doc.toString()).toBe('hello\n' + STARTER + '\n\nworld');
   });
 
   it('TBL-I-17: focuses the first header cell after insertion', async () => {
