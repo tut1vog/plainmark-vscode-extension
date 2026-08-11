@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.1] - 2026-08-11
+
+### Fixed
+
+- **Tables no longer collapse into empty rows after an earlier edit shifts them down the document** — a table below an edit could render as blank collapsed rows until you clicked into it; it now stays correctly rendered as the document changes around it.
+
 ## [1.11.0] - 2026-08-06
 
 ### Changed
