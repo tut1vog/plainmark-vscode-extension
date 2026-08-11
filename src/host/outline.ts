@@ -102,7 +102,10 @@ class PlainmarkOutlineProvider implements vscode.TreeDataProvider<HeadingItem> {
     this._onDidChangeTreeData.fire();
   }
 
+  private refresh_seq = 0;
+
   async refresh(): Promise<void> {
+    const seq = ++this.refresh_seq;
     const uri = this.active_uri;
     if (!uri) {
       this.set_tree([]);
@@ -110,7 +113,11 @@ class PlainmarkOutlineProvider implements vscode.TreeDataProvider<HeadingItem> {
     }
     // Lazy: a hidden view never renders, so skip the symbol query until it shows.
     if (this.view && !this.view.visible) return;
-    this.set_tree(await query_headings(uri));
+    const roots = await query_headings(uri);
+    // The active document (or the document itself) can change while the query
+    // is in flight — a stale resolve must not bind old headings to the new state.
+    if (seq !== this.refresh_seq) return;
+    this.set_tree(roots);
   }
 
   // OUT-I-3 — reveal and select the heading the caret currently sits under.
