@@ -1,7 +1,7 @@
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 
 const hr_line = Decoration.line({ class: 'plainmark-hr plainmark-collapse-adjacent' });
 
@@ -46,7 +46,4 @@ const horizontal_rule_theme = EditorView.theme({
   },
 });
 
-export const horizontal_rule_extension = [
-  make_inline_decorations_plugin(horizontal_rule_handlers),
-  horizontal_rule_theme,
-];
+export const horizontal_rule_extension = [horizontal_rule_theme];

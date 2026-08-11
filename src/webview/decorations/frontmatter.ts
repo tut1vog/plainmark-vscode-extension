@@ -1,7 +1,7 @@
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 import { syntax_token_classes, syntax_token_color } from './syntax_palette.js';
 
@@ -122,7 +122,4 @@ function build_frontmatter_theme(): Record<string, Record<string, string>> {
 
 const frontmatter_theme = EditorView.theme(build_frontmatter_theme());
 
-export const frontmatter_extension = [
-  make_inline_decorations_plugin(frontmatter_handlers),
-  frontmatter_theme,
-];
+export const frontmatter_extension = [frontmatter_theme];

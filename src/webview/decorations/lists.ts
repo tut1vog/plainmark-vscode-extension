@@ -1,8 +1,8 @@
 import { syntaxTree } from '@codemirror/language';
-import { type EditorState, type Range, RangeSet } from '@codemirror/state';
+import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 
 function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
@@ -72,7 +72,7 @@ function list_item_line(depth: number): Decoration {
   return deco;
 }
 
-class ListBulletWidget extends WidgetType {
+export class ListBulletWidget extends WidgetType {
   eq(): boolean {
     return true;
   }
@@ -206,28 +206,6 @@ const task_handler: NodeHandler = {
 
 export const list_handlers: readonly NodeHandler[] = [list_item_handler, task_handler];
 
-const list_decorations_plugin = make_inline_decorations_plugin(list_handlers);
-
-// The bullet marker is never revealed (B2), so its replaced source span —
-// leading whitespace + ListMark + trailing space — must navigate as one atomic
-// unit, or the caret would step through hidden bytes one keypress at a time.
-const list_atomic_ranges = EditorView.atomicRanges.of((view) => {
-  const plugin = view.plugin(list_decorations_plugin);
-  if (!plugin) return RangeSet.empty;
-  const ranges: Range<Decoration>[] = [];
-  plugin.decorations.between(0, view.state.doc.length, (from, to, deco) => {
-    if (deco.spec.widget instanceof ListBulletWidget) ranges.push(deco.range(from, to));
-  });
-  // Pass sort=true defensively — `between` iterates the source RangeSet in
-  // `from` order, but two adjacent ListBulletWidget replace ranges can share
-  // a `from` (e.g. an empty bullet line whose marker collapses to zero width
-  // alongside a re-revealed neighbour), and the source RangeSet's tie-break
-  // by startSide doesn't necessarily survive the filter-and-rebuild here.
-  // Without this guard, RangeSet.of throws "Ranges must be added sorted by
-  // `from` position and `startSide`".
-  return RangeSet.of(ranges, true);
-});
-
 const lists_theme = EditorView.theme({
   // padding-top, not margin-top: a margin-top variant desynced CM6's height map for nested lists (cumulative margins → ArrowUp / posAtCoords skipped lines). Padding is measured by getBoundingClientRect on .cm-line, so the height map stays in sync.
   '.plainmark-list-item + .plainmark-list-item': {
@@ -322,4 +300,6 @@ const lists_theme = EditorView.theme({
   },
 });
 
-export const lists_extension = [list_decorations_plugin, lists_theme, list_atomic_ranges];
+// The decoration plugin and the bullet atomic-ranges provider live in
+// inline_bundle.ts — the latter reads the shared plugin's decorations.
+export const lists_extension = [lists_theme];

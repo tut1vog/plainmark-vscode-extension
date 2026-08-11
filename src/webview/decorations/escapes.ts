@@ -1,7 +1,7 @@
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 
 const hide_marker = Decoration.mark({ class: 'plainmark-inline-marker-hidden' });
@@ -17,8 +17,6 @@ const escape_handler: NodeHandler = {
   },
 };
 
+// Consumed by inline_bundle.ts (one shared walk). No theme — the
+// .plainmark-inline-marker-hidden rule lives once in text_styles_theme.
 export const escape_handlers: readonly NodeHandler[] = [escape_handler];
-
-// No theme here — the .plainmark-inline-marker-hidden rule lives once in
-// text_styles_theme (always co-loaded).
-export const escapes_extension = [make_inline_decorations_plugin(escape_handlers)];

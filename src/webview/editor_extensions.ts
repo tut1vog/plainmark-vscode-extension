@@ -36,11 +36,11 @@ import {
   codeblock_tab_dedent,
   codeblock_tab_indent,
 } from './decorations/codeblock_tab.js';
-import { escapes_extension } from './decorations/escapes.js';
 import {
   footnote_decorations_plugin,
   footnote_theme,
 } from './decorations/footnote.js';
+import { inline_decorations_bundle } from './decorations/inline_bundle.js';
 import { footnote_popover_extension } from './decorations/footnote_popover.js';
 import { frontmatter_extension } from './decorations/frontmatter.js';
 import { headings_extension } from './decorations/headings.js';
@@ -267,8 +267,8 @@ const editor_extensions_core: Extension[] = [
   math_extension,
   math_preview_extension,
   mermaid_extension,
+  inline_decorations_bundle,
   text_styles_extension,
-  escapes_extension,
   headings_extension,
   links_extension,
   lists_extension,

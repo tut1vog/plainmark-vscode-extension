@@ -1,7 +1,7 @@
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 
 function text_style_handler(
@@ -110,7 +110,5 @@ const text_styles_theme = EditorView.theme({
   },
 });
 
-export const text_styles_extension = [
-  make_inline_decorations_plugin(text_style_handlers),
-  text_styles_theme,
-];
+// The decoration plugin lives in inline_bundle.ts (one shared walk).
+export const text_styles_extension = [text_styles_theme];

@@ -1,7 +1,7 @@
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { syntax_token_color } from './syntax_palette.js';
 
 const html_block_deco = Decoration.line({ class: 'plainmark-html-block' });
@@ -108,7 +108,4 @@ function build_html_theme(): Record<string, Record<string, string>> {
 
 const html_theme = EditorView.theme(build_html_theme());
 
-export const html_extension = [
-  make_inline_decorations_plugin(html_handlers),
-  html_theme,
-];
+export const html_extension = [html_theme];

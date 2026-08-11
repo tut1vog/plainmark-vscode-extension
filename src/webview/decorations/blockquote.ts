@@ -10,7 +10,7 @@ import { Decoration, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror
 import type { SyntaxNodeRef } from '@lezer/common';
 import { build_callout_decorations } from './callout.js';
 import { detect_callout } from './callout_detect.js';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { line_revealed } from './quote_reveal.js';
 
 const MAX_DEPTH = 6;
@@ -575,12 +575,12 @@ const blockquote_marker_width_probe = ViewPlugin.fromClass(
   },
 );
 
-const marker_metrics_changed = (update: ViewUpdate): boolean =>
+// Consumed by inline_bundle.ts as the shared plugin's extra_rebuild.
+export const marker_metrics_changed = (update: ViewUpdate): boolean =>
   update.startState.field(marker_metrics_field) !== update.state.field(marker_metrics_field);
 
 export const blockquote_extension = [
   marker_metrics_field,
-  make_inline_decorations_plugin(blockquote_handlers, marker_metrics_changed),
   blockquote_caret_remeasure,
   blockquote_marker_width_probe,
   blockquote_theme,

@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language';
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef, Tree } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 import { effective_destination } from '../link_destination.js';
 import { create_logger } from '../../log.js';
@@ -327,8 +327,4 @@ const link_click_handler = EditorView.domEventHandlers({
   },
 });
 
-export const links_extension = [
-  make_inline_decorations_plugin(link_handlers),
-  links_theme,
-  link_click_handler,
-];
+export const links_extension = [links_theme, link_click_handler];

@@ -1,7 +1,7 @@
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 
 function heading_handler(node_name: string, level: number): NodeHandler {
@@ -124,7 +124,4 @@ const headings_theme = EditorView.theme({
   },
 });
 
-export const headings_extension = [
-  make_inline_decorations_plugin(heading_handlers),
-  headings_theme,
-];
+export const headings_extension = [headings_theme];

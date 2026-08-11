@@ -4,7 +4,7 @@ import { ranges_overlap } from '../ranges.js';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
 import { tags } from '@lezer/highlight';
-import { make_inline_decorations_plugin, type NodeHandler } from './inline_decorations.js';
+import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 import { syntax_token_classes, syntax_token_color } from './syntax_palette.js';
 
@@ -258,7 +258,4 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
 
 const code_block_theme = EditorView.theme(build_code_block_theme());
 
-export const code_block_extension = [
-  make_inline_decorations_plugin(code_block_handlers),
-  code_block_theme,
-];
+export const code_block_extension = [code_block_theme];
