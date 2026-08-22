@@ -3,7 +3,6 @@ import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
 import type { NodeHandler } from './inline_decorations.js';
-import { should_reveal_for_selection } from './selection_reveal.js';
 
 function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
   for (let c = node.firstChild; c; c = c.nextSibling) if (c.name === name) return c;
@@ -103,21 +102,14 @@ const list_item_handler: NodeHandler = {
     const is_task = find_first_child(n, 'Task') !== null;
     // Space-gate (Typora): a lone bullet marker with nothing after it on its own line stays plain text — otherwise the just-typed `-` is instantly swallowed by the glyph (lezer parses it as an empty list item).
     if (mark && !is_ordered && mark.to === own_line.to) return [];
-    // Only ordered numbers reveal per-line, scoped to the item's own marker line so a nested-child edit cannot collapse an ancestor; bullets and tasks never reveal (Typora model).
-    const revealed =
-      is_ordered && should_reveal_for_selection(state, own_line.from, own_line.to);
-    const depth = revealed ? 0 : list_depth(n);
+    // No list construct reveals (Typora B2): a source-true indent on the caret line shifts the line on enter/leave, since depth·indent-unit ≠ the source spaces' advance (LIST-I-3).
+    const depth = list_depth(n);
     const decorations: Range<Decoration>[] = [list_item_line(depth).range(line_from)];
     if (!mark) return decorations;
 
-    if (revealed) {
-      decorations.push(list_marker_mark.range(mark.from, mark.to));
-      return decorations;
-    }
-
-    // Off-line: hide the source's leading whitespace so nesting comes purely
-    // from the --plainmark-list-depth padding, not from the source space count
-    // — except inside a quote, where the prefix and nesting spaces stay in
+    // Hide the source's leading whitespace so nesting comes purely from the
+    // --plainmark-list-depth padding, not from the source space count —
+    // except inside a quote, where the prefix and nesting spaces stay in
     // flow (see marker_hide_from).
     const hide_from = marker_hide_from(state, line_from, mark.from);
     if (is_ordered) {
@@ -269,9 +261,8 @@ const lists_theme = EditorView.theme({
   // carried by the marker itself: each marker pushes right by depth·unit,
   // landing a nested marker on its parent's text column exactly like an
   // unquoted list. Wrapped rows get the matching step from the quote's line
-  // padding (blockquote.ts quoted_list_indent_units). The depth var is 0 on
-  // revealed lines, so revealed source text gets no phantom offset. Margins
-  // and padding on inline boxes are horizontal-only — no caret-height risk.
+  // padding (blockquote.ts quoted_list_indent_units). Margins and padding on
+  // inline boxes are horizontal-only — no caret-height risk.
   '.plainmark-blockquote .plainmark-list-bullet::before': {
     marginLeft: 'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))',
   },

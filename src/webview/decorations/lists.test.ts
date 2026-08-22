@@ -83,6 +83,11 @@ const bullet = (from: number, to: number): DecoSnapshot => ({
   to,
   kind: 'bullet',
 });
+const replace = (from: number, to: number): DecoSnapshot => ({
+  from,
+  to,
+  kind: 'replace',
+});
 
 function line_depths(state: EditorState): Array<{ from: number; depth: number }> {
   const set = build_inline_decorations(
@@ -209,7 +214,7 @@ describe('lone bullet marker space-gate LIST-R-2 LIST-E-6', () => {
   });
 });
 
-describe('ordered list LIST-R-5 LIST-I-2 LIST-E-2', () => {
+describe('ordered list LIST-R-5 LIST-I-3 LIST-E-2', () => {
   // '1. a\n\nzz\n' — ListItem[0,4]; ListMark[0,2] = '1.'
   const doc = '1. a\n\nzz\n';
   const caret_off = 7;
@@ -222,7 +227,7 @@ describe('ordered list LIST-R-5 LIST-I-2 LIST-E-2', () => {
     ]);
   });
 
-  it('keeps the numeric marker as a mark when caret is on the line (no reveal branch)', () => {
+  it('keeps the numeric marker as a mark when caret is on the line (ordered items never reveal)', () => {
     expect(snapshot(make_state(doc, caret_inside))).toEqual([
       line(0, 'plainmark-list-item'),
       mark(0, 2, 'plainmark-list-marker'),
@@ -235,6 +240,59 @@ describe('ordered list LIST-R-5 LIST-I-2 LIST-E-2', () => {
       line(0, 'plainmark-list-item'),
       mark(0, 2, 'plainmark-list-marker'),
     ]);
+  });
+});
+
+describe('nested ordered list LIST-R-5 LIST-I-3', () => {
+  // '- a\n  1. b\n\nzz\n' — inner ListItem line starts at 4; nesting
+  // spaces [4,6); ListMark[6,8) = '1.'
+  const doc = '- a\n  1. b\n\nzz\n';
+  const caret_off = 12;
+  const caret_inside = 9;
+  const expected = [
+    line(0, 'plainmark-list-item'),
+    bullet(0, 2),
+    line(4, 'plainmark-list-item'),
+    replace(4, 6),
+    mark(6, 8, 'plainmark-list-marker'),
+  ];
+
+  it('hides the nesting spaces and keeps computed depth when caret is off-line', () => {
+    expect(snapshot(make_state(doc, caret_off))).toEqual(expected);
+    expect(line_depths(make_state(doc, caret_off))).toEqual([
+      { from: 0, depth: 0 },
+      { from: 4, depth: 1 },
+    ]);
+  });
+
+  it('emits identical decorations when the caret is on the nested marker line (never reveals — the line must not shift)', () => {
+    expect(snapshot(make_state(doc, caret_inside))).toEqual(expected);
+    expect(line_depths(make_state(doc, caret_inside))).toEqual([
+      { from: 0, depth: 0 },
+      { from: 4, depth: 1 },
+    ]);
+  });
+
+  it('keeps the decorations stable across caret enter and leave', () => {
+    let state = make_state(doc, caret_inside);
+    expect(snapshot(state)).toEqual(expected);
+    state = state.update({ selection: { anchor: caret_off } }).state;
+    expect(snapshot(state)).toEqual(expected);
+  });
+
+  it('keeps computed depth with the caret on an ordered item nested under an ordered parent', () => {
+    // '1. a\n   1. b\n\nzz\n' — three-space nesting; inner line from 5,
+    // spaces [5,8), ListMark[8,10)
+    const doc_ord = '1. a\n   1. b\n\nzz\n';
+    const inner = [
+      line(0, 'plainmark-list-item'),
+      mark(0, 2, 'plainmark-list-marker'),
+      line(5, 'plainmark-list-item'),
+      replace(5, 8),
+      mark(8, 10, 'plainmark-list-marker'),
+    ];
+    expect(snapshot(make_state(doc_ord, 14))).toEqual(inner);
+    expect(snapshot(make_state(doc_ord, 11))).toEqual(inner);
   });
 });
 
@@ -316,7 +374,7 @@ describe('depth-cycled bullet glyphs LIST-R-3 LIST-E-3', () => {
   });
 });
 
-describe('task list (unchecked) LIST-R-6 LIST-I-3 LIST-E-4', () => {
+describe('task list (unchecked) LIST-R-6 LIST-I-2 LIST-E-4', () => {
   // '- [ ] a\n\nzz\n' — ListMark[0,1]; Task[2,7]; TaskMarker[2,5]
   const doc = '- [ ] a\n\nzz\n';
   const caret_off = 10;
@@ -354,7 +412,7 @@ describe('task list (unchecked) LIST-R-6 LIST-I-3 LIST-E-4', () => {
   });
 });
 
-describe('task list (checked) LIST-R-6 LIST-R-7 LIST-I-3', () => {
+describe('task list (checked) LIST-R-6 LIST-R-7 LIST-I-2', () => {
   // '- [x] a\n\nzz\n'
   const doc = '- [x] a\n\nzz\n';
   const caret_off = 10;

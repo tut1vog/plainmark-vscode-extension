@@ -27,9 +27,8 @@ freeze (while a button is held it evaluates the pre-press selection captured in
 code, links, backslash escapes (`escapes.md`), fenced-code fence reveal
 (`code-blocks.md` CBLK-I-1/CBLK-I-3), math widgets (`math.md`), and — under the unified
 reveal model — the image paragraph widget (IMG-I-1), mermaid block widget
-(MMD-I-1), footnote reference reveal (FN-I-1), and the ordered-list per-line
-reveal (LIST-I-3, evaluated against the item's own marker line range) call it
-directly. The
+(MMD-I-1), and footnote reference reveal (FN-I-1) call it directly. (List
+constructs no longer appear here: no list construct reveals, LIST-I-1/I-2/I-3.) The
 **scaffold path** (`compute_reveal_ranges` + the intersection test in
 `build_inline_decorations`) is line-expanded and feeds
 a `revealed` boolean to `NodeHandler.handle`; it is the default for structural
