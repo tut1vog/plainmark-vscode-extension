@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.3] - 2026-08-22
+
+### Fixed
+
+- **Numbered list items no longer shift sideways when the caret enters or leaves the line** — a nested numbered item now keeps the same indent whether or not the cursor is on it, matching bullets and checklist items.
+
 ## [1.11.2] - 2026-08-11
 
 ### Changed
