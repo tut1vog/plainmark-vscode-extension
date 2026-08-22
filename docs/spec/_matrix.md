@@ -558,7 +558,7 @@
 | LIST-E-6 | tier-a + smoke | conforming | `lists.test.ts` |
 | LIST-I-1 | tier-a + smoke | conforming | `lists.test.ts` |
 | LIST-I-2 | tier-a + smoke | conforming | `lists.test.ts` |
-| LIST-I-3 | tier-a + smoke | conforming | `lists.test.ts` |
+| LIST-I-3 | tier-a + tier-b + smoke | conforming | `lists.test.ts`, `list-caret-stability.spec.ts` |
 | LIST-I-4 | smoke | conforming | — |
 | LIST-I-5 | smoke | conforming | — |
 | LIST-I-6 | UNCOVERED | conforming | — |
@@ -697,7 +697,7 @@
 | MMD-E-7 | UNCOVERED | conforming | — |
 | MMD-E-8 | tier-a | conforming | `mermaid_loader.test.ts` |
 | MMD-E-9 | smoke + accepted | accepted | — |
-| MMD-E-10 | smoke | unknown | — |
+| MMD-E-10 | smoke | conforming | — |
 | MMD-E-11 | accepted | accepted | — |
 | MMD-I-1 | tier-a + tier-b | conforming | `mermaid.test.ts`, `mermaid-geometry.spec.ts` |
 | MMD-I-2 | smoke | conforming | — |
@@ -707,8 +707,8 @@
 | MMD-R-1 | tier-a | conforming | `mermaid.test.ts` |
 | MMD-R-2 | tier-a | conforming | `mermaid.test.ts` |
 | MMD-R-3 | smoke | unknown | — |
-| MMD-R-4 | tier-b + smoke | unknown | `mermaid-geometry.spec.ts` |
-| MMD-R-5 | tier-b + smoke | unknown | `mermaid-geometry.spec.ts` |
+| MMD-R-4 | tier-b + smoke | conforming | `mermaid-geometry.spec.ts` |
+| MMD-R-5 | tier-b + smoke | conforming | `mermaid-geometry.spec.ts` |
 | MMD-R-6 | tier-a + tier-b + smoke | conforming | `mermaid.test.ts`, `mermaid-geometry.spec.ts` |
 | MMD-R-7 | tier-a | conforming | `mermaid.test.ts`, `mermaid_loader.test.ts` |
 | MMD-R-8 | tier-b + smoke | conforming | `mermaid-geometry.spec.ts` |
