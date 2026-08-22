@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.4] - 2026-08-22
+
+### Security
+
+- **Updated the diagram renderer and its HTML sanitizer** — mermaid and DOMPurify move to their latest releases, closing a sanitizer bypass that could let a crafted diagram run script, along with several ways a malicious diagram could pollute shared state, inject styling outside itself, or hang rendering.
+
 ## [1.11.3] - 2026-08-22
 
 ### Fixed
