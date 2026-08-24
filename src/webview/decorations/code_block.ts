@@ -2,7 +2,7 @@ import { HighlightStyle } from '@codemirror/language';
 import { type EditorState, type Range } from '@codemirror/state';
 import { ranges_overlap } from '../ranges.js';
 import { Decoration, EditorView } from '@codemirror/view';
-import type { SyntaxNodeRef } from '@lezer/common';
+import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
 import { tags } from '@lezer/highlight';
 import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
@@ -22,6 +22,35 @@ const fenced_content_end_deco = Decoration.line({
 // drawSelection under lineWrapping (see headings.ts). The fence line
 // keeps its full height (no line-height collapse) so reveal/hide reflows nothing.
 const hide_fence = Decoration.mark({ class: 'plainmark-fenced-code-marker' });
+// Emitted in both caret states — a caret-state indent (raw spaces in flow)
+// would shift the line on enter/leave, the defect the list never-reveal fixed.
+const hide_indent = Decoration.mark({ class: 'plainmark-fenced-code-indent' });
+
+// Quoted lines keep the status quo: the in-flow `> ` prefix and the quote's
+// net-to-zero indent own their geometry, so nesting stops at any Blockquote.
+function nest_context(node: SyntaxNode): { depth: number; quoted: boolean } {
+  let depth = 0;
+  for (let p = node.parent; p; p = p.parent) {
+    if (p.name === 'Blockquote') return { depth: 0, quoted: true };
+    if (p.name === 'ListItem') depth++;
+  }
+  return { depth, quoted: false };
+}
+
+// Per-depth line decorations are cached so equal depths share one instance.
+const nested_lines = new Map<string, Decoration>();
+function nested_line(base_class: string, depth: number): Decoration {
+  const key = `${base_class}|${depth}`;
+  let deco = nested_lines.get(key);
+  if (!deco) {
+    deco = Decoration.line({
+      class: `${base_class} plainmark-fenced-code-nested`,
+      attributes: { style: `--plainmark-list-depth: ${depth}` },
+    });
+    nested_lines.set(key, deco);
+  }
+  return deco;
+}
 
 function fenced_code_handler(): NodeHandler {
   return {
@@ -42,9 +71,13 @@ function fenced_code_handler(): NodeHandler {
         if (!ranges_overlap(sel, node)) return [];
       }
 
+      const { depth, quoted } = nest_context(node.node);
+      const nested = depth > 0;
+
       const header_attrs: Record<string, string> = info
         ? { 'data-language': info }
         : {};
+      if (nested) header_attrs['style'] = `--plainmark-list-depth: ${depth}`;
 
       // Typora-style fence reveal at whole-node granularity: the opening and
       // closing fence text is hidden (zero-font mark over a full-height line)
@@ -58,9 +91,16 @@ function fenced_code_handler(): NodeHandler {
       const revealed = should_reveal_for_selection(state, node.from, node.to);
 
       const header_deco = Decoration.line({
-        class: 'plainmark-fenced-code plainmark-fenced-code-header',
+        class: nested
+          ? 'plainmark-fenced-code plainmark-fenced-code-header plainmark-fenced-code-nested'
+          : 'plainmark-fenced-code plainmark-fenced-code-header',
         attributes: header_attrs,
       });
+
+      // CommonMark strips the fence's indent from the block's content, so up
+      // to that many leading whitespace characters per line are display-hidden.
+      const fence_indent =
+        !quoted && marks.length > 0 ? marks[0].from - open_line.from : 0;
 
       for (let i = open_line.number; i <= end_line_no; i++) {
         const line = state.doc.line(i);
@@ -68,14 +108,28 @@ function fenced_code_handler(): NodeHandler {
         if (i === open_line.number) {
           deco = header_deco;
         } else if (i === close_line_no) {
-          deco = fenced_footer_deco;
+          deco = nested
+            ? nested_line('plainmark-fenced-code plainmark-fenced-code-footer', depth)
+            : fenced_footer_deco;
         } else if (i === end_line_no) {
           // Unclosed block — the last line is code content, not a fence.
-          deco = fenced_content_end_deco;
+          deco = nested
+            ? nested_line('plainmark-fenced-code plainmark-fenced-code-content-end', depth)
+            : fenced_content_end_deco;
         } else {
-          deco = fenced_body_deco;
+          deco = nested ? nested_line('plainmark-fenced-code', depth) : fenced_body_deco;
         }
         decorations.push(deco.range(line.from));
+        if (fence_indent > 0) {
+          let ws = 0;
+          while (
+            ws < fence_indent &&
+            ws < line.text.length &&
+            (line.text[ws] === ' ' || line.text[ws] === '\t')
+          )
+            ws++;
+          if (ws > 0) decorations.push(hide_indent.range(line.from, line.from + ws));
+        }
       }
 
       if (!revealed) {
@@ -173,6 +227,10 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
     'var(--plainmark-fenced-code-language-label-color, var(--vscode-descriptionForeground, currentColor))';
   const label_size = 'var(--plainmark-fenced-code-language-label-size, 0.75em)';
 
+  // One indent unit per enclosing list level — the same step the list lines use.
+  const nest =
+    'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))';
+
   const background =
     'var(--plainmark-code-background, var(--vscode-textCodeBlock-background, var(--vscode-textPreformat-background, transparent)))';
   const color =
@@ -241,6 +299,23 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
     // full line-height strut, so the collapsed fence reserves a full line of
     // space and revealing it reflows nothing.
     '.plainmark-fenced-code-marker': {
+      'font-size': '0',
+    },
+    // List-nested block: the tinted box and its padding shift right to the
+    // list content column (depth indent units past the margin). Declared after
+    // the shared chrome so the padding-left override wins the specificity tie.
+    '.plainmark-fenced-code-nested': {
+      'background-size': `calc(100% - ${margin_x} - ${nest}) 100%`,
+      'background-position': `calc(${margin_x} + ${nest}) 0`,
+      'padding-left': `calc(${margin_x} + ${padding_x} + ${nest})`,
+    },
+    // Triple-class form so the nest offset beats the two-class gapped-header
+    // background rule above.
+    '.plainmark-fenced-code-nested.plainmark-fenced-code-header.plainmark-paragraph-gap': {
+      'background-size': `calc(100% - ${margin_x} - ${nest}) calc(100% - var(--plainmark-paragraph-gap, 0.75em))`,
+      'background-position': `calc(${margin_x} + ${nest}) bottom`,
+    },
+    '.plainmark-fenced-code-indent': {
       'font-size': '0',
     },
   };

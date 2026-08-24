@@ -191,3 +191,159 @@ describe('plainmark_highlight_style', () => {
     expect(plainmark_highlight_style).toBeInstanceOf(HighlightStyle);
   });
 });
+
+function chrome_lines(
+  state: EditorState,
+): Array<{ from: number; cls: string; style?: string }> {
+  const set = build_inline_decorations(
+    state,
+    [{ from: 0, to: state.doc.length }],
+    registry,
+  );
+  const out: Array<{ from: number; cls: string; style?: string }> = [];
+  set.between(0, state.doc.length, (from, to, deco) => {
+    if (from !== to) return;
+    const spec = deco.spec as { class?: string; attributes?: Record<string, string> };
+    out.push({ from, cls: spec.class ?? '', style: spec.attributes?.style });
+  });
+  out.sort((a, b) => a.from - b.from);
+  return out;
+}
+
+function indent_marks(state: EditorState): Array<{ from: number; to: number }> {
+  const set = build_inline_decorations(
+    state,
+    [{ from: 0, to: state.doc.length }],
+    registry,
+  );
+  const out: Array<{ from: number; to: number }> = [];
+  set.between(0, state.doc.length, (from, to, deco) => {
+    if ((deco.spec as { class?: string }).class === 'plainmark-fenced-code-indent') {
+      out.push({ from, to });
+    }
+  });
+  out.sort((a, b) => a.from - b.from);
+  return out;
+}
+
+describe('CBLK-R-17: list-nested fenced code takes content-column geometry', () => {
+  it('marks every line of a fence under an ordered item with nested class and depth 1', () => {
+    // '1. item'=0..7, '   ```js'=8..16, '   const a = 1;'=17..32, '   ```'=33..39, 'z'=40
+    const state = make_state('1. item\n   ```js\n   const a = 1;\n   ```\nz', 40);
+    const out = chrome_lines(state);
+    expect(out.map((l) => l.from)).toEqual([8, 17, 33]);
+    for (const line of out) {
+      expect(line.cls).toContain('plainmark-fenced-code-nested');
+      expect(line.style).toBe('--plainmark-list-depth: 1');
+    }
+  });
+
+  it('carries the uncapped depth for a fence nested two list levels down', () => {
+    const state = make_state('- a\n  1. b\n     ```js\n     x\n     ```\nz', 38);
+    const out = chrome_lines(state);
+    expect(out.map((l) => l.from)).toEqual([11, 22, 29]);
+    for (const line of out) {
+      expect(line.cls).toContain('plainmark-fenced-code-nested');
+      expect(line.style).toBe('--plainmark-list-depth: 2');
+    }
+  });
+
+  it('keeps the header data-language alongside the nested depth style', () => {
+    const state = make_state('1. item\n   ```js\n   x\n   ```\nz', 29);
+    const out = snapshot(state).filter((d) => d.from === d.to && d.from === 8);
+    expect(out).toHaveLength(1);
+    expect(out[0].data_language).toBe('js');
+    const header = chrome_lines(state)[0];
+    expect(header.style).toBe('--plainmark-list-depth: 1');
+  });
+
+  it('emits no nested class or depth style on a top-level fence', () => {
+    const state = make_state('```js\nconst a = 1;\n```\nz', 24);
+    const out = chrome_lines(state);
+    expect(out).toHaveLength(3);
+    for (const line of out) {
+      expect(line.cls).not.toContain('plainmark-fenced-code-nested');
+      expect(line.style).toBeUndefined();
+    }
+  });
+});
+
+describe('CBLK-R-18: leading whitespace up to the fence indent is display-hidden', () => {
+  it('hides the shared 3-space indent on every line of a list-nested fence', () => {
+    const state = make_state('1. item\n   ```js\n   const a = 1;\n   ```\nz', 40);
+    expect(indent_marks(state)).toEqual([
+      { from: 8, to: 11 },
+      { from: 17, to: 20 },
+      { from: 33, to: 36 },
+    ]);
+  });
+
+  it('keeps intentional code indentation past the fence indent visible', () => {
+    // '       y = 2' has 7 leading spaces; only the fence's 3 hide.
+    const state = make_state('1. a\n   ```py\n   x = 1\n       y = 2\n   ```\nz', 44);
+    expect(indent_marks(state)).toContainEqual({ from: 23, to: 26 });
+  });
+
+  it('hides only what is there on an under-indented content line', () => {
+    // ' x' has one leading space against a 2-space fence indent (top-level
+    // fence: inside a list an under-indented line ends the item and the fence).
+    const state = make_state('  ```js\n x\n  ```\nz', 18);
+    expect(indent_marks(state)).toContainEqual({ from: 8, to: 9 });
+  });
+
+  it('emits no mark for a blank or flush-left content line', () => {
+    // blank line at 14, flush 'x' at 15..16 — neither may carry a mark.
+    const state = make_state('1. a\n   ```js\n\nx\n   ```\nz', 24);
+    expect(indent_marks(state)).toEqual([
+      { from: 5, to: 8 },
+      { from: 17, to: 20 },
+    ]);
+  });
+
+  it('applies the strip to a top-level indented fence without list geometry', () => {
+    const state = make_state('  ```js\n  const a = 1;\n  ```\nz', 30);
+    for (const line of chrome_lines(state)) {
+      expect(line.cls).not.toContain('plainmark-fenced-code-nested');
+    }
+    expect(indent_marks(state)).toEqual([
+      { from: 0, to: 2 },
+      { from: 8, to: 10 },
+      { from: 23, to: 25 },
+    ]);
+  });
+
+  it('emits no indent marks for a flush top-level fence', () => {
+    const state = make_state('```js\nconst a = 1;\n```\nz', 24);
+    expect(indent_marks(state)).toEqual([]);
+  });
+
+  it('keeps indent marks and nested lines while the caret is inside the block', () => {
+    const state = make_state('1. item\n   ```js\n   const a = 1;\n   ```\nz', 22);
+    expect(markers(state)).toHaveLength(0);
+    expect(indent_marks(state)).toHaveLength(3);
+    for (const line of chrome_lines(state)) {
+      expect(line.cls).toContain('plainmark-fenced-code-nested');
+    }
+  });
+});
+
+describe('CBLK-E-8: quote-nested fenced code keeps quote geometry', () => {
+  it('emits no nested class and no indent marks inside a blockquote', () => {
+    const state = make_state('> ```js\n> const a = 1;\n> ```\nz', 30);
+    const out = chrome_lines(state);
+    expect(out.length).toBeGreaterThanOrEqual(3);
+    for (const line of out) {
+      expect(line.cls).not.toContain('plainmark-fenced-code-nested');
+      expect(line.style).toBeUndefined();
+    }
+    expect(indent_marks(state)).toEqual([]);
+  });
+
+  it('emits no nested class for a fence in a list inside a blockquote', () => {
+    const state = make_state('> - a\n>   ```js\n>   x\n>   ```\nz', 31);
+    for (const line of chrome_lines(state)) {
+      expect(line.cls).not.toContain('plainmark-fenced-code-nested');
+    }
+    expect(indent_marks(state)).toEqual([]);
+  });
+});

@@ -79,6 +79,57 @@ describe('4-space-indented lines — no code chrome (CBLK-E-1)', () => {
   });
 });
 
+describe('list-nested fenced code — content-column geometry CBLK-R-17 CBLK-R-18', () => {
+  let h: SetupHandle;
+  beforeEach(() => {
+    h = make_setup();
+    h.container.style.width = '600px';
+    document.body.appendChild(h.container);
+  });
+  afterEach(() => {
+    h.view?.destroy();
+    h.container.remove();
+  });
+
+  // '- item'=0..6, '  ```js'=7..14, '  const x = 1;'=15..29, '  ```'=30..35, 'z'=36
+  const doc = '- item\n  ```js\n  const x = 1;\n  ```\nz';
+
+  it('starts the tinted box at the list content column', async () => {
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 36);
+    await wait_frames(2);
+
+    const body = h.container.querySelectorAll('.plainmark-fenced-code')[1] as HTMLElement;
+    expect(body.classList.contains('plainmark-fenced-code-nested')).toBe(true);
+    const box_left =
+      body.getBoundingClientRect().left +
+      parseFloat(getComputedStyle(body).backgroundPositionX);
+    const content_x = h.view.coordsAtPos(2)!.left;
+    expect(Math.abs(box_left - content_x)).toBeLessThanOrEqual(1);
+  });
+
+  it('renders code flush inside the box — the shared fence indent has no advance', async () => {
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 36);
+    await wait_frames(2);
+
+    const at_line_start = h.view.coordsAtPos(15)!.left;
+    const past_indent = h.view.coordsAtPos(17)!.left;
+    expect(Math.abs(past_indent - at_line_start)).toBeLessThanOrEqual(1);
+  });
+
+  it('keeps code x stable when the caret enters the block (never-reveal indent)', async () => {
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 36);
+    await wait_frames(2);
+    const before = h.view.coordsAtPos(17)!.left;
+    move_cursor(h.view, 20);
+    await wait_frames(2);
+    const after = h.view.coordsAtPos(17)!.left;
+    expect(Math.abs(after - before)).toBeLessThanOrEqual(1);
+  });
+});
+
 describe('fenced code block — syntax highlighting CBLK-R-10 CBLK-R-12', () => {
   let h: SetupHandle;
   let injected_style: HTMLStyleElement | null = null;
