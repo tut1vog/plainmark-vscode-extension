@@ -130,6 +130,46 @@ describe('list-nested fenced code — content-column geometry CBLK-R-17 CBLK-R-1
   });
 });
 
+describe('quoted fenced code — hidden marker stays hidden BQ-E-13', () => {
+  let h: SetupHandle;
+  beforeEach(() => {
+    h = make_setup();
+    document.body.appendChild(h.container);
+  });
+  afterEach(() => {
+    h.view?.destroy();
+    h.container.remove();
+  });
+
+  // '> ```js'=0..7, '> const quoted = true;'=8..30, '> ```'=31..36, 'z'=37
+  const doc = '> ```js\n> const quoted = true;\n> ```\nz';
+
+  it('keeps the syntax-colored `>` span transparent on a quoted fence body line', async () => {
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 37);
+    await wait_frames(2);
+
+    const markers = h.container.querySelectorAll('.plainmark-quote-marker');
+    expect(markers.length).toBeGreaterThanOrEqual(3);
+    // The body line's marker — the highlighter wraps its `>` in a syntax span.
+    const inner = markers[1].querySelector('[class*="plainmark-syntax-"]');
+    expect(inner).not.toBeNull();
+    expect(getComputedStyle(inner as Element).color).toBe('rgba(0, 0, 0, 0)');
+  });
+
+  it('still shows the `>` when the caret is on the line (per-line reveal)', async () => {
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 12);
+    await wait_frames(2);
+
+    const revealed = h.container.querySelector('.plainmark-quote-marker-revealed');
+    expect(revealed).not.toBeNull();
+    const inner = revealed!.querySelector('[class*="plainmark-syntax-"]');
+    const glyph = (inner ?? revealed) as Element;
+    expect(getComputedStyle(glyph).color).not.toBe('rgba(0, 0, 0, 0)');
+  });
+});
+
 describe('fenced code block — syntax highlighting CBLK-R-10 CBLK-R-12', () => {
   let h: SetupHandle;
   let injected_style: HTMLStyleElement | null = null;

@@ -298,6 +298,12 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
     '.plainmark-quote-marker': {
       color: 'transparent',
     },
+    // The highlighter meta-tags `>` like other markdown marks, so chrome that
+    // scopes token colors (fenced code, CBLK-R-11) repaints the hidden marker;
+    // doubled class outranks those (0,2,0) scoped rules.
+    '.plainmark-quote-marker.plainmark-quote-marker [class*="plainmark-syntax-"]': {
+      color: 'transparent',
+    },
     // DIRECT-child text-indent reset: Chromium leaks the line's negative indent into inline-flex children, collapsing their gap (Firefox#1682380); a descendant `*` reset would also kill the block's first-line hang.
     '.plainmark-blockquote > *': {
       'text-indent': '0',
