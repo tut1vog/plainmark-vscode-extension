@@ -2,6 +2,15 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.5] - 2026-08-24
+
+### Fixed
+
+- **Code blocks inside a list now align with the list content** — a fenced block nested in a list item no longer sits in the margin with the list's indent showing as blank space inside it.
+- **Mermaid diagrams inside a list now render in full** — a diagram nested in a list item previously showed only its first line and rendered as empty; it now renders completely.
+- **Hidden blockquote markers stay hidden inside syntax-highlighted code** — a quote's `>` marker at the start of a fenced-code line could repaint itself visible when that line was syntax-highlighted; it now stays invisible.
+- **A code block opening right at the start of a blockquote keeps its shaded background** — the fence line immediately after the quote marker no longer looks like it sits outside the code block.
+
 ## [1.11.4] - 2026-08-22
 
 ### Security
