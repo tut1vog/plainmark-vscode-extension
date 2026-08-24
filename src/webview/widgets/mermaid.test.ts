@@ -253,3 +253,43 @@ describe('mermaid_cache_field MMD-R-6', () => {
     expect(cache.get('light:b')).toEqual({ ok: true, svg: '<svg/>' });
   });
 });
+
+describe('MMD-R-2 MMD-E-12: list-nested indented diagram', () => {
+  // '1. d:'=0..5, '   ```mermaid'=6..19, '   graph TD'=20..31,
+  // '     A --> B'=32..44, '   ```'=45..51, 'z'=52
+  const nested = '1. d:\n   ```mermaid\n   graph TD\n     A --> B\n   ```\nz';
+
+  it('concatenates all CodeText segments into the source', () => {
+    const blocks = find_mermaid_blocks(make_state(nested));
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].src).toBe('graph TD\n  A --> B');
+  });
+
+  it('keeps a blank line inside the source', () => {
+    const blocks = find_mermaid_blocks(
+      make_state('1. d:\n   ```mermaid\n   graph TD\n\n     A --> B\n   ```\nz'),
+    );
+    expect(blocks[0].src).toBe('graph TD\n\n  A --> B');
+  });
+
+  it('extends the block range to the opening line start', () => {
+    const blocks = find_mermaid_blocks(make_state(nested));
+    expect(blocks[0].from).toBe(6);
+    expect(blocks[0].to).toBe(51);
+  });
+
+  it('emits a line-aligned block replace widget when the caret is outside', () => {
+    const decos = decorations(make_state(nested));
+    expect(decos).toHaveLength(1);
+    expect(decos[0].from).toBe(6);
+    expect(decos[0].to).toBe(51);
+    expect(decos[0].block).toBe(true);
+    expect(decos[0].widget.src).toBe('graph TD\n  A --> B');
+  });
+
+  it('leaves a top-level diagram source and range unchanged', () => {
+    const blocks = find_mermaid_blocks(make_state(DIAGRAM));
+    expect(blocks[0].src.trim()).toBe('graph TD\nA-->B');
+    expect(blocks[0].from).toBe(0);
+  });
+});

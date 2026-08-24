@@ -402,9 +402,15 @@ export function find_mermaid_blocks(
         .trim()
         .toLowerCase();
       if (info !== 'mermaid') return;
-      const text_node = node.node.getChild('CodeText');
-      const src = text_node ? state.doc.sliceString(text_node.from, text_node.to) : '';
-      blocks.push({ src, from: node.from, to: node.to });
+      // Inside a container (list) fence the parser splits CodeText per line,
+      // stripping the container indent — concatenate for the full source.
+      const src = node.node
+        .getChildren('CodeText')
+        .map((t) => state.doc.sliceString(t.from, t.to))
+        .join('');
+      // Block decorations must cover whole lines; an indented fence's node
+      // starts past the leading whitespace.
+      blocks.push({ src, from: state.doc.lineAt(node.from).from, to: node.to });
     },
   });
   return blocks;

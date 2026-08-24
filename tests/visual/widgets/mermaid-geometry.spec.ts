@@ -96,6 +96,29 @@ describe('mermaid widget geometry oracles', () => {
     expect(block.right).toBeLessThanOrEqual(content.right + 1);
   });
 
+  it('MMD-E-12: a list-nested indented diagram renders and receives the full source', async () => {
+    const seen: string[] = [];
+    (window as MermaidGlobal).PlainmarkMermaid = {
+      initialize: () => {},
+      render: (_id, text) => {
+        seen.push(text);
+        return Promise.resolve({ svg: OK_SVG });
+      },
+    };
+    const doc = '1. d:\n   ```mermaid\n   graph TD\n     A-->B\n   ```\nz';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await expect
+      .poll(() => container.querySelectorAll('[data-test="mermaid-ok"]').length, {
+        timeout: 30000,
+        interval: 50,
+      })
+      .toBe(1);
+    // The per-line CodeText segments concatenate to the diagram source with the
+    // container indent stripped — not just the first line.
+    expect(seen).toContain('graph TD\n  A-->B');
+  });
+
   it('MMD-R-5: a broken diagram renders a visible error element with nonzero height that fits the content width', async () => {
     allow_console('mermaid render failed');
     const doc = '```mermaid\nBROKEN\n```\n\ntail';
