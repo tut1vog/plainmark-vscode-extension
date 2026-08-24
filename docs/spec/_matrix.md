@@ -68,7 +68,7 @@
 | BQ-R-10 | tier-b + smoke | conforming | `selection-alignment.spec.ts` |
 | BQ-R-11 | tier-b + smoke | conforming | `blockquote-caret.spec.ts`, `selection-alignment.spec.ts` |
 | BQ-R-12 | tier-a + tier-b + smoke | conforming | `blockquote_indent.test.ts`, `selection-alignment.spec.ts` |
-| BQ-R-13 | tier-b | conforming | `paragraph-gap-blockquote.spec.ts`, `paragraph-gap-blocks.spec.ts` |
+| BQ-R-13 | tier-b | conforming | `code_block.spec.ts`, `paragraph-gap-blockquote.spec.ts`, `paragraph-gap-blocks.spec.ts` |
 | BQ-SP-1 | tier-a | conforming | `blockquote_keymap.test.ts` |
 | BQ-SP-2 | smoke | conforming | — |
 | BQ-SP-3 | tier-a + tier-b + inherited | conforming | — |

@@ -168,6 +168,25 @@ describe('quoted fenced code — hidden marker stays hidden BQ-E-13', () => {
     const glyph = (inner ?? revealed) as Element;
     expect(getComputedStyle(glyph).color).not.toBe('rgba(0, 0, 0, 0)');
   });
+
+  it('keeps the code tint on a gapped quote-first fence header BQ-R-13', async () => {
+    // Prose + blank above makes the quote's FIRST line the fence header, which
+    // then carries blockquote-first + paragraph-gap: the quote gap repaint
+    // must restack the code background, not drop it.
+    const gapped = 'prose above\n\n> ```js\n> const quoted = true;\n> ```\nz';
+    h.view = mount_editor(h.container, gapped);
+    move_cursor(h.view, gapped.length);
+    await wait_frames(2);
+
+    const header = h.container.querySelector(
+      '.plainmark-fenced-code-header',
+    ) as HTMLElement;
+    expect(header.classList.contains('plainmark-blockquote-first')).toBe(true);
+    expect(header.classList.contains('plainmark-paragraph-gap')).toBe(true);
+    const bg = getComputedStyle(header).backgroundImage;
+    expect(bg).not.toBe('none');
+    expect(bg.match(/linear-gradient/g)?.length).toBe(2);
+  });
 });
 
 describe('fenced code block — syntax highlighting CBLK-R-10 CBLK-R-12', () => {
