@@ -5,7 +5,10 @@ import type { SyntaxNodeRef } from '@lezer/common';
 import {
   hanging_indent_px,
   hide_marker,
+  hide_nest_indent,
+  list_nest_depth,
   marker_metrics_field,
+  nest_indent_len,
   quote_prefix_counts,
 } from './blockquote.js';
 import {
@@ -93,14 +96,30 @@ export function build_callout_decorations(
   const header_line = state.doc.line(start_line_no);
   const header_revealed = line_revealed(state, header_line.from, header_line.to);
 
+  // Same list-nesting model as a plain quote: the enclosing list depth rides a
+  // transparent border (theme) and the container indent before `>` is hidden.
+  const nest = list_nest_depth(node.node);
+  const nested_class = nest > 0 ? ' plainmark-callout-nested' : '';
+  const nest_style = nest > 0 ? `--plainmark-quote-nest:${nest}` : '';
+
   for (let i = start_line_no; i <= end_line_no; i++) {
     const line = state.doc.line(i);
-    const style = indent_style(line.text);
+    const lead = nest_indent_len(line.text);
+    // Opening line: a list marker may precede the `>` (`- > [!NOTE]`); the
+    // list handler owns it, so only a pure whitespace run is hidden here.
+    const quote_col = i === start_line_no ? node.from - line.from : lead;
+    if (lead > 0 && lead === quote_col) {
+      decorations.push(hide_nest_indent.range(line.from, line.from + lead));
+    }
+    const style_parts = [nest_style, indent_style(line.text.slice(quote_col)) ?? ''].filter(
+      Boolean,
+    );
+    const style = style_parts.length > 0 ? style_parts.join(';') : undefined;
     // aria-label on Decoration.line (vs aria-labelledby + per-toDOM id) — the line element is rebuilt independently of the widget; carrying a static label string is simpler than threading an id between two passes.
     const deco =
       i === start_line_no
         ? Decoration.line({
-            class: 'plainmark-callout plainmark-callout-header',
+            class: `plainmark-callout plainmark-callout-header${nested_class}`,
             attributes: {
               'data-callout-type': info.type,
               'data-callout-fold': info.fold ?? '',
@@ -110,7 +129,7 @@ export function build_callout_decorations(
             },
           })
         : Decoration.line({
-            class: 'plainmark-callout plainmark-callout-body',
+            class: `plainmark-callout plainmark-callout-body${nested_class}`,
             attributes: {
               'data-callout-type': info.type,
               ...(style ? { style } : {}),
@@ -213,6 +232,13 @@ function build_callout_theme(): Record<string, Record<string, string>> {
     // DIRECT-child text-indent reset: Chromium leaks the line's negative indent into the inline-flex title, collapsing its icon/label gap (Firefox#1682380); a descendant `*` reset would also kill the body's first-line hang.
     '.plainmark-callout > *': {
       'text-indent': '0',
+    },
+    // List-nested callout: the enclosing list depth rides a transparent border,
+    // so both gradient layers (positioned in the padding box) inset with it.
+    '.plainmark-callout-nested': {
+      'border-left':
+        'calc(var(--plainmark-quote-nest, 0) * var(--plainmark-list-indent, 1em)) solid transparent',
+      'background-clip': 'padding-box',
     },
     '.plainmark-callout-title': {
       display: 'inline-flex',

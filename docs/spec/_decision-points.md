@@ -39,6 +39,7 @@ Status legend: `pending` (awaiting owner ratification) · `blessed` · `reopened
 | LIST-SP-4 | Ordered siblings are never auto-renumbered after edit/insert/delete; source digits are the rendered form. | docs/spec/lists.md | pending |
 | CBLK-I-10 | No copy button on code blocks in v1 (widget + clipboard + caret-trap defense deferred). | docs/spec/code-blocks.md | pending |
 | CBLK-E-8 | Quote-nested fenced code keeps the pre-nesting geometry (no content-column shift, no indent hide); composing list-nest geometry with the quote's net-to-zero indent model is deferred. | docs/spec/code-blocks.md | pending |
+| BQ-E-14 | A quote (or callout) in a list inside another quote keeps the pre-nesting quoted geometry (no nested class, no nest property, no indent hide); the same deferral as CBLK-E-8. | docs/spec/blockquotes.md | pending |
 | MATH-E-8 | LaTeX passed verbatim to MathJax; markdown inside math is not re-parsed. | math.ts | pending |
 | MATH-E-9 | TeX surface limited to bundled packages (base + AMS + newcommand; no `autoload`/`\require`). | docs/spec/math.md | pending |
 | MATH-E-13 | Block math (`$$…$$`) nested in a blockquote/callout is not typeset — the `BlockMath` node straddles the inner `>` markers, which the render layer doesn't strip, so source extraction and the block widget both break. Deferred (Obsidian parity); inline math in a blockquote still works. | math.ts (find_block_math_source / build_decorations) | pending |

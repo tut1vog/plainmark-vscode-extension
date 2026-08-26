@@ -7,7 +7,7 @@ import {
   StateField,
 } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
-import type { SyntaxNodeRef } from '@lezer/common';
+import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
 import { build_callout_decorations } from './callout.js';
 import { detect_callout } from './callout_detect.js';
 import type { NodeHandler } from './inline_decorations.js';
@@ -57,21 +57,56 @@ export function quote_prefix_counts(line_text: string): { gt: number; ws: number
   return { gt, ws };
 }
 
-// Keyed `depth:first` — the outermost quote's FIRST line carries
+// Enclosing list depth of a quote block (0 at the top level). A quote inside
+// another quote keeps quoted geometry regardless of any list between them.
+export function list_nest_depth(node: SyntaxNode): number {
+  let depth = 0;
+  for (let p = node.parent; p; p = p.parent) {
+    if (p.name === 'Blockquote') return 0;
+    if (p.name === 'ListItem') depth++;
+  }
+  return depth;
+}
+
+// Length of the whitespace run before a line's first `>`; 0 on a marker-less
+// line. That run is container prefix (list indent + up to three quote-indent
+// spaces), never content, so it is display-hidden in both caret states.
+export function nest_indent_len(line_text: string): number {
+  let i = 0;
+  while (i < line_text.length && (line_text[i] === ' ' || line_text[i] === '\t')) i++;
+  return i < line_text.length && line_text[i] === '>' ? i : 0;
+}
+
+export const hide_nest_indent = Decoration.mark({ class: 'plainmark-quote-nest-indent' });
+
+// The nest is a transparent `border-left` (theme), not padding: one rule then
+// insets every background layer the quote family paints and the marker bars.
+function nested_class(nest: number): string {
+  return nest > 0 ? ' plainmark-blockquote-nested' : '';
+}
+function nest_style(nest: number): string {
+  return nest > 0 ? `--plainmark-quote-nest:${nest}` : '';
+}
+
+// Keyed `depth:first:nest` — the outermost quote's FIRST line carries
 // `plainmark-blockquote-first` so the theme can render its paragraph gap
 // (PARA-R-7) as clear space above the block: bottom-anchored tint, bars
 // starting below the gap. Interior lines keep the full-box tint.
-const depth_line_decorations = new Map<string, Decoration>();
-for (let d = 1; d <= MAX_DEPTH; d++) {
-  for (const first of [false, true]) {
-    depth_line_decorations.set(
-      `${d}:${first}`,
-      Decoration.line({
-        class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}`,
-        attributes: { 'data-blockquote-depth': d.toString() },
-      }),
-    );
+const depth_line_cache = new Map<string, Decoration>();
+function depth_line_decoration(depth: number, first: boolean, nest: number): Decoration {
+  const key = `${depth}:${first}:${nest}`;
+  let deco = depth_line_cache.get(key);
+  if (!deco) {
+    deco = Decoration.line({
+      class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}${nested_class(nest)}`,
+      attributes: {
+        'data-blockquote-depth': depth.toString(),
+        ...(nest > 0 ? { style: nest_style(nest) } : {}),
+      },
+    });
+    depth_line_cache.set(key, deco);
   }
+  return deco;
 }
 
 // Per-line hanging-indent px: the line's literal `>`/whitespace prefix advance,
@@ -124,7 +159,7 @@ function quoted_list_indent_units(state: EditorState, line_from: number, line_te
 // against) paint each depth's bar at the SAME x as the per-marker bars of
 // neighboring lines; without it the widget line falls back to the em grid
 // and its inner bars visibly drift at depth ≥ 2.
-// Cached per (depth, px, units, first, bar_step).
+// Cached per (depth, px, units, first, bar_step, nest).
 const indent_line_cache = new Map<string, Decoration>();
 function indent_line_decoration(
   depth: number,
@@ -132,8 +167,9 @@ function indent_line_decoration(
   units: number,
   first: boolean,
   bar_step: number,
+  nest: number,
 ): Decoration {
-  const key = `${depth}:${px}:${units}:${first}:${bar_step}`;
+  const key = `${depth}:${px}:${units}:${first}:${bar_step}:${nest}`;
   let deco = indent_line_cache.get(key);
   if (!deco) {
     const expr =
@@ -141,12 +177,13 @@ function indent_line_decoration(
         ? `calc(${px}px + ${units} * var(--plainmark-list-indent, 1em))`
         : `${px}px`;
     const step = bar_step > 0 ? `--plainmark-quote-bar-step:${bar_step}px;` : '';
+    const prefix = nest > 0 ? `${step}${nest_style(nest)};` : step;
     const style =
       units > 0
-        ? `${step}padding-left:${expr};text-indent:calc(-1 * ${expr})`
-        : `${step}padding-left:${px}px;text-indent:-${px}px`;
+        ? `${prefix}padding-left:${expr};text-indent:calc(-1 * ${expr})`
+        : `${prefix}padding-left:${px}px;text-indent:-${px}px`;
     deco = Decoration.line({
-      class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}`,
+      class: `plainmark-blockquote plainmark-collapse-adjacent${first ? ' plainmark-blockquote-first' : ''}${nested_class(nest)}`,
       attributes: {
         'data-blockquote-depth': depth.toString(),
         style,
@@ -205,19 +242,33 @@ const blockquote_handler: NodeHandler = {
     const decorations: Range<Decoration>[] = [];
 
     const metrics = state.field(marker_metrics_field, false) ?? { gt: 0, space: 0 };
+    const nest = list_nest_depth(node.node);
     const start_line = state.doc.lineAt(node.from).number;
     const end_line = state.doc.lineAt(node.to).number;
     for (let i = start_line; i <= end_line; i++) {
       const line = state.doc.line(i);
+      const lead = nest_indent_len(line.text);
+      // The opening line may put the quote after the item's own list marker
+      // (`- > q`); the list handler owns that prefix, so only a pure
+      // whitespace run is hidden, and the prefix scan starts at the `>`.
+      const quote_col = i === start_line ? node.from - line.from : lead;
+      if (lead > 0 && lead === quote_col) {
+        decorations.push(hide_nest_indent.range(line.from, line.from + lead));
+      }
+      const text = line.text.slice(quote_col);
       // Depth (for the bars / data attribute) is parse-based; the indent magnitude
       // is the line's own literal prefix advance (quote_prefix_counts).
       const raw_depth = depth_at_line(state, line.from, line.to);
       const clamped = Math.min(Math.max(raw_depth, 1), MAX_DEPTH);
-      const units = quoted_list_indent_units(state, line.from, line.text);
+      const list_units = quoted_list_indent_units(state, line.from, line.text);
+      // A quoted marker's ancestor count includes the list levels enclosing the
+      // quote itself; the border already carries those, so only the levels
+      // inside the quote step the hang.
+      const units = list_units > 0 ? list_units - nest : 0;
       // List line: count only the quote prefix (nesting spaces are hidden);
       // otherwise the full literal run, including intentional content spaces.
       const counts = quote_prefix_counts(
-        units > 0 ? (quote_only_prefix_re.exec(line.text)?.[0] ?? line.text) : line.text,
+        list_units > 0 ? (quote_only_prefix_re.exec(text)?.[0] ?? text) : text,
       );
       // Inline measured indent once the probe has run; the class-only decoration
       // (theme em fallback) covers the first frame before measurement. `first`
@@ -232,9 +283,10 @@ const blockquote_handler: NodeHandler = {
               units,
               first,
               Math.round((metrics.gt + metrics.space) * 100) / 100,
+              nest,
             )
-          : depth_line_decorations.get(`${clamped}:${first}`);
-      if (deco) decorations.push(deco.range(line.from));
+          : depth_line_decoration(clamped, first, nest);
+      decorations.push(deco.range(line.from));
     }
 
     syntaxTree(state).iterate({
@@ -307,6 +359,17 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
     // DIRECT-child text-indent reset: Chromium leaks the line's negative indent into inline-flex children, collapsing their gap (Firefox#1682380); a descendant `*` reset would also kill the block's first-line hang.
     '.plainmark-blockquote > *': {
       'text-indent': '0',
+    },
+    // List-nested quote: one indent unit per enclosing list level, carried as
+    // a transparent border so tint, gap gradient and marker bars all inset
+    // together. Horizontal-only (height-map-safe).
+    '.plainmark-blockquote-nested': {
+      'border-left':
+        'calc(var(--plainmark-quote-nest, 0) * var(--plainmark-list-indent, 1em)) solid transparent',
+      'background-clip': 'padding-box',
+    },
+    '.plainmark-quote-nest-indent': {
+      'font-size': '0',
     },
     // Each `>` marker draws its own nesting bar (Obsidian's mechanism), instead
     // of the line painting bars at a fixed k·indent grid. The bar's containing

@@ -262,15 +262,23 @@ const lists_theme = EditorView.theme({
   // landing a nested marker on its parent's text column exactly like an
   // unquoted list. Wrapped rows get the matching step from the quote's line
   // padding (blockquote.ts quoted_list_indent_units). Margins and padding on
-  // inline boxes are horizontal-only — no caret-height risk.
+  // inline boxes are horizontal-only — no caret-height risk. The levels
+  // enclosing the quote itself (--plainmark-quote-nest) are already on the
+  // quote line's border, so only the levels inside the quote step here; on a
+  // quote opening after the item's own marker (`- > q`) the step goes
+  // negative and pulls the marker back into the border — margins only, a
+  // negative padding is discarded.
   '.plainmark-blockquote .plainmark-list-bullet::before': {
-    marginLeft: 'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))',
+    marginLeft:
+      'calc((var(--plainmark-list-depth, 0) - var(--plainmark-quote-nest, 0)) * var(--plainmark-list-indent, 1em))',
   },
   '.plainmark-blockquote .plainmark-list-marker': {
-    paddingLeft: 'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))',
+    marginLeft:
+      'calc((var(--plainmark-list-depth, 0) - var(--plainmark-quote-nest, 0)) * var(--plainmark-list-indent, 1em))',
   },
   '.plainmark-blockquote .plainmark-task-checkbox': {
-    marginLeft: 'calc(var(--plainmark-list-depth, 0) * var(--plainmark-list-indent, 1em))',
+    marginLeft:
+      'calc((var(--plainmark-list-depth, 0) - var(--plainmark-quote-nest, 0)) * var(--plainmark-list-indent, 1em))',
   },
   '.plainmark-task-checkbox': {
     width: 'var(--plainmark-task-checkbox-size, 0.85em)',
