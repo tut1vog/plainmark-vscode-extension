@@ -2,6 +2,13 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.7] - 2026-08-26
+
+### Fixed
+
+- **Quotes and callouts nested inside a list now line up with the list's content** — previously they sat at the editor margin instead of following the list's indent, with their accent bar and shading out of place.
+- **A tab-indented code block inside a list no longer shows its code shifted one tab stop to the right** — the code now sits flush with the rest of the block.
+
 ## [1.11.6] - 2026-08-26
 
 ### Fixed
