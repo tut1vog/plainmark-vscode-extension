@@ -118,6 +118,20 @@ describe('list-nested fenced code — content-column geometry CBLK-R-17 CBLK-R-1
     expect(Math.abs(past_indent - at_line_start)).toBeLessThanOrEqual(1);
   });
 
+  it('renders a tab-indented nested fence flush, on the same column as a space-indented one', async () => {
+    const tabbed = '- item\n\t```js\n\tconst x = 1;\n\t```\n\n- item\n  ```js\n  const x = 1;\n  ```\nz';
+    h.view = mount_editor(h.container, tabbed);
+    move_cursor(h.view, tabbed.length);
+    await wait_frames(2);
+
+    const tab_x = h.view.coordsAtPos(tabbed.indexOf('const'))!.left;
+    const space_x = h.view.coordsAtPos(tabbed.indexOf('const', tabbed.indexOf('const') + 1))!.left;
+    expect(Math.abs(tab_x - space_x)).toBeLessThanOrEqual(1);
+    const body = h.container.querySelectorAll('.plainmark-fenced-code')[1] as HTMLElement;
+    const pad_edge = body.getBoundingClientRect().left + parseFloat(getComputedStyle(body).paddingLeft);
+    expect(Math.abs(tab_x - pad_edge)).toBeLessThanOrEqual(1);
+  });
+
   it('keeps code x stable when the caret enters the block (never-reveal indent)', async () => {
     h.view = mount_editor(h.container, doc);
     move_cursor(h.view, 36);

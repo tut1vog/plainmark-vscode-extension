@@ -24,7 +24,9 @@ const fenced_content_end_deco = Decoration.line({
 const hide_fence = Decoration.mark({ class: 'plainmark-fenced-code-marker' });
 // Emitted in both caret states — a caret-state indent (raw spaces in flow)
 // would shift the line on enter/leave, the defect the list never-reveal fixed.
-const hide_indent = Decoration.mark({ class: 'plainmark-fenced-code-indent' });
+// A widgetless replace, not a zero-font mark: a tab's advance runs to the
+// block's next tab stop, which a zero font on the span does not shrink.
+const hide_indent = Decoration.replace({});
 
 // Quoted lines keep the status quo: the in-flow `> ` prefix and the quote's
 // net-to-zero indent own their geometry, so nesting stops at any Blockquote.
@@ -314,9 +316,6 @@ function build_code_block_theme(): Record<string, Record<string, string>> {
     '.plainmark-fenced-code-nested.plainmark-fenced-code-header.plainmark-paragraph-gap': {
       'background-size': `calc(100% - ${margin_x} - ${nest}) calc(100% - var(--plainmark-paragraph-gap, 0.75em))`,
       'background-position': `calc(${margin_x} + ${nest}) bottom`,
-    },
-    '.plainmark-fenced-code-indent': {
-      'font-size': '0',
     },
   };
 

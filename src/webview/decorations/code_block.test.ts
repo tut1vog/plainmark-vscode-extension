@@ -218,9 +218,9 @@ function indent_marks(state: EditorState): Array<{ from: number; to: number }> {
   );
   const out: Array<{ from: number; to: number }> = [];
   set.between(0, state.doc.length, (from, to, deco) => {
-    if ((deco.spec as { class?: string }).class === 'plainmark-fenced-code-indent') {
-      out.push({ from, to });
-    }
+    const spec = deco.spec as { class?: string; widget?: unknown };
+    // The indent hide is the handler's only widgetless, classless replace.
+    if (from !== to && !spec.class && !spec.widget) out.push({ from, to });
   });
   out.sort((a, b) => a.from - b.from);
   return out;
