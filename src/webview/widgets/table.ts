@@ -492,6 +492,25 @@ function start_cell_drag_select(sub: EditorView, anchor: number): () => void {
 // map from row_count alone; a rendered table replaces it with its real height.
 const TABLE_ROW_HEIGHT_PX = 37;
 
+// auto layout re-negotiates every column when one cell's intrinsic width changes — the caret-adjacent marker reveal would move the whole table on entry
+function pin_column_widths(table: HTMLTableElement | null): void {
+  const header = table?.tHead?.rows[0];
+  if (!table || !header || table.querySelector(':scope > colgroup')) return;
+  const widths = Array.from(header.cells, (th) => th.getBoundingClientRect().width);
+  if (widths.some((w) => w <= 0)) return;
+  const colgroup = document.createElement('colgroup');
+  for (const width of widths) {
+    const col = document.createElement('col');
+    col.style.width = `${width}px`;
+    colgroup.appendChild(col);
+  }
+  table.insertBefore(colgroup, table.firstChild);
+}
+
+function unpin_column_widths(table: HTMLTableElement | null): void {
+  table?.querySelector(':scope > colgroup')?.remove();
+}
+
 export class TableWidget extends WidgetType {
   private active: ActiveSubview | null = null;
   // eq() input: a draw whose tree lookup missed must not compare equal to a fresh rebuild, else the empty DOM is reused forever.
@@ -815,6 +834,7 @@ export class TableWidget extends WidgetType {
         subview_container,
       });
 
+      pin_column_widths(td.closest('table'));
       while (td.firstChild) td.removeChild(td.firstChild);
       td.appendChild(subview_container);
       sub.focus();
@@ -853,6 +873,7 @@ export class TableWidget extends WidgetType {
         detach: () => {
           sub.contentDOM.removeEventListener('focusout', blur_handler);
           drag_cleanup?.();
+          unpin_column_widths(td.closest('table'));
         },
       };
       set_active_cell_snapshot(main_view, {
