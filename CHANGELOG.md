@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.6] - 2026-08-26
+
+### Fixed
+
+- **Neighboring table columns no longer jitter when you click into a cell** — activating a cell (or arriving via Tab or the arrow keys) could nudge every column's width by a few pixels and re-wrap the row next to it; columns now hold steady while a cell is active and only resize once you move on.
+
 ## [1.11.5] - 2026-08-24
 
 ### Fixed
