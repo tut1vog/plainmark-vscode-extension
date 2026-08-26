@@ -42,8 +42,9 @@ function build(
     const spec = deco.spec as { class?: string; attributes?: Record<string, string> };
     if (from === to) {
       lines.push({ from, class: spec.class, style: spec.attributes?.style });
-    } else if (spec.class === 'plainmark-quote-nest-indent') {
-      nest_marks.push({ from, to, class: spec.class });
+    } else if (!spec.class && !(spec as { widget?: unknown }).widget) {
+      // The nest-indent hide is the handler's only widgetless, classless replace.
+      nest_marks.push({ from, to });
     }
   });
   lines.sort((a, b) => a.from - b.from);
@@ -77,7 +78,7 @@ describe('BQ-R-14: list-nested blockquote takes content-column geometry', () => 
           '--plainmark-quote-bar-step:11px;--plainmark-quote-nest:1;padding-left:11px;text-indent:-11px',
       },
     ]);
-    expect(nest_marks).toEqual([{ from: 4, to: 6, class: 'plainmark-quote-nest-indent' }]);
+    expect(nest_marks).toEqual([{ from: 4, to: 6 }]);
   });
 
   it('carries the nest on every line of a quote under an ordered item', () => {
@@ -89,8 +90,8 @@ describe('BQ-R-14: list-nested blockquote takes content-column geometry', () => 
       expect(line.style).toContain('--plainmark-quote-nest:1;');
     }
     expect(nest_marks).toEqual([
-      { from: 5, to: 8, class: 'plainmark-quote-nest-indent' },
-      { from: 12, to: 15, class: 'plainmark-quote-nest-indent' },
+      { from: 5, to: 8 },
+      { from: 12, to: 15 },
     ]);
   });
 
@@ -101,7 +102,7 @@ describe('BQ-R-14: list-nested blockquote takes content-column geometry', () => 
     expect(lines[0].style).toBe(
       '--plainmark-quote-bar-step:11px;--plainmark-quote-nest:2;padding-left:11px;text-indent:-11px',
     );
-    expect(nest_marks).toEqual([{ from: 10, to: 14, class: 'plainmark-quote-nest-indent' }]);
+    expect(nest_marks).toEqual([{ from: 10, to: 14 }]);
   });
 
   it('steps a quoted list line only by the levels inside the quote', () => {
@@ -118,7 +119,7 @@ describe('BQ-R-14: list-nested blockquote takes content-column geometry', () => 
     expect(lines).toHaveLength(1);
     expect(lines[0].class).not.toContain('plainmark-blockquote-nested');
     expect(lines[0].style).toBe('--plainmark-quote-bar-step:11px;padding-left:11px;text-indent:-11px');
-    expect(nest_marks).toEqual([{ from: 0, to: 2, class: 'plainmark-quote-nest-indent' }]);
+    expect(nest_marks).toEqual([{ from: 0, to: 2 }]);
   });
 
   it('keeps the nested class and the nest variable before measurement', () => {
@@ -135,7 +136,7 @@ describe('BQ-R-14: list-nested blockquote takes content-column geometry', () => 
 
   it('never reveals the hidden indent when the caret is on the line', () => {
     const { nest_marks } = build('- a\n  > q\n', { anchor: 8 });
-    expect(nest_marks).toEqual([{ from: 4, to: 6, class: 'plainmark-quote-nest-indent' }]);
+    expect(nest_marks).toEqual([{ from: 4, to: 6 }]);
   });
 
   it('nests a quote opening on the item marker line and scans the prefix from its `>`', () => {
@@ -148,7 +149,7 @@ describe('BQ-R-14: list-nested blockquote takes content-column geometry', () => 
         '--plainmark-quote-bar-step:11px;--plainmark-quote-nest:1;padding-left:11px;text-indent:-11px',
       );
     }
-    expect(nest_marks).toEqual([{ from: 6, to: 8, class: 'plainmark-quote-nest-indent' }]);
+    expect(nest_marks).toEqual([{ from: 6, to: 8 }]);
   });
 
   it('leaves a nested marker line prefix to the list handler', () => {

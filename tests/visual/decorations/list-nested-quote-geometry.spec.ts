@@ -59,6 +59,17 @@ describe('list-nested blockquote and callout — content-column geometry BQ-R-14
     expect(Math.abs(left(markers[1]) - grid_column(items[2]))).toBeLessThanOrEqual(1);
   });
 
+  it('BQ-R-14: a tab-indented nested quote lands on the same column as a space-indented one', async () => {
+    const doc = '- abc\n\t> tab quote\n\n- def\n  > space quote\n\ntail';
+    const v = await mount(doc);
+    const markers = container.querySelectorAll('.plainmark-quote-marker');
+    expect(markers).toHaveLength(2);
+    expect(Math.abs(left(markers[0]) - left(markers[1]))).toBeLessThanOrEqual(1);
+    const tab_x = v.coordsAtPos(doc.indexOf('tab quote'))!.left;
+    const space_x = v.coordsAtPos(doc.indexOf('space quote'))!.left;
+    expect(Math.abs(tab_x - space_x)).toBeLessThanOrEqual(1);
+  });
+
   it('BQ-R-14: quote text sits one prefix past the bar and keeps its x when the caret enters', async () => {
     const doc = '- abc\n  > quote text\n\ntail';
     const v = await mount(doc);

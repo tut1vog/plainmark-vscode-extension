@@ -41,7 +41,8 @@ function build(
       if (spec.class?.includes('plainmark-callout-header') || spec.class?.includes('plainmark-callout-body')) {
         lines.push({ from, class: spec.class, style: spec.attributes?.style });
       }
-    } else if (spec.class === 'plainmark-quote-nest-indent') {
+    } else if (!spec.class && !(spec as { widget?: unknown }).widget) {
+      // The nest-indent hide is the only widgetless, classless replace here.
       nest_marks.push({ from, to });
     }
   });

@@ -77,7 +77,10 @@ export function nest_indent_len(line_text: string): number {
   return i < line_text.length && line_text[i] === '>' ? i : 0;
 }
 
-export const hide_nest_indent = Decoration.mark({ class: 'plainmark-quote-nest-indent' });
+// A widgetless replace (the ordered-list leading-whitespace idiom), not a
+// zero-font mark: a tab's advance runs to the block's next tab stop, which a
+// zero font on the span does not shrink.
+export const hide_nest_indent = Decoration.replace({});
 
 // The nest is a transparent `border-left` (theme), not padding: one rule then
 // insets every background layer the quote family paints and the marker bars.
@@ -367,9 +370,6 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
       'border-left':
         'calc(var(--plainmark-quote-nest, 0) * var(--plainmark-list-indent, 1em)) solid transparent',
       'background-clip': 'padding-box',
-    },
-    '.plainmark-quote-nest-indent': {
-      'font-size': '0',
     },
     // Each `>` marker draws its own nesting bar (Obsidian's mechanism), instead
     // of the line painting bars at a fixed k·indent grid. The bar's containing
