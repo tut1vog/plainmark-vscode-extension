@@ -58,4 +58,18 @@ describe('math inline widget', () => {
       .poll(() => container.querySelectorAll('mjx-container').length, { timeout: 30000, interval: 100 })
       .toBeGreaterThan(0);
   });
+
+  it('typesets \\boldsymbol from the bundled package', async () => {
+    const doc = `prose with $\\boldsymbol{\\beta}$ math\n\ntail`;
+    view = mount_editor(container, doc);
+    await expect
+      .poll(() => container.querySelectorAll('.plainmark-math-inline mjx-container').length, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBeGreaterThan(0);
+    expect(container.querySelectorAll('mjx-merror').length).toBe(0);
+    // U+1D737 is bold-italic beta; the unbundled-package fallback would be italic U+1D6FD
+    expect(container.querySelectorAll('mjx-c.mjx-c1D737').length).toBe(1);
+  });
 });

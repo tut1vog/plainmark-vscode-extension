@@ -1,5 +1,5 @@
 // Derived from the MathJax / standard LaTeX command set — bundle-scoped
-// (MathJax base + ams + newcommand). Symbol commands carry a `glyph`; commands taking
+// (MathJax base + ams + boldsymbol + newcommand). Symbol commands carry a `glyph`; commands taking
 // arguments carry a CM6 snippet `template` (empty ${} fields + a terminal ${} tab-stop).
 // Array order is the curated default ranking (frequency boost overrides it at use time).
 
@@ -309,6 +309,7 @@ export const LATEX_COMMANDS: readonly LatexCommand[] = [
   { label: "\\ddddot", template: "\\ddddot{${}}${}" },
   { label: "\\mathbb", template: "\\mathbb{${}}${}" },
   { label: "\\mathbf", template: "\\mathbf{${}}${}" },
+  { label: "\\boldsymbol", template: "\\boldsymbol{${}}${}" },
   { label: "\\mathit", template: "\\mathit{${}}${}" },
   { label: "\\mathrm", template: "\\mathrm{${}}${}" },
   { label: "\\mathsf", template: "\\mathsf{${}}${}" },

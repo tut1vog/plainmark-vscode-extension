@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Bold math with `\boldsymbol` now renders** — an equation using `\boldsymbol{...}` showed an error instead of typesetting, and the command now appears in the math autocomplete list too.
+
 ## [1.11.7] - 2026-08-26
 
 ### Fixed

@@ -3,7 +3,7 @@ import { LATEX_COMMANDS } from './latex_commands.js';
 
 describe('MATH-I-12 LATEX_COMMANDS dataset', () => {
   it('transcribes the full bundle-scoped catalog', () => {
-    expect(LATEX_COMMANDS).toHaveLength(416);
+    expect(LATEX_COMMANDS).toHaveLength(417);
   });
 
   it('every label is a non-empty backslash command', () => {
@@ -18,8 +18,9 @@ describe('MATH-I-12 LATEX_COMMANDS dataset', () => {
     expect(new Set(labels).size).toBe(labels.length);
   });
 
-  it('excludes commands outside the bundle (boldsymbol package)', () => {
-    expect(LATEX_COMMANDS.some((c) => c.label === '\\boldsymbol')).toBe(false);
+  it('carries the bundled boldsymbol package command', () => {
+    const bold = LATEX_COMMANDS.find((c) => c.label === '\\boldsymbol');
+    expect(bold?.template).toBe('\\boldsymbol{${}}${}');
   });
 
   it('carries the motivating symbol entry with its glyph', () => {

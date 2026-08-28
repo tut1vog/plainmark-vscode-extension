@@ -26,7 +26,7 @@ describe('MATH-I-11 latex_completions — gating', () => {
     const doc = '$\\var$';
     const result = complete(doc, after(doc, '\\var'));
     expect(result).not.toBeNull();
-    expect(result!.options).toHaveLength(416);
+    expect(result!.options).toHaveLength(417);
   });
 
   it('offers commands inside a parsed block-math node', () => {
@@ -67,7 +67,7 @@ describe('MATH-I-11 latex_completions — gating', () => {
     const pos = after(doc, 'x\\');
     const result = complete(doc, pos, true);
     expect(result).not.toBeNull();
-    expect(result!.options).toHaveLength(416);
+    expect(result!.options).toHaveLength(417);
   });
 });
 
