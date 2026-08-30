@@ -30,7 +30,7 @@ Plainmark runs as a custom editor in both the desktop app and the browser — op
 - **Diagrams** — Mermaid flowcharts, sequence diagrams, and more.
 - **Callouts** — Obsidian-style `> [!NOTE]` admonitions.
 - **Footnotes, autolinks, images, frontmatter, HTML** — full Markdown coverage.
-- **Paste images** — paste a screenshot from the clipboard and Plainmark saves it into your workspace and inserts the image link.
+- **Paste images** — paste a screenshot or an image file (PNG, JPEG, GIF, WebP, or SVG) from the clipboard and Plainmark saves it into your workspace and inserts the image link.
 - **Paste tables** — paste a range copied from Excel, Google Sheets, or a table rendered on a web page and it becomes a Markdown table, bold/links included; tab-separated plain text converts too.
 - **Paste into quotes** — paste multi-line text inside a blockquote or callout and every line gets the `>` markers it needs, at the right nesting depth, so the whole paste stays quoted.
 - **Outline view** — jump around the document from the Explorer sidebar.
