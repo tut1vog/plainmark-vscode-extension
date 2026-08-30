@@ -39,6 +39,8 @@ export function ext_for_mime(mime: string): string {
       return 'gif';
     case 'image/webp':
       return 'webp';
+    case 'image/svg+xml':
+      return 'svg';
     default:
       return 'png';
   }

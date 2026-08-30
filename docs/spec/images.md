@@ -86,7 +86,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-I-8** `[smoke]` — When the target file system is not writable — an untitled buffer, a window with no folder open, or any document scheme reporting `isWritableFileSystem` false — the host MUST NOT attempt a write; it MUST reply with an error and surface an actionable message ("Save this document to a folder before pasting images"). A data-URI fallback is explicitly deferred as a possible later opt-in.
   _Example:_ pasting an image into an unsaved (untitled) buffer inserts nothing and shows the "save this document to a folder" warning.
 
-- **IMG-I-9** — Saved files MUST be named `image-YYYYMMDD-HHMMSS.<ext>`, where `<ext>` derives from the blob's MIME type (png by default; jpeg, gif, and webp respected). A name collision MUST NOT overwrite an existing file; the host MUST append `-2`, `-3`, … to the base name until it is free.
+- **IMG-I-9** — Saved files MUST be named `image-YYYYMMDD-HHMMSS.<ext>`, where `<ext>` derives from the blob's MIME type (png by default; jpeg, gif, webp, and svg respected). A name collision MUST NOT overwrite an existing file; the host MUST append `-2`, `-3`, … to the base name until it is free.
   _Example:_ two pastes within the same second produce `image-20260621-101500.png` and `image-20260621-101500-2.png`.
 
 - **IMG-I-10** — A single paste carrying multiple image blobs MUST save each blob to its own file and insert one `![](relative-path)` per line, in clipboard order.

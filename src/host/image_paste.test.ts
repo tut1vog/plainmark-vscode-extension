@@ -66,16 +66,17 @@ describe('document_base_name', () => {
 });
 
 describe('ext_for_mime — filename extension (IMG-I-9)', () => {
-  it('defaults to png and respects jpeg/gif/webp', () => {
+  it('defaults to png and respects jpeg/gif/webp/svg', () => {
     expect(ext_for_mime('image/png')).toBe('png');
     expect(ext_for_mime('image/jpeg')).toBe('jpg');
     expect(ext_for_mime('image/gif')).toBe('gif');
     expect(ext_for_mime('image/webp')).toBe('webp');
+    expect(ext_for_mime('image/svg+xml')).toBe('svg');
   });
 
   it('is case-insensitive and defaults unknown types to png', () => {
     expect(ext_for_mime('IMAGE/JPEG')).toBe('jpg');
-    expect(ext_for_mime('image/svg+xml')).toBe('png');
+    expect(ext_for_mime('image/x-unknown')).toBe('png');
     expect(ext_for_mime('')).toBe('png');
   });
 });
@@ -94,6 +95,7 @@ describe('format_image_timestamp / image_file_name (IMG-I-9)', () => {
     const date = new Date(2026, 5, 21, 10, 15, 0);
     expect(image_file_name(date, 'image/png')).toBe('image-20260621-101500.png');
     expect(image_file_name(date, 'image/jpeg')).toBe('image-20260621-101500.jpg');
+    expect(image_file_name(date, 'image/svg+xml')).toBe('image-20260621-101500.svg');
   });
 });
 
