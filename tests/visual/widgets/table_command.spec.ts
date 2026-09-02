@@ -78,6 +78,14 @@ describe('insert_table_at_caret — ED command webview path', () => {
     expect(view.state.doc.toString()).toBe('hello\n' + STARTER + '\n\nworld');
   });
 
+  it('TBL-I-17: replaces a non-empty selection with the starter table', async () => {
+    view = mount_editor(container, 'hello world');
+    view.dispatch({ selection: { anchor: 0, head: 'hello'.length } });
+    insert_table_at_caret(view);
+    await next_frame();
+    expect(view.state.doc.toString()).toBe('\n' + STARTER + '\n\n world');
+  });
+
   it('TBL-I-17: focuses the first header cell after insertion', async () => {
     view = mount_editor(container, '');
     insert_table_at_caret(view);

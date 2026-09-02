@@ -13,16 +13,17 @@ export function insert_table_at_caret(view: EditorView): void {
     log.warn('insertTable ignored: focus is inside a table cell');
     return;
   }
-  const caret = view.state.selection.main.head;
-  const line = view.state.doc.lineAt(caret);
-  const at_line_start = caret === line.from;
-  // caret === 0 always needs a leading \n — the table would otherwise sit at offset 0 with no caret-targetable line above it.
-  const prefix = caret === 0 ? '\n' : at_line_start ? '' : '\n';
+  // A non-empty selection is replaced, as with a pasted table (TBL-I-35).
+  const { from, to } = view.state.selection.main;
+  const line = view.state.doc.lineAt(from);
+  const at_line_start = from === line.from;
+  // from === 0 always needs a leading \n — the table would otherwise sit at offset 0 with no caret-targetable line above it.
+  const prefix = from === 0 ? '\n' : at_line_start ? '' : '\n';
   const table = make_starter_table_markdown();
-  const insert = prefix + table + table_insert_suffix(view.state.doc, caret);
-  const table_from = caret + prefix.length;
+  const insert = prefix + table + table_insert_suffix(view.state.doc, to);
+  const table_from = from + prefix.length;
   view.dispatch({
-    changes: { from: caret, insert },
+    changes: { from, to, insert },
     selection: { anchor: table_from + 2 },
     annotations: [Transaction.userEvent.of('input')],
   });
