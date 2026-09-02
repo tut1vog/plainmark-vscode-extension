@@ -1,3 +1,4 @@
+import { completionStatus } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import { Transaction, type EditorState, type Line } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
@@ -47,6 +48,8 @@ function close_block(view: EditorView, insert_at: number, indent: string, closer
 // run to the end of the document. Higher-precedence than markdownKeymap.
 export function block_delimiter_autoclose(view: EditorView): boolean {
   const { state } = view;
+  // An open fence-tag popup owns Enter (accept); closing the fence here would freeze the partial tag.
+  if (completionStatus(state) === 'active') return false;
   const { main } = state.selection;
   if (!main.empty) return false;
   const line = state.doc.lineAt(main.head);

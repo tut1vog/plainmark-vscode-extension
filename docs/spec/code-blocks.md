@@ -138,6 +138,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 | ```` (no ` ~~~ ` closer appended); ```` intro
 ```py| ```` → Enter → still auto-closes.
 
+- **CBLK-I-18** — While the fence-tag completion popup (CBLK-I-15) is open, Enter MUST accept the highlighted tag and MUST NOT run the CBLK-I-6 auto-close: the auto-close yields whenever a completion is active, so the fence is never closed around a half-typed tag. The next Enter, with no popup open, auto-closes as usual.
+  _Example:_ ` ```py| ` with the popup showing `python` → Enter → ` ```python| ` on one line, no closer; Enter again → ` ```python\n|\n``` `.
+
 ## SP · Source preservation
 
 - **CBLK-SP-1** `[inherits:INV-SP-1]` — Code-block rendering MUST be decoration-only. The handler emits only `Decoration.line` (chrome), `Decoration.mark` (fence hiding) and the widgetless `Decoration.replace({})` of CBLK-R-18 (fence-indent hiding); it performs NO widget replace, NO info-string canonicalization, and NO source-byte mutation. The `codeLanguages` overlay only sub-parses for coloring; it never rewrites or re-serializes source.
