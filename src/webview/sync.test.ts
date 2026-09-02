@@ -6,7 +6,6 @@ import {
   compute_min_diff,
   create_update_listener,
   dispatch_host_sync,
-  line_char_to_offset,
   make_sync_transaction_spec,
   syncAnnotation,
   type SyncDispatchView,
@@ -525,35 +524,6 @@ describe('SYNC-H-6 CM6 history owns undo — a Mod-z undo flows out as one ordin
     expect(posted).toHaveLength(2);
     expect(posted[1]).toMatchObject({ type: 'update', text: 'hello' });
     expect(posted.map((m) => m.type)).toEqual(['update', 'update']);
-  });
-});
-
-describe('line_char_to_offset', () => {
-  it('maps (0, 0) to 0 on a non-empty doc', () => {
-    expect(line_char_to_offset('hello\nworld', 0, 0)).toBe(0);
-  });
-  it('maps (0, 3) to 3', () => {
-    expect(line_char_to_offset('hello\nworld', 0, 3)).toBe(3);
-  });
-  it('maps (1, 0) to the start of the second line', () => {
-    expect(line_char_to_offset('hello\nworld', 1, 0)).toBe(6);
-  });
-  it('maps (1, 4) to mid-line on the second line', () => {
-    expect(line_char_to_offset('hello\nworld', 1, 4)).toBe(10);
-  });
-  it('clamps character past line end to the end of that line', () => {
-    expect(line_char_to_offset('hi\nworld', 0, 100)).toBe(2);
-  });
-  it('clamps line past doc end to doc length', () => {
-    expect(line_char_to_offset('hi\nworld', 99, 0)).toBe('hi\nworld'.length);
-  });
-  it('returns 0 on an empty doc regardless of position', () => {
-    expect(line_char_to_offset('', 5, 5)).toBe(0);
-  });
-  it('handles multibyte characters character-by-character (CM6 native indexing)', () => {
-    // CM6's character offset counts UTF-16 code units, like JS string indexing.
-    // The function walks chars by JS string indexing, which matches.
-    expect(line_char_to_offset('日本語\n', 0, 2)).toBe(2);
   });
 });
 

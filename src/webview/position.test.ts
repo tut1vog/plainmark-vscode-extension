@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Text } from '@codemirror/state';
-import { position_to_offset } from './outline_scroll.js';
+import { position_to_offset } from './position.js';
 
 describe('position_to_offset OUT-I-2', () => {
   const lf_text = '# A\nbody one\nbody two\n## B\nafter\n';
@@ -23,5 +23,13 @@ describe('position_to_offset OUT-I-2', () => {
     // line 3 is '## B' (length 4): character past line end clamps to line end.
     expect(position_to_offset(doc, 3, 99)).toBe(lf_text.indexOf('## B') + 4);
     expect(position_to_offset(doc, 3, -7)).toBe(lf_text.indexOf('## B'));
+  });
+
+  it('returns 0 on an empty doc regardless of position', () => {
+    expect(position_to_offset(Text.of(['']), 5, 5)).toBe(0);
+  });
+
+  it('counts characters in UTF-16 code units, matching CM6 offsets', () => {
+    expect(position_to_offset(Text.of(['日本語', '']), 0, 2)).toBe(2);
   });
 });

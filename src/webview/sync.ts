@@ -122,25 +122,6 @@ export function make_sync_transaction_spec(
   return spec;
 }
 
-// Map (line, character) — both zero-based, VS Code semantics — to a byte
-// offset in `text` (LF). Clamps past-end positions so over-shoot values from
-// the host land at the last legal offset rather than throwing.
-export function line_char_to_offset(text: string, line: number, character: number): number {
-  let i = 0;
-  let current_line = 0;
-  while (i < text.length && current_line < line) {
-    if (text.charCodeAt(i) === 10) current_line++;
-    i++;
-  }
-  let chars = 0;
-  while (i < text.length && chars < character) {
-    if (text.charCodeAt(i) === 10) break;
-    i++;
-    chars++;
-  }
-  return i;
-}
-
 // Minimal EditorView surface used by dispatch_host_sync — keeps the function
 // testable from a node env without a real CM6 instance.
 export interface SyncDispatchView {

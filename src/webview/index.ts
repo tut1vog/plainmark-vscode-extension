@@ -1,9 +1,8 @@
-import { EditorState, type StateEffect } from '@codemirror/state';
+import { EditorState, Text, type StateEffect } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import {
   create_update_listener,
   dispatch_host_sync_to_view,
-  line_char_to_offset,
   type HostToWebviewMessage,
   type PostMessage,
 } from './sync.js';
@@ -18,6 +17,7 @@ import type { HostPasteImageReplyMessage } from '../sync/protocol.js';
 import { insert_footnote } from './decorations/footnote_insert.js';
 import { editor_extensions } from './editor_extensions.js';
 import { normalize_list_indent } from './normalize_list_indent.js';
+import { position_to_offset } from './position.js';
 import { compact_paragraph_seams, expand_paragraph_seams } from './paragraph_seams.js';
 import { prettify_seams } from './prettify_seams.js';
 import { set_image_base_effect } from './widgets/image.js';
@@ -133,8 +133,9 @@ window.addEventListener('message', (event: MessageEvent) => {
     let selection_anchor: number | undefined;
     const effects: StateEffect<unknown>[] = [base_effect];
     if (sync.initial_cursor) {
-      selection_anchor = line_char_to_offset(
-        sync.text,
+      // The anchor addresses the post-sync doc, which the view does not hold yet.
+      selection_anchor = position_to_offset(
+        Text.of(sync.text.split('\n')),
         sync.initial_cursor.line,
         sync.initial_cursor.character,
       );
