@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **A table whose header line ends in stray spaces no longer grows an empty extra column** — trailing whitespace after the last `|` was read as a cell, so the table rendered one column too wide and the first edit wrote that empty column into the file.
+
 ## [1.11.9] - 2026-08-30
 
 ### Fixed

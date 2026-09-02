@@ -263,3 +263,6 @@ called out in prose to avoid ambiguity with `|`.
 
 - **TBL-E-12** — An EDIT-path failure (a throw inside `handle_cell_edit`'s or `dispatch_table_edit`'s serialize/dispatch try/catch) MUST NOT write any bytes — the document stays byte-identical — and MUST surface the failure: `console.error` plus a `plainmark-table-edit-error` DOM event, relayed to the host as a `table_edit_error` message that shows a VS Code error notification (SHELL-M-8). Only RENDER-path failures degrade silently (TBL-R-13); a swallowed edit failure would be a silently dropped keystroke on the one surface permitted to rewrite source.
   _Example:_ `serialize_table` throws during a cell keystroke → the document is unchanged and VS Code shows "Plainmark: a table edit could not be applied and was discarded (…)".
+
+- **TBL-E-13** — Trailing whitespace after a row's last pipe MUST NOT count as a cell: the row node lezer emits runs through that whitespace, but GFM ends the row at the last pipe, so a whitespace-only span after the final `TableDelimiter` is ignored at extraction. A trailing span with content (a row that omits its closing pipe, TBL-E-3) is still a cell.
+  _Example:_ `| A | B |␠␠\n|---|---|\n| 1 | 2 |` → a two-column table; editing cell `1` re-serializes to two columns, never `| A | B |     |`.

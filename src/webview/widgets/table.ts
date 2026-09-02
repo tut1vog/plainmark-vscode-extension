@@ -85,7 +85,7 @@ function row_node_kind(name: string): 'header' | 'row' | null {
   return null;
 }
 
-function extract_cell_ranges_in_row(row: SyntaxNode): Array<[number, number]> {
+function extract_cell_ranges_in_row(row: SyntaxNode, doc: Text): Array<[number, number]> {
   // lezer-markdown emits one TableDelimiter per pipe; cell range = inter-pipe span (incl. padding); leading/trailing pipes optional in GFM.
   const delimiters: Array<[number, number]> = [];
   for (let c = row.firstChild; c; c = c.nextSibling) {
@@ -103,8 +103,10 @@ function extract_cell_ranges_in_row(row: SyntaxNode): Array<[number, number]> {
   for (let i = 0; i < delimiters.length - 1; i++) {
     cells.push([delimiters[i][1], delimiters[i + 1][0]]);
   }
-  if (delimiters[delimiters.length - 1][1] < row_to) {
-    cells.push([delimiters[delimiters.length - 1][1], row_to]);
+  // The row node runs through trailing whitespace, which GFM does not count as a cell.
+  const tail_from = delimiters[delimiters.length - 1][1];
+  if (tail_from < row_to && /\S/.test(doc.sliceString(tail_from, row_to))) {
+    cells.push([tail_from, row_to]);
   }
   return cells;
 }
@@ -176,7 +178,7 @@ function extract_table_full(table_node: SyntaxNode, doc: Text): TableExtraction 
     }
     const kind = row_node_kind(c.name);
     if (!kind) continue;
-    const row_cells = extract_cell_ranges_in_row(c);
+    const row_cells = extract_cell_ranges_in_row(c, doc);
     // Skip rows with no TableDelimiter children — Lezer's GFM grammar wraps
     // a trailing non-pipe line as TableRow when it absorbs into the Table
     // node; treating it as a row would extend last_row_to past the real table.

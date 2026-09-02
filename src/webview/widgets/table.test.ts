@@ -509,3 +509,32 @@ describe('extract_table_info exposes canonical shape via find_tables', () => {
     expect(typeof extract_table_info).toBe('function');
   });
 });
+
+describe('TBL-E-13 trailing whitespace after the last pipe is not a cell', () => {
+  it('a header line with trailing spaces keeps the pipe-delimited column count', () => {
+    const t = find_tables(make_state('| A | B |  \n|---|---|\n| 1 | 2 |\n'))[0];
+    expect(t.col_count).toBe(2);
+    expect(t.cells.filter((c) => c.row_index === 0)).toHaveLength(2);
+    expect(t.cells).toHaveLength(4);
+  });
+
+  it('a body row with trailing spaces yields no extra cell', () => {
+    const t = find_tables(make_state('| A | B |\n|---|---|\n| 1 | 2 |   \n'))[0];
+    expect(t.cells.filter((c) => c.row_index === 1)).toHaveLength(2);
+  });
+
+  it('a trailing span with content (no closing pipe) is still a cell', () => {
+    const t = find_tables(make_state('| A | B\n|---|---|\n| 1 | 2\n'))[0];
+    expect(t.col_count).toBe(2);
+  });
+
+  it('the first edit re-serializes to two columns, not three', () => {
+    const doc = '| A | B |  \n|---|---|\n| 1 | 2 |\n';
+    const state = make_state(doc);
+    const ext = locate_table_extraction(state, 0);
+    expect(ext).not.toBeNull();
+    const model = build_model_from_extraction(ext!, state.doc);
+    expect(model.rows.every((r) => r.length === 2)).toBe(true);
+    expect(serialize_table(model)).toBe('| A   | B   |\n| --- | --- |\n| 1   | 2   |');
+  });
+});
