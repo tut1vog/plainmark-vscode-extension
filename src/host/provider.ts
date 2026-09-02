@@ -227,8 +227,9 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       () => {
         const panel = PlainmarkEditorProvider.get_active_panel();
         if (!panel) return;
-        const uri = PlainmarkEditorProvider.panel_documents.get(panel)?.uri;
-        const { resolved, warnings } = read_prettify_seams(uri ?? vscode.Uri.parse('untitled:'));
+        // Every tracked panel is registered in panel_documents on resolve.
+        const uri = PlainmarkEditorProvider.panel_documents.get(panel)!.uri;
+        const { resolved, warnings } = read_prettify_seams(uri);
         for (const warning of warnings) init_log.warn(warning);
         void panel.webview.postMessage({
           type: 'prettify_seams',
@@ -874,22 +875,16 @@ function try_handle_link_click(msg: WebviewToHostMessage | null, doc_uri: vscode
       return true;
     case 'open-external':
       widget_log.debug('link_click ipc: openExternal', { href_len: decision.href.length });
-      try {
-        void vscode.env.openExternal(vscode.Uri.parse(decision.href));
-      } catch {
-        // Malformed URI — swallow; nothing actionable to surface yet.
-      }
+      attempt_open(() => vscode.env.openExternal(vscode.Uri.parse(decision.href)));
       return true;
     case 'open-file':
       // file: opens in-editor, never via the OS default-app handler (SHELL-M-3).
       widget_log.debug('link_click ipc: file scheme via vscode.open', {
         href_len: decision.href.length,
       });
-      try {
-        void vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(decision.href));
-      } catch {
-        // Malformed URI — swallow.
-      }
+      attempt_open(() =>
+        vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(decision.href)),
+      );
       return true;
     case 'blocked-scheme':
       // Off-allowlist scheme — silent drop (SHELL-M-3); breadcrumb only.
@@ -899,14 +894,18 @@ function try_handle_link_click(msg: WebviewToHostMessage | null, doc_uri: vscode
       widget_log.debug('link_click ipc: relative but no document dir (untitled)');
       return true;
     case 'open-workspace-relative':
-      try {
-        // dir is non-null here — has_document_dir gated this branch.
-        const target = vscode.Uri.joinPath(dir!, decision.href);
-        widget_log.debug('link_click ipc: vscode.open', { href_len: decision.href.length });
-        void vscode.commands.executeCommand('vscode.open', target);
-      } catch {
-        // Bad relative path — swallow.
-      }
+      widget_log.debug('link_click ipc: vscode.open', { href_len: decision.href.length });
+      // dir is non-null here — has_document_dir gated this branch.
+      attempt_open(() =>
+        vscode.commands.executeCommand('vscode.open', vscode.Uri.joinPath(dir!, decision.href)),
+      );
       return true;
   }
+}
+
+// `Uri.parse` throws synchronously on a malformed href (`http:////x`) and the open itself can reject; both land here so neither escapes the dispatch.
+function attempt_open(open: () => Thenable<unknown>): void {
+  Promise.resolve()
+    .then(open)
+    .catch((err: unknown) => widget_log.warn('link_click ipc: open failed', { detail: String(err) }));
 }
