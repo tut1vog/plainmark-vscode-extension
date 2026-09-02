@@ -7,9 +7,16 @@ import {
 } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { detect_callout } from './decorations/callout_detect.js';
-
-// A partial tree could misclassify a paragraph's span.
-const PARSE_BUDGET_MS = 1000;
+import {
+  BLANK,
+  INDENT_LED,
+  LIST_INTERRUPTS,
+  PARSE_BUDGET_MS,
+  SETEXT_UNDERLINE,
+  node_last_line,
+  type LineSpan,
+  top_level_line_spans,
+} from './block_spans.js';
 
 // Lines that sit inside a paragraph as plain text but would re-parse as a
 // different block if a blank line came to precede them (CommonMark
@@ -17,22 +24,6 @@ const PARSE_BUDGET_MS = 1000;
 // type 7, GFM table rows. Expanding at such a seam would change what other
 // renderers see.
 const REPARSE_TRAP = /^ {0,3}(\d{1,9}[.)][ \t]|<|\|)|^( {4,}|\t)/;
-
-// A ≥4-indent region is indented code to CommonMark renderers and an inert
-// CodeBlock here (CBLK-E-1). The node is non-convertible, which already keeps
-// the transforms off it — these guards are the byte-safety backstop should a
-// grammar change ever reclassify such a region as a paragraph again.
-const INDENT_LED = /^( {4,}|\t)/;
-
-// A paragraph consisting of `=`/`-` runs becomes a setext heading when the
-// blank line separating it from the paragraph above is removed.
-const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
-
-// A list may lose its guarding blank behind paragraph-like content only when
-// its first line can interrupt a paragraph (CommonMark): a non-empty bullet
-// item, or a non-empty ordered item numbered 1. An empty `-` item would
-// re-parse as a setext underline, and `2.`-style starts as paragraph text.
-const LIST_INTERRUPTS = /^ {0,3}([-+*]|1[.)])[ \t]+\S/;
 
 // An empty `+`/`*` bullet cannot interrupt a paragraph but is a valid list
 // item at block start, so a blank line would turn the text line into a list
@@ -47,8 +38,6 @@ const QUOTE_PREFIX = /^[ \t]*>(?:[ \t]*>)*/;
 // deliberate intra-paragraph newline both transforms preserve (PARA-E-1).
 const HARD_BREAK_END = /( {2}|\\)$/;
 
-const BLANK = /^[ \t]*$/;
-
 // House scripts that join without a separator (same classification as the
 // word-count and word-motion CJK handling, extended by CJK punctuation).
 const CJK_END =
@@ -56,11 +45,7 @@ const CJK_END =
 const CJK_START =
   /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303F\uFF01-\uFF60]/u;
 
-interface BlockSpan {
-  kind: 'para' | 'atx' | 'list';
-  first: number;
-  last: number;
-}
+type BlockSpan = LineSpan<'para' | 'atx' | 'list'>;
 
 // Paragraphs, ATX headings, and lists are the convertible blocks. A heading
 // is safe on either side of a seam edit (line-scoped, interrupts a
@@ -70,28 +55,15 @@ interface BlockSpan {
 // converts. Setext headings are excluded entirely — removing the blank
 // above one absorbs the preceding paragraph into its content run.
 function top_level_blocks(state: EditorState): BlockSpan[] | null {
-  const tree = ensureSyntaxTree(state, state.doc.length, PARSE_BUDGET_MS);
-  if (!tree) return null;
-  const doc = state.doc;
-  const spans: BlockSpan[] = [];
-  for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    const kind =
-      node.name === 'Paragraph'
-        ? 'para'
-        : /^ATXHeading[1-6]$/.test(node.name)
-          ? 'atx'
-          : node.name === 'BulletList' || node.name === 'OrderedList'
-            ? 'list'
-            : null;
-    if (!kind) continue;
-    let last = doc.lineAt(node.to);
-    // A node ending exactly at a line start spans through the previous line.
-    if (last.from === node.to && last.number > doc.lineAt(node.from).number) {
-      last = doc.line(last.number - 1);
-    }
-    spans.push({ kind, first: doc.lineAt(node.from).number, last: last.number });
-  }
-  return spans;
+  return top_level_line_spans(state, (name) =>
+    name === 'Paragraph'
+      ? 'para'
+      : /^ATXHeading[1-6]$/.test(name)
+        ? 'atx'
+        : name === 'BulletList' || name === 'OrderedList'
+          ? 'list'
+          : null,
+  );
 }
 
 // A document-level blockquote or callout directly above a non-blank line is a
@@ -110,10 +82,7 @@ function quote_exit_seams(state: EditorState): number[] | null {
   const seams: number[] = [];
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
     if (node.name !== 'Blockquote') continue;
-    let last = doc.lineAt(node.to);
-    if (last.from === node.to && last.number > doc.lineAt(node.from).number) {
-      last = doc.line(last.number - 1);
-    }
+    const last = node_last_line(doc, node.from, node.to);
     if (last.number >= doc.lines) continue;
     const next = doc.line(last.number + 1);
     if (BLANK.test(next.text)) continue;
@@ -142,10 +111,7 @@ function quote_interior_seams(state: EditorState): ChangeSpec[] | null {
     enter: (ref) => {
       if (ref.name === 'Blockquote') {
         if (quote_depth > 0) {
-          let last = doc.lineAt(ref.to);
-          if (last.from === ref.to && last.number > doc.lineAt(ref.from).number) {
-            last = doc.line(last.number - 1);
-          }
+          const last = node_last_line(doc, ref.from, ref.to);
           if (last.number < doc.lines) {
             const next = doc.line(last.number + 1);
             const prefix = QUOTE_PREFIX.exec(next.text);

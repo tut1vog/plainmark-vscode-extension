@@ -1,4 +1,3 @@
-import { ensureSyntaxTree } from '@codemirror/language';
 import {
   Transaction,
   type ChangeSpec,
@@ -11,24 +10,14 @@ import {
   type SeamKind,
   type SeamOverride,
 } from '../common/prettify_seams_config.js';
-
-// A partial tree could misclassify a block's kind or span.
-const PARSE_BUDGET_MS = 1000;
-
-const BLANK = /^[ \t]*$/;
-
-// A list can interrupt a paragraph only when its first line is a non-empty
-// bullet or a non-empty ordered item numbered 1 (CommonMark).
-const LIST_INTERRUPTS = /^ {0,3}([-+*]|1[.)])[ \t]+\S/;
-
-// A bare `=`/`-` run directly under paragraph text is a setext underline.
-const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
-
-// A ≥4-indent line is indented code to CommonMark renderers; changing blanks
-// beside one could change that render. The inert CodeBlock node (CBLK-E-1)
-// already classifies as opaque below — this edge-line check is the byte-safety
-// backstop for indent-led lines inside other block shapes.
-const INDENT_LED = /^( {4,}|\t)/;
+import {
+  BLANK,
+  INDENT_LED,
+  LIST_INTERRUPTS,
+  type LineSpan,
+  SETEXT_UNDERLINE,
+  top_level_line_spans,
+} from './block_spans.js';
 
 // Seams touching these are never converted, so they carry no configurable
 // kind. CodeBlock (inert indented code, CBLK-E-1) is deliberately unmapped —
@@ -69,29 +58,12 @@ const CLOSED_BY_BLANK: ReadonlySet<Kind> = new Set([
 // break already exists (doc top after frontmatter, a heading stack, a rule).
 const NO_BLANK_ABOVE_HEADING: ReadonlySet<Kind> = new Set(['frontmatter', 'heading', 'rule']);
 
-interface Block {
-  kind: Kind;
-  first: number;
-  last: number;
-}
+type Block = LineSpan<Kind>;
 
 function top_level_blocks(state: EditorState): Block[] | null {
-  const tree = ensureSyntaxTree(state, state.doc.length, PARSE_BUDGET_MS);
-  if (!tree) return null;
-  const doc = state.doc;
-  const blocks: Block[] = [];
-  for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    const kind = /^ATXHeading[1-6]$/.test(node.name)
-      ? 'heading'
-      : (KIND_BY_NODE[node.name] ?? 'opaque');
-    let last = doc.lineAt(node.to);
-    // A node ending exactly at a line start spans through the previous line.
-    if (last.from === node.to && last.number > doc.lineAt(node.from).number) {
-      last = doc.line(last.number - 1);
-    }
-    blocks.push({ kind, first: doc.lineAt(node.from).number, last: last.number });
-  }
-  return blocks;
+  return top_level_line_spans(state, (name) =>
+    /^ATXHeading[1-6]$/.test(name) ? 'heading' : (KIND_BY_NODE[name] ?? 'opaque'),
+  );
 }
 
 // CommonMark's can-interrupt-a-paragraph test, conservative on HTML: every

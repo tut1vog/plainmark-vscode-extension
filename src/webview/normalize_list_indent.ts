@@ -7,8 +7,7 @@ import {
 } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 
-// A partial tree could truncate an item's span and dedent only part of it.
-const PARSE_BUDGET_MS = 1000;
+import { PARSE_BUDGET_MS, node_last_line } from './block_spans.js';
 
 export function normalize_list_indent_spec(state: EditorState): TransactionSpec | null {
   const tree = ensureSyntaxTree(state, state.doc.length, PARSE_BUDGET_MS);
@@ -26,10 +25,7 @@ export function normalize_list_indent_spec(state: EditorState): TransactionSpec 
       // 0 is already normal; a top-level marker sits at most 3 columns in.
       if (indent < 1 || indent > 3) continue;
       if (!/^ +$/.test(first_line.text.slice(0, indent))) continue;
-      let last_line = doc.lineAt(item.to);
-      if (last_line.from === item.to && last_line.number > first_line.number) {
-        last_line = doc.line(last_line.number - 1);
-      }
+      const last_line = node_last_line(doc, item.from, item.to);
       const item_changes: ChangeSpec[] = [];
       let tab_indented = false;
       for (let n = first_line.number; n <= last_line.number; n++) {
