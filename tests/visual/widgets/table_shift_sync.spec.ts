@@ -45,6 +45,22 @@ describe('table widget under edits that only shift it', () => {
     container.remove();
   });
 
+  it('TBL-R-17: typing above the table keeps every cell DOM node in place', async () => {
+    view = mount_editor(container, INTRO + TABLE);
+    await next_frame();
+    const td = get_cell(container, 1, 1);
+    const content = td.firstChild;
+    expect(content).not.toBeNull();
+
+    view.dispatch({ changes: { from: 0, insert: 'x' } });
+    await next_frame();
+    await next_frame();
+
+    expect(get_cell(container, 1, 1)).toBe(td);
+    expect(td.firstChild).toBe(content);
+    expect(td.textContent).toBe('2');
+  });
+
   it('TBL-I-40: a host sync that rewrites the active cell does not steal focus', async () => {
     view = mount_editor(container, INTRO + TABLE);
     await next_frame();

@@ -634,7 +634,21 @@ export class TableWidget extends WidgetType {
       prev.active = null;
     }
     dom.dataset.tableFrom = String(this.table.from);
+    dom.classList.toggle('plainmark-block-gap-above', this.gap_above);
     set_container_widget(dom, this);
+    // An edit above the table only shifts table.from: with every cell's text,
+    // math, and alignment signature unchanged the DOM is already right, and the
+    // cell listeners resolve the live widget at event time, so skip the re-emit.
+    if (
+      prev instanceof TableWidget &&
+      !prev.draw_failed &&
+      prev.content_signature === this.content_signature &&
+      prev.math_fingerprint === this.math_fingerprint &&
+      alignment_signature(prev.table.alignment) === alignment_signature(this.table.alignment)
+    ) {
+      this.draw_failed = false;
+      return true;
+    }
     try {
       const extraction = locate_table_extraction(view.state, this.table.from);
       this.draw_failed = !extraction;
