@@ -87,6 +87,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **LINK-I-12** `[smoke]` — The full navigation bridge MUST carry the href to the host and open it: the webview document listener forwards the `plainmark-link-click` event as a `{ type: 'link_click', href }` host message, and the host opens the resolved target. An allowlisted scheme-bearing href (`https:`, `http:`, `mailto:`, `vscode:`, `vscode-insiders:`) opens verbatim via `openExternal`; a `file:` href opens in-editor via `vscode.open`; any other scheme-bearing href is dropped (SHELL-M-3); a relative href is percent-decoded (`decodeURIComponent`, falling back to the raw string on a malformed escape) and resolves against the document URI's directory. A `#fragment` or `?query` suffix on a relative href is split off before decoding, so `api.md#auth` opens `api.md`.
   _Example:_ Cmd+Click on `[Plainmark](https://example.com)` → opens `https://example.com`; Cmd+Click on `[docs](./guide)` in `/proj/page` → opens `/proj/guide`.
 
+- **LINK-I-13** `[smoke]` — A Cmd/Ctrl press on a link that drags before release — the pointer travels more than a few pixels between `mousedown` and `click` — MUST NOT navigate: the gesture is a selection, and only a click (press and release in place) follows the link (LINK-I-6).
+  _Example:_ Cmd+press on `t` in `[t](u)`, drag across the line, release → text selected, no `plainmark-link-click` event; Cmd+press and release in place → navigates.
+
 ## SP · Source preservation
 
 - **LINK-SP-1** `[inherits:INV-SP-1]` — Link rendering MUST be decoration-only (`Decoration.mark` for content, markers, and marker-hiding); the `[`, `]`, `(`, `)`, URL, and title bytes are preserved verbatim, and bytes outside the link are never touched.

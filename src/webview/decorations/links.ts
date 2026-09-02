@@ -275,6 +275,9 @@ function dispatch_link_click(href: string): void {
 // one click sequence is in flight at a time.
 // Correct only for the single production webview / single EditorView realm; a second realm would share this in-flight href.
 let mousedown_link_href: string | null = null;
+let mousedown_point: { x: number; y: number } | null = null;
+// A press that travels farther than this before release is a drag (selection), not a click.
+const LINK_CLICK_SLOP_PX = 4;
 
 const link_click_handler = EditorView.domEventHandlers({
   mousedown(event) {
@@ -290,6 +293,7 @@ const link_click_handler = EditorView.domEventHandlers({
       return false;
     }
     mousedown_link_href = href;
+    mousedown_point = { x: event.clientX, y: event.clientY };
     // Defer to CM6's default handler so the caret moves to the click position;
     // navigation (if any) fires on click after mouseup. preventDefault is NOT
     // called here — the press needs to count as a caret-placement gesture too.
@@ -297,11 +301,21 @@ const link_click_handler = EditorView.domEventHandlers({
   },
   click(event) {
     const href = mousedown_link_href;
+    const point = mousedown_point;
     mousedown_link_href = null;
+    mousedown_point = null;
     if (href === null) return false;
     if (event.button !== 0) return false;
     if (!(event.metaKey || event.ctrlKey)) {
       log.debug('plain link click: defer to caret placement');
+      return false;
+    }
+    if (
+      point &&
+      (Math.abs(event.clientX - point.x) > LINK_CLICK_SLOP_PX ||
+        Math.abs(event.clientY - point.y) > LINK_CLICK_SLOP_PX)
+    ) {
+      log.debug('modified link drag: defer to selection');
       return false;
     }
     // Navigate to the mousedown-snapshot href, not a target re-resolved here:

@@ -154,6 +154,32 @@ describe('link navigation timing', () => {
     expect(dispatched).toEqual(['http://e.co']);
   });
 
+  it('LINK-I-13: a Cmd/Ctrl press that drags before release does not navigate', async () => {
+    const doc = '[lk](http://e.co) xy\nhello\n';
+    view = mount_editor(container, doc);
+    view.dispatch({ selection: { anchor: 23 } });
+    await next_frame();
+    await next_frame();
+
+    const link = find_link_span(container, 'http://e.co');
+    const rect = link.getBoundingClientRect();
+    const down = { clientX: rect.left + 2, clientY: rect.top + rect.height / 2 };
+    const up = { clientX: rect.left + 40, clientY: rect.top + rect.height / 2 };
+    link.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, metaKey: true, ...down }),
+    );
+    view.dispatch({ selection: { anchor: 1, head: 8 } }); // the drag selected text
+    link.dispatchEvent(
+      new MouseEvent('mouseup', { bubbles: true, cancelable: true, button: 0, metaKey: true, ...up }),
+    );
+    link.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, metaKey: true, ...up }),
+    );
+    await next_frame();
+
+    expect(dispatched).toEqual([]);
+  });
+
   it('navigation target is the snapshot href, not the click target (which may have shifted after marker reveal)', async () => {
     // Simulates the real F5 layout-shift scenario: between mousedown and
     // click, the pointer_state gate clears on mouseup, markers reveal, the
