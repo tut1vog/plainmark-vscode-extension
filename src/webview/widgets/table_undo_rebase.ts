@@ -103,6 +103,7 @@ function rebase_subview_to_cell(
   post_ext: TableExtraction,
   row: number,
   col: number,
+  refocus: boolean,
 ): void {
   const cell = post_ext.info.cells.find((c) => c.row_index === row && c.col_index === col);
   if (!cell) return;
@@ -120,8 +121,10 @@ function rebase_subview_to_cell(
       Transaction.addToHistory.of(false),
     ],
   });
-  // Refocus — a multi-line→single-line cell shrink on undo can drop the subview's `.cm-focused`, which hides drawSelection's caret.
-  sub.focus();
+  // Undo only: a multi-line→single-line cell shrink can drop the subview's
+  // `.cm-focused`, hiding drawSelection's caret. A host sync must not pull
+  // focus from wherever the user is typing (a split text editor, say).
+  if (refocus) sub.focus();
 }
 
 // Snapshot null + undo lands inside an existing table → find the cell to
@@ -188,7 +191,7 @@ export const table_undo_rebase = ViewPlugin.fromClass(
         // Cell gone — the dimension-change rebuild destroys the subview.
         return;
       }
-      rebase_subview_to_cell(snapshot, post, post_ext, snapshot.row, snapshot.col);
+      rebase_subview_to_cell(snapshot, post, post_ext, snapshot.row, snapshot.col, false);
     }
 
     private process(vu: ViewUpdate, tr: Transaction): void {
@@ -236,7 +239,7 @@ export const table_undo_rebase = ViewPlugin.fromClass(
         pre_ext.info.col_count !== post_ext.info.col_count;
 
       if (same_cell && !dims_changed) {
-        rebase_subview_to_cell(snapshot, post, post_ext, diff.row, diff.col);
+        rebase_subview_to_cell(snapshot, post, post_ext, diff.row, diff.col, true);
         return;
       }
 
