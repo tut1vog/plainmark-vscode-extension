@@ -29,29 +29,35 @@ const cases = [
   },
   {
     name: 'em',
-    doc: 'xx *it* yy zz\n',
+    doc: 'xx *ital* yy zz\n',
     open: [3, 4] as const,
-    content: [4, 6] as const,
-    close: [6, 7] as const,
-    line_end: 13,
-  },
-  {
-    name: 'strikethrough',
-    doc: 'xx ~~st~~ yy zz\n',
-    open: [3, 5] as const,
-    content: [5, 7] as const,
-    close: [7, 9] as const,
+    content: [4, 8] as const,
+    close: [8, 9] as const,
     line_end: 15,
   },
   {
+    name: 'strikethrough',
+    doc: 'xx ~~str~~ yy zz\n',
+    open: [3, 5] as const,
+    content: [5, 8] as const,
+    close: [8, 10] as const,
+    line_end: 16,
+  },
+  {
     name: 'inline code',
-    doc: 'xx `cd` yy zz\n',
+    doc: 'xx `code` yy zz\n',
     open: [3, 4] as const,
-    content: [4, 6] as const,
-    close: [6, 7] as const,
-    line_end: 13,
+    content: [4, 8] as const,
+    close: [8, 9] as const,
+    line_end: 15,
   },
 ];
+
+// Every construct's content is at least three characters wide, so the
+// strict-inside and one-edge cases below assert for all four — none may skip.
+for (const c of cases) {
+  if (c.content[1] - c.content[0] < 3) throw new Error(`${c.name}: content too narrow`);
+}
 
 describe('compute_marker_snap EMPH-I-7 EMPH-I-8 EMPH-I-9 EMPH-SP-4 MRS-S-1 MRS-S-2 MRS-S-3 MRS-S-4 MRS-S-5 MRS-S-6 MRS-S-7 MRS-S-8', () => {
   for (const c of cases) {
@@ -74,7 +80,6 @@ describe('compute_marker_snap EMPH-I-7 EMPH-I-8 EMPH-I-9 EMPH-SP-4 MRS-S-1 MRS-S
 
       it('does NOT snap a strict-inside selection (Issue 1 — `ld` inside `**bold**` stays as-is)', () => {
         // Both edges strictly inside the content area; neither at boundary.
-        if (content_end - content_start < 3) return; // skip when content too narrow for strict-inside
         const from = content_start + 1;
         const to = content_end - 1;
         expect(compute_marker_snap(make_state(c.doc, from, to))).toBeNull();
@@ -83,14 +88,12 @@ describe('compute_marker_snap EMPH-I-7 EMPH-I-8 EMPH-I-9 EMPH-SP-4 MRS-S-1 MRS-S
       it('does NOT snap when only the right edge sits at content end and the left is strict-inside', () => {
         // `[ld]` case — Issue 1's exact reproduction. right_at_content_end is
         // true but left_before_content is false → Rule B does not fire.
-        if (content_end - content_start < 2) return;
         const from = content_start + 1;
         const to = content_end;
         expect(compute_marker_snap(make_state(c.doc, from, to))).toBeNull();
       });
 
       it('does NOT snap when only the left edge sits at content start and the right is strict-inside', () => {
-        if (content_end - content_start < 2) return;
         const from = content_start;
         const to = content_end - 1;
         expect(compute_marker_snap(make_state(c.doc, from, to))).toBeNull();
