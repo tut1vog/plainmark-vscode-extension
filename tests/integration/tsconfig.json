@@ -1,0 +1,10 @@
+{
+  // Mocha suites use the TDD globals (`suite` / `test`); the root config's
+  // explicit `types` list would otherwise drop @types/mocha from the program.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "mocha"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": []
+}

@@ -1,0 +1,25 @@
+name: Setup pnpm + Node
+description: >-
+  Install the pinned pnpm, set up Node with the pnpm store cache, and install
+  dependencies from the lockfile. Checkout stays in the calling job.
+
+inputs:
+  pnpm-version:
+    description: pnpm version to install
+    default: 11.0.9
+  node-version:
+    description: Node.js major version
+    default: '22'
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6
+      with:
+        version: ${{ inputs.pnpm-version }}
+    - uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash

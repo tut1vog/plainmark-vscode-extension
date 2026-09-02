@@ -9,6 +9,8 @@ name: CI
 # release.yml packages — so what ships is compiled and loaded in a real
 # extension host before publish. The visual job keeps `build:dev`: its tests
 # import src/ through vite and only need dist/ for the lazy MathJax bundle.
+#
+# pnpm/Node versions are pinned once, in .github/actions/setup/action.yml.
 
 on:
   push:
@@ -25,24 +27,14 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PNPM_VERSION: 11.0.9
-  NODE_VERSION: 22
-
 jobs:
   static:
     name: Lint + type-check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm run lint
       - run: pnpm run build
       - run: pnpm run build:check
@@ -52,50 +44,32 @@ jobs:
   unit-and-source:
     name: Unit + source-preservation
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm run test:unit
       - run: pnpm run test:source-preservation
 
   fuzz:
     name: Fuzz suite
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # Blocking — promoted from soft-fail. The
     # initial run is clean (no new regressions; allowlisted upstream
     # divergences are pinned in fixtures/metamorphic-known-divergences.json).
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm run test:fuzz
 
   visual:
     name: Visual + browser fuzz (Playwright Chromium)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run build:dev
       - run: pnpm run test:visual
@@ -103,16 +77,10 @@ jobs:
   integration-desktop:
     name: Integration — VS Code Desktop
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm run build
       - run: pnpm run test:integration:desktop:build
       # VS Code Desktop is an Electron app — Linux needs a virtual display.
@@ -121,16 +89,10 @@ jobs:
   integration-web:
     name: Integration — VS Code Web
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run build
       - run: pnpm run test:integration:web:build
