@@ -7,6 +7,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 ### Security
 
 - **A diagram can no longer restyle the editor** — a Mermaid `%%{init}%%` directive could carry CSS that applied to the whole editor, hiding text or drawing fake controls; that setting is now locked.
+- **A Restricted Mode workspace can no longer choose where pasted images are written** — the image location setting of an untrusted folder is ignored until you trust the workspace, as its stylesheet and shortcut settings already were.
 
 ### Fixed
 
@@ -34,6 +35,23 @@ All notable changes to the Plainmark extension are documented here. The format f
 - **Backspace after an emoji on a list's continuation line now removes the whole emoji** — it removed half of the character, leaving a broken glyph in the file; accented letters written as a base letter plus accent are also deleted as one.
 - **A lone `---` on the first line no longer blanks the rest of the document** — an opening frontmatter fence with no closing fence made every heading, list, table, and formula below it render as plain text until the closer was typed; the rest of the document now renders normally and the `---` shows as a horizontal rule.
 - **`$$` in the middle of a line no longer turns the text after it into math** — `a $$x$$ b $y$` typeset `$x`, swallowed ` b ` as a formula, and broke `$y$`; the `$$` now stays literal text and `$y$` renders. An escaped `\$` inside a formula and a `$` inside a code span within a formula no longer end it early.
+- **One warning per bad stylesheet entry** — changing the theme or another Plainmark setting no longer re-shows stylesheet warnings, and an invalid entry warns once instead of once per open Plainmark tab.
+- **The minus key works in table shortcuts** — a table shortcut ending in `-`, such as `Mod--`, is now accepted.
+- **Callouts written as `>  [!NOTE]` (two spaces) no longer show a stray space before the title** — the header lines up with the body like a normally spaced callout.
+- **Quote lines keep their hanging indent when the first quote marker on screen cannot be measured** — one unmeasurable marker no longer pins every quote on the fallback indent.
+- **A tab-indented line inside an indented code fence keeps the indentation the fence does not strip** — the whole tab used to be hidden.
+- **Select All no longer flips an image, diagram, math block, or front matter on the first or last line to raw source** — a selection covering the whole document keeps them rendered wherever they sit.
+- **Marker reveal stays put when you type or right-click while holding the mouse button** — an edit mid-press no longer evaluates stale positions, and releasing a secondary button no longer ends the press.
+- **Cmd/Ctrl-dragging across a link to select text no longer opens the link on release** — only a click in place follows it.
+- **Enter with the code-fence language popup open picks the highlighted language** — it no longer closes the fence around the half-typed tag.
+- **Paragraph ▸ Heading on a bare `##` line swaps the marker instead of producing `# ##`** — and the Paragraph items skip code blocks far down a large document as they do near the top.
+- **Dragging a wide diagram's scrollbar no longer flips it to source** — the horizontal scrollbar under a Mermaid diagram scrolls it, as it already did for math blocks.
+- **Math previews report a failed typeset** — when MathJax rejects a formula outright, the live preview shows the error instead of silently keeping the previous render.
+- **Clicking a table cell while the document changes underneath no longer loses the click** — an edit arriving in the same instant, such as a sync from another editor, used to drop the activation or leave a stray editing cell behind.
+- **Indented tables keep their indentation when edited** — editing a cell of a table indented by a few spaces no longer strips the indent from every row but the first, and arrowing down into such a table now enters its first cell.
+- **Insert table replaces the selected text** — running the command with text selected puts the table in place of the selection instead of inserting it at the caret.
+- **Pasting a Google Sheets range keeps bold text and links** — the sheet's clipboard payload no longer falls back to plain tab-separated text.
+- **Switching between two dark (or two light) themes recolors Mermaid diagrams** — diagrams no longer keep the previous theme's colors until the editor is reloaded.
 
 ## [1.11.9] - 2026-08-30
 
