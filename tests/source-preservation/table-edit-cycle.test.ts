@@ -55,6 +55,7 @@ function apply_edit_cycle(
 
 const editable_fixtures = [
   'table.md',
+  'indented.md',
   'column-uniform-padding.md',
   'inline-content.md',
   'mismatched-cols.md',
@@ -301,5 +302,29 @@ describe('TBL-SP-3 TBL-SP-4 TBL-SP-5 TBL-SP-9 round trip through Lezer, model, a
     const reparsed = find_tables(make_state(second.result));
     expect(reparsed).toHaveLength(1);
     expect(reparsed[0].alignment).toEqual(['left', 'center', 'right']);
+  });
+});
+
+describe('TBL-SP-13 TBL-E-14 indented table keeps every row indent (indented.md)', () => {
+  it('an edit re-applies each source row indent and a new row takes the header indent', () => {
+    const doc = read_fixture('indented.md');
+    const [table] = find_tables(make_state(doc));
+    const { result, from } = apply_edit_cycle(doc, table.from, (model) => {
+      model.rows[1][1] = '1x';
+      model.rows.push(['three', '3']);
+    });
+    expect(result.slice(0, from)).toBe(doc.slice(0, from));
+    const rows = result.slice(from).split('\n').slice(0, 5);
+    expect(rows[0].startsWith('| Name')).toBe(true);
+    for (const row of rows.slice(1)) expect(row.startsWith('  | ')).toBe(true);
+    expect(result).toContain('  | three');
+    expect(result).toContain('\n\nAfter the table.');
+    expect(find_tables(make_state(result))[0].row_count).toBe(4);
+  });
+
+  it('a no-op cycle on an already-canonical indented table is byte-stable', () => {
+    const doc = read_fixture('indented.md');
+    const [table] = find_tables(make_state(doc));
+    expect(apply_edit_cycle(doc, table.from).result).toBe(doc);
   });
 });

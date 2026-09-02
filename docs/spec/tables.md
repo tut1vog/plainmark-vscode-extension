@@ -235,6 +235,9 @@ called out in prose to avoid ambiguity with `|`.
 - **TBL-SP-12** — **Navigation-driven newline injection** — the ONLY navigation (non-editing) action permitted to write bytes. The two cell-exit paths (TBL-I-20 / TBL-I-21) MAY each write at most one `\n` byte directly adjacent to the table: leading at offset 0 (exit above a table at document start) or trailing at end-of-document (exit below a table at document end), dispatched as a single userEvent-`input` transaction. An exit that has a real line to land on MUST write zero bytes. This is a sanctioned extension of the `INV-SP-2` allowlist.
   _Example:_ ArrowUp out of an at-offset-0 table writes exactly one byte (`\n` at offset 0); the same exit on a table with a line above writes none.
 
+- **TBL-SP-13** — **Row indentation is preserved.** The whole-table replace (TBL-SP-1) starts at the `Table` node, which for an indented table begins past the first row's leading whitespace; every later row's leading whitespace lies inside the replace range. The dispatch MUST re-apply each source line's leading whitespace to the corresponding serialized row (a row without a source line — one added by the edit — takes the header row's indent), so an indented table stays indented on every row after an edit and a no-op cycle is byte-stable (TBL-SP-9). An unindented table is unaffected.
+  _Example:_ `  | a | b |\n  |---|---|\n  | 1 | 2 |` → edit cell `1` to `1x` → every row still begins with two spaces.
+
 ## E · Edge cases
 
 - **TBL-E-1** — A table nested in a list item or blockquote MUST be skipped (IL1; cross-ref TBL-R-12): no widget, plain-source render. This is the at-render guard `is_in_list_or_blockquote` on the table's first line.
@@ -275,3 +278,6 @@ called out in prose to avoid ambiguity with `|`.
 
 - **TBL-E-13** — Trailing whitespace after a row's last pipe MUST NOT count as a cell: the row node lezer emits runs through that whitespace, but GFM ends the row at the last pipe, so a whitespace-only span after the final `TableDelimiter` is ignored at extraction. A trailing span with content (a row that omits its closing pipe, TBL-E-3) is still a cell.
   _Example:_ `| A | B |␠␠\n|---|---|\n| 1 | 2 |` → a two-column table; editing cell `1` re-serializes to two columns, never `| A | B |     |`.
+
+- **TBL-E-14** — A table indented by up to three spaces (GFM-legal) MUST be widgeted like an unindented one: it is not a list or blockquote nesting (TBL-R-12), the main-view entry keys (TBL-I-22) MUST find it by the line the `Table` node starts on rather than by `node.from === line.from`, and edits keep its indentation (TBL-SP-13).
+  _Example:_ `text\n  | a |\n  |---|\n  | 1 |` with the caret on `text` → ArrowDown → cell (0,0) is active.

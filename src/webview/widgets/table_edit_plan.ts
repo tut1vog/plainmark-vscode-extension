@@ -21,10 +21,21 @@ export function plan_table_edit(
   const model = build_model_from_extraction(extraction, state.doc);
   const next = mutator(model);
   if (next === model) return { kind: 'unchanged', info: extraction.info };
-  const serialized = serialize_table(next);
   const { from, to } = extraction.info;
-  const doc_len = state.doc.length;
-  const next_byte = to < doc_len ? state.doc.sliceString(to, to + 1) : '';
+  const doc = state.doc;
+  // Row 1's indent sits before `from`; every later row's sits inside the replace
+  // range, so re-apply each source line's indent (new rows take the header's) or
+  // an indented table loses it from row 2 on (TBL-SP-13).
+  const indents: string[] = [];
+  for (let n = doc.lineAt(from).number; n <= doc.lineAt(to).number; n++) {
+    indents.push(/^[ \t]*/.exec(doc.line(n).text)?.[0] ?? '');
+  }
+  const serialized = serialize_table(next)
+    .split('\n')
+    .map((row, i) => (i === 0 ? row : (indents[i] ?? indents[0]) + row))
+    .join('\n');
+  const doc_len = doc.length;
+  const next_byte = to < doc_len ? doc.sliceString(to, to + 1) : '';
   return {
     kind: 'replace',
     info: extraction.info,

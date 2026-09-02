@@ -393,15 +393,17 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
   ];
 }
 
+// The Table node of an indented table begins past the line's leading
+// whitespace, so match on the node's line, not its offset (TBL-E-14).
 function find_table_starting_at(state: EditorState, line_from: number): number | null {
   let result: number | null = null;
   syntaxTree(state).iterate({
     from: line_from,
-    to: line_from + 1,
+    to: state.doc.lineAt(line_from).to,
     enter(node) {
       if (result !== null) return false;
-      if (node.name === 'Table' && node.from === line_from) {
-        result = line_from;
+      if (node.name === 'Table' && state.doc.lineAt(node.from).from === line_from) {
+        result = node.from;
         return false;
       }
       return;

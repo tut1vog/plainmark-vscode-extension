@@ -87,6 +87,25 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (Fix 2)', () =
     expect(idx!.col).toBe(0);
   });
 
+  it('TBL-E-14: ArrowDown from the line above an indented table activates cell (0, 0)', async () => {
+    // an indented row cannot interrupt a paragraph (lazy continuation), so the table follows a blank line
+    const prefix = 'hello\n\n';
+    const indented = STARTER.split('\n')
+      .map((row) => (row ? '  ' + row : row))
+      .join('\n');
+    view = mount_editor(container, prefix + indented);
+    view.dispatch({ selection: { anchor: prefix.length - 1 } });
+    view.focus();
+    await next_frame();
+
+    arrow_down(view);
+    await settle();
+
+    expect(active_subview_container()).not.toBeNull();
+    const idx = active_cell_indices();
+    expect(idx).toEqual({ row: 0, col: 0 });
+  });
+
   // BLOCKER: lezer-markdown absorbs an adjacent paragraph into the Table node
   // unless separated by '\n\n'. With '\n\n' (the realistic case), the Table
   // terminates at the last '|' and no real source line below it has
