@@ -68,11 +68,22 @@ export function dedupe_file_name(desired: string, taken: ReadonlySet<string>): s
   }
 }
 
+// A bare CommonMark destination cannot hold whitespace or unbalanced parens,
+// and the link opener splits `#`/`?` off before percent-decoding (LINK-I-12).
+const DESTINATION_UNSAFE = /[\s()%#?<>[\]\\`]/g;
+
+function encode_segment(segment: string): string {
+  return segment.replace(DESTINATION_UNSAFE, (ch) =>
+    ch === '(' ? '%28' : ch === ')' ? '%29' : encodeURIComponent(ch),
+  );
+}
+
+// Markdown destination (percent-encoded) for `to_file` relative to `from_dir`.
 export function relative_path(from_dir: string, to_file: string): string {
   const from = from_dir.split('/').filter(Boolean);
   const to = to_file.split('/').filter(Boolean);
   let i = 0;
   while (i < from.length && i < to.length && from[i] === to[i]) i++;
   const ups = Array.from({ length: from.length - i }, () => '..');
-  return [...ups, ...to.slice(i)].join('/') || '.';
+  return [...ups, ...to.slice(i).map(encode_segment)].join('/') || '.';
 }

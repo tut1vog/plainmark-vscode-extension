@@ -156,3 +156,21 @@ describe('relative_path — document folder → saved file with .. segments (IMG
     expect(relative_path('/a/b/c', '/a/b/img.png')).toBe('../img.png');
   });
 });
+
+describe('relative_path — percent-encodes a valid bare destination (IMG-I-6)', () => {
+  it('encodes spaces, so the `assets/${documentBaseName}` example stays an image', () => {
+    expect(relative_path('/a/notes', '/a/notes/assets/My Note/image-1.png')).toBe(
+      'assets/My%20Note/image-1.png',
+    );
+  });
+
+  it('encodes parentheses, `#`, `?`, and `%`', () => {
+    expect(relative_path('/a', '/a/img (1).png')).toBe('img%20%281%29.png');
+    expect(relative_path('/a', '/a/c#1/100%.png')).toBe('c%231/100%25.png');
+    expect(relative_path('/a', '/a/why?.png')).toBe('why%3F.png');
+  });
+
+  it('leaves non-ASCII letters and `..` segments as they are', () => {
+    expect(relative_path('/a/notes', '/a/图片/img.png')).toBe('../图片/img.png');
+  });
+});
