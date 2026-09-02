@@ -130,6 +130,9 @@ first fire of the single in-flight apply.
 - **SYNC-G-8** — While CM6 is composing (`view.composing || view.compositionStarted`), the webview update-listener MUST NOT post intermediate `update` messages; it MUST defer and post the composed text once after composition unwinds (debounced ~60 ms re-check). This stops the host `TextDocument` from churning mid-IME — the per-step `applyEdit` + multi-fire echo churn that otherwise manufactures the escaped-echo divergent syncs SYNC-G-7 and SYNC-H-2 absorb.
   _Example:_ typing a multi-character pinyin word → zero `update` messages during composition, one `update` carrying the final text after `compositionend`.
 
+- **SYNC-G-9** — The SYNC-G-7 deferral MUST be bounded: after ~50 consecutive deferrals (~3 s) the sync MUST dispatch regardless of the composition flags, so flags that never clear cannot hold inbound host state indefinitely. The bound never revives a superseded sync — the newest-wins drop of SYNC-G-7 is checked first.
+  _Example:_ `view.composing` stays true for 3 s after an external edit → the deferred `sync` dispatches on its 51st attempt; if a newer `sync` arrived meanwhile, the bounded one still drops.
+
 ## P — persistence, dirty, save, lifecycle
 
 - **SYNC-P-1** — Plainmark MUST NOT maintain its own dirty flag or persistence layer; dirty state MUST be derived solely from the `TextDocument` mutated via `WorkspaceEdit`.

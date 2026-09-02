@@ -381,6 +381,36 @@ describe('dispatch_host_sync — CJK IME composition guard SYNC-G-7', () => {
     expect(spec.changes).toEqual({ from: 0, to: 2, insert: 'XYZ' });
   });
 
+  it('SYNC-G-9: dispatches after the deferral bound even if composition never ends', () => {
+    const h = make_fake_view('中文', { composing: true });
+    let scheduled: (() => void) | null = null;
+    const fake_defer = (cb: () => void) => {
+      scheduled = cb;
+    };
+    let applied = 0;
+    dispatch_host_sync(h.view, '中，文', [], undefined, () => applied++, fake_defer);
+    for (let i = 0; i < 49; i++) scheduled!();
+    expect(h.dispatched).toHaveLength(0);
+    expect(applied).toBe(0);
+
+    scheduled!();
+    expect(h.dispatched).toHaveLength(1);
+    expect(applied).toBe(1);
+  });
+
+  it('SYNC-G-9: a superseded sync still drops at the bound instead of dispatching', () => {
+    const h = make_fake_view('中文', { composing: true });
+    const scheduled: (() => void)[] = [];
+    const fake_defer = (cb: () => void) => {
+      scheduled.push(cb);
+    };
+    dispatch_host_sync(h.view, 'OLD', [], undefined, undefined, fake_defer);
+    for (let i = 0; i < 49; i++) scheduled.shift()!();
+    dispatch_host_sync(h.view, 'NEW', [], undefined, undefined, fake_defer);
+    scheduled.shift()!(); // the old sync's 50th retry — bound reached, but superseded
+    expect(h.dispatched).toHaveLength(0);
+  });
+
   // Base-version bookkeeping must track APPLIED
   // syncs only — advancing it on receipt would let a composition-deferred
   // sync stamp a base the doc does not yet reflect.

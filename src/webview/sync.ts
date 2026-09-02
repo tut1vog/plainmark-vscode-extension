@@ -21,6 +21,10 @@ export type DeferScheduler = (cb: () => void, delay_ms: number) => void;
 // host `sync` and to flush the outbound `update` once composition ends.
 const COMPOSITION_DEFER_MS = 60;
 
+// ~3 s of inbound deferral. Composition flags that never clear (a
+// `compositionend` CM6 never saw) would otherwise hold every host sync forever.
+const MAX_COMPOSITION_DEFERRALS = 50;
+
 // Outbound webview→host forwarding. CM6 fires a docChanged transaction per
 // intermediate IME composition step; posting each one churns the host applyEdit
 // (and its multi-fire echo) mid-composition — the churn that manufactures the
@@ -161,12 +165,14 @@ export function dispatch_host_sync(
 ): void {
   const generation = (sync_dispatch_generation.get(view) ?? 0) + 1;
   sync_dispatch_generation.set(view, generation);
+  let deferrals = 0;
   const attempt = (): void => {
     if (sync_dispatch_generation.get(view) !== generation) {
       log.debug('sync: superseded while deferred — dropping stale sync');
       return;
     }
-    if (view.composing || view.compositionStarted) {
+    if ((view.composing || view.compositionStarted) && deferrals < MAX_COMPOSITION_DEFERRALS) {
+      deferrals++;
       log.debug('sync: deferring — composition active');
       defer(attempt, COMPOSITION_DEFER_MS);
       return;
