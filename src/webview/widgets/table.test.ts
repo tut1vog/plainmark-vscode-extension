@@ -247,6 +247,13 @@ describe('TBL-E-7 TBL-SP-6 pipe-bearing line after a table — GFM absorption se
   });
 });
 
+describe('TBL-E-15 upstream: delimiter row with trailing spaces', () => {
+  it('@lezer/markdown does not recognise `|:--|--:|␠␠` as a table (GitHub does)', () => {
+    expect(find_tables(make_state('|a|b|\n|:--|--:|  \n|1|2|\n'))).toHaveLength(0);
+    expect(find_tables(make_state('|a|b|\n|:--|--:|\n|1|2|\n'))).toHaveLength(1);
+  });
+});
+
 describe('TBL-R-12 TBL-E-1 IL1 — table nested inside list or blockquote', () => {
   it('find_tables skips a table nested in a list item (IL1 — only document-level tables are widgets)', () => {
     const doc = '- list item before\n  | A | B |\n  |---|---|\n  | 1 | 2 |\n';

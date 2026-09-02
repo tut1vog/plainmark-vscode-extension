@@ -281,3 +281,6 @@ called out in prose to avoid ambiguity with `|`.
 
 - **TBL-E-14** — A table indented by up to three spaces (GFM-legal) MUST be widgeted like an unindented one: it is not a list or blockquote nesting (TBL-R-12), the main-view entry keys (TBL-I-22) MUST find it by the line the `Table` node starts on rather than by `node.from === line.from`, and edits keep its indentation (TBL-SP-13).
   _Example:_ `text\n  | a |\n  |---|\n  | 1 |` with the caret on `text` → ArrowDown → cell (0,0) is active.
+
+- **TBL-E-15** `[accepted]` — A delimiter row with trailing spaces after its last pipe (`|:--|--:|␠␠`) is NOT recognised as a table by the parser (`@lezer/markdown` GFM), although GitHub renders the same source as a table; the lines fall back to a paragraph and no widget is emitted. This is an upstream divergence, accepted as-is — the mirror image of TBL-E-13, where trailing whitespace after a data row's last pipe is tolerated. Trimming the row would be a source rewrite outside the edit path (`INV-SP-2`), so Plainmark MUST NOT repair it.
+  _Example:_ `|a|b|\n|:--|--:|␠␠\n|1|2|` → plain paragraph text in Plainmark, a two-column table on GitHub; removing the two trailing spaces makes it a table in both.
