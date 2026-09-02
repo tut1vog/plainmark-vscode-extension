@@ -237,12 +237,33 @@ describe('plan_plainmark_styles — resource roots + href THEME-R-5', () => {
     expect(plan.resource_roots).toEqual(['file:///ws', 'file:///ws/sub']);
   });
 
-  it('dedup is by string identity: parents equal as strings collapse to one root', () => {
-    // ./a.css and a.css both resolve under the workspace folder → identical
-    // parent string → a single root, proving dedup keys on to_string(parent).
-    const plan = plan_plainmark_styles(['./a.css', 'a.css'], bases(WS), make_ops());
+  it('dedups roots by to_string, not by URI object identity', () => {
+    // Every op returns a fresh object, so the two parents are distinct objects
+    // with equal string forms — an identity-keyed set would emit two roots.
+    interface FakeUri {
+      path: string;
+    }
+    const ops: StyleUriOps<FakeUri> = {
+      parse_file_uri: (raw) => ({ path: raw }),
+      from_absolute_path: (raw) => ({ path: `abs:${raw}` }),
+      join: (base, rel) => ({ path: join_fake(base.path, rel) }),
+      parent: (u) => ({ path: parent_fake(u.path) }),
+      to_string: (u) => u.path,
+      to_webview_href: (u) => `webview:${u.path}`,
+    };
+    const plan = plan_plainmark_styles(
+      ['a.css', 'b.css'],
+      { workspace_folder: { path: WS }, document_dir: () => ({ path: DOC }) },
+      ops,
+    );
     expect(plan.resolved).toHaveLength(2);
-    expect(plan.resource_roots).toEqual(['file:///ws']);
+    expect(plan.resource_roots).toEqual([{ path: WS }]);
+  });
+
+  it('collapses one directory reached through the file: and relative branches', () => {
+    const plan = plan_plainmark_styles([`${WS}/a.css`, 'b.css'], bases(WS), make_ops());
+    expect(plan.resolved.map((r) => r.local_uri)).toEqual([`${WS}/a.css`, `${WS}/b.css`]);
+    expect(plan.resource_roots).toEqual([WS]);
   });
 });
 

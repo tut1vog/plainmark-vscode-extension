@@ -1,4 +1,7 @@
+import { Text } from '@codemirror/state';
 import { describe, expect, it } from 'vitest';
+import { native_to_lf } from '../sync/translate.js';
+import { position_to_offset } from '../webview/position.js';
 import {
   build_heading_tree,
   clean_label,
@@ -61,11 +64,10 @@ describe('build_heading_tree OUT-R-3 OUT-R-4', () => {
     expect(node.character).toBe(2);
   });
 
-  // line/character on the wire keeps CRLF host docs and the LF webview doc in agreement.
-  it('carries CRLF-document symbol positions unchanged', () => {
-    const text = '# A\r\nbody one\r\nbody two\r\n## B\r\nafter\r\n';
-    const lines = text.split('\r\n');
-    const b_line = lines.indexOf('## B');
+  it('resolves a CRLF host symbol position to the same heading in the LF webview doc', () => {
+    const host_text = '# A\r\nbody one\r\nbody two\r\n## B\r\nafter\r\n';
+    // The host reports symbol positions against its own CRLF line structure.
+    const b_line = host_text.split('\r\n').indexOf('## B');
     const symbols: RawSymbol[] = [
       {
         name: '# A',
@@ -76,8 +78,11 @@ describe('build_heading_tree OUT-R-3 OUT-R-4', () => {
       },
     ];
     const [root] = build_heading_tree(symbols);
-    expect(root.children[0].line).toBe(3);
-    expect(root.children[0].character).toBe(0);
+    const lf_text = native_to_lf(host_text);
+    const webview_doc = Text.of(lf_text.split('\n'));
+    const offset = position_to_offset(webview_doc, root.children[0].line, root.children[0].character);
+    expect(offset).toBe(lf_text.indexOf('## B'));
+    expect(webview_doc.sliceString(offset, offset + 4)).toBe('## B');
   });
 
   it('returns an empty tree for no symbols', () => {

@@ -16,7 +16,7 @@ describe('large-document advisory SHELL-C-16', () => {
     expect(should_warn_large_file(LARGE_FILE_WARN_THRESHOLD + 1, false)).toBe(true);
   });
 
-  it('warns at most once per session', () => {
+  it('stays quiet once the session has already warned', () => {
     expect(should_warn_large_file(LARGE_FILE_WARN_THRESHOLD + 1, true)).toBe(false);
   });
 
