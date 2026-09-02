@@ -357,13 +357,6 @@ describe('create_sync_loop SYNC-H-7 SYNC-G-2 SYNC-G-3 SYNC-G-4 SYNC-W-3 SYNC-W-4
     ]);
   });
 
-  it('send_sync posts the current text on demand', () => {
-    const h = make_harness('hello');
-    const loop = create_sync_loop(h.document, h.webview, h.applier);
-    loop.send_sync();
-    expect(h.posted).toEqual([{ type: 'sync', text: 'hello', version: 1, document_dir_webview_uri: null }]);
-  });
-
   it('serializes concurrent webview messages: msg2 sees doc state after msg1 settles', async () => {
     const h = make_harness('hello');
     let resolve_first!: () => void;
@@ -443,7 +436,7 @@ describe('create_sync_loop SYNC-H-7 SYNC-G-2 SYNC-G-3 SYNC-G-4 SYNC-W-3 SYNC-W-4
       expect(seen).toEqual([]);
     });
 
-    it('send_sync injects initial_cursor when consume_initial_cursor returns a position', async () => {
+    it('the `ready` sync injects initial_cursor when consume_initial_cursor returns a position', async () => {
       const h = make_harness('hello');
       let popped = false;
       const loop = create_sync_loop(h.document, h.webview, h.applier, {

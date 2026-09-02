@@ -29,7 +29,6 @@ export interface SyncEditApplier {
 export interface SyncLoopApi {
   handle_webview_message(raw: unknown): Promise<void>;
   handle_text_document_change(uri_string: string): void;
-  send_sync(): void;
 }
 
 export interface SyncLoopHooks {
@@ -245,5 +244,5 @@ export function create_sync_loop(
     webview.post_message(message);
   }
 
-  return { handle_webview_message, handle_text_document_change, send_sync };
+  return { handle_webview_message, handle_text_document_change };
 }

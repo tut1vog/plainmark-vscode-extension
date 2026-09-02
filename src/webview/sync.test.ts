@@ -34,7 +34,6 @@ function make_fake_view(initial_text: string, opts?: { composing?: boolean; comp
     get state() {
       return {
         doc: {
-          length: text.length,
           toString: () => text,
         },
       };

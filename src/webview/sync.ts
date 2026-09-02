@@ -146,7 +146,7 @@ export function line_char_to_offset(text: string, line: number, character: numbe
 export interface SyncDispatchView {
   readonly composing: boolean;
   readonly compositionStarted: boolean;
-  readonly state: { doc: { length: number; toString(): string } };
+  readonly state: { doc: { toString(): string } };
   dispatch(spec: TransactionSpec): void;
 }
 
