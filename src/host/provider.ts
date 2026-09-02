@@ -422,7 +422,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     // (full webview reload — THEME-R-8). Stored in a closure
     // so the disposer can release the prior set before installing a new one.
     let style_watch: StyleWatchHandle | null = null;
-    const install_styles = (): ResolvedStyle[] => {
+    const install_styles = (change?: vscode.ConfigurationChangeEvent): ResolvedStyle[] => {
       style_watch?.dispose();
       const { resolved, resource_roots, warnings } = resolve_plainmark_styles(
         document.uri,
@@ -438,6 +438,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         ],
       };
       for (const warning of warnings) {
+        if (change && !first_warning_for(change, warning)) continue;
         void vscode.window.showWarningMessage(warning);
       }
       style_watch = watch_styles(resolved, webviewPanel.webview);
@@ -455,11 +456,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         .getConfiguration('plainmark', document.uri)
         .get<boolean>('paste.convertTables', true);
 
-    const initial_styles = install_styles();
+    let current_styles = install_styles();
     const initial_keybindings = compute_keybindings();
     webviewPanel.webview.html = this.getHtml(
       webviewPanel.webview,
-      initial_styles,
+      current_styles,
       initial_keybindings,
       compute_paste_table_conversion(),
     );
@@ -611,13 +612,13 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         theme_changed,
         paste_changed,
       });
-      const next_styles = install_styles();
+      if (styles_changed) current_styles = install_styles(e);
       const next_keybindings = compute_keybindings();
       // Full webview-html reload per THEME-R-8: re-setting `webview.html` reboots
       // the webview process; CM6 state is rebuilt via the `ready` handshake.
       webviewPanel.webview.html = this.getHtml(
         webviewPanel.webview,
-        next_styles,
+        current_styles,
         next_keybindings,
         compute_paste_table_conversion(),
       );
@@ -706,6 +707,20 @@ function test_hook_enabled(): boolean {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
     ?.env;
   return env?.PLAINMARK_TEST_HOOK === '1';
+}
+
+// Every open panel re-resolves styles on the same change event, so an identical warning is shown once per event, not once per panel.
+const warned_per_change = new WeakMap<vscode.ConfigurationChangeEvent, Set<string>>();
+
+function first_warning_for(change: vscode.ConfigurationChangeEvent, warning: string): boolean {
+  let seen = warned_per_change.get(change);
+  if (!seen) {
+    seen = new Set();
+    warned_per_change.set(change, seen);
+  }
+  if (seen.has(warning)) return false;
+  seen.add(warning);
+  return true;
 }
 
 // Narrow an untrusted IPC payload to the shared wire union at the host boundary;

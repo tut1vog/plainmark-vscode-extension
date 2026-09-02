@@ -85,7 +85,7 @@ into the webview's CSS environment. Section code `R`.
 - **THEME-R-2** — Each entry MUST be classified by `classify_style_entry` into exactly one of: `file:` URI, absolute path (POSIX `/…` or Windows drive `C:\…`/`c:/…`), workspace-relative path, declined remote (`http:`/`https:`), or invalid (non-string / empty string).
   _Example:_ `"file:///Users/me/x.css"` → `file_uri`; `"styles/x.css"` → `relative_path`; `"https://cdn/x.css"` → `declined_remote`; `""` → `invalid`.
 
-- **THEME-R-3** — A `declined_remote` or `invalid` entry MUST be skipped and MUST surface an operator warning via `showWarningMessage`; it MUST NOT abort resolution of the remaining entries.
+- **THEME-R-3** — A `declined_remote` or `invalid` entry MUST be skipped and MUST surface an operator warning via `showWarningMessage`; it MUST NOT abort resolution of the remaining entries. Styles are re-resolved only on a `plainmark.styles` change (THEME-R-8) — a change to another `plainmark.*` setting reloads the webview with the styles already resolved and re-shows no warning — and a warning produced by one change event MUST be shown once, however many Plainmark panels re-resolve on that event.
   _Example:_ `["https://cdn/x.css", "./ok.css"]` → one warning for the remote URL, `./ok.css` still resolved.
 
 - **THEME-R-4** — A relative entry MUST resolve against the workspace folder that contains the bound document (`getWorkspaceFolder`), then the first workspace folder for a document outside every folder, falling back to the document's directory when no workspace folder exists; an absolute path MUST resolve via `Uri.file`; a `file:` URI MUST resolve via `Uri.parse`.
