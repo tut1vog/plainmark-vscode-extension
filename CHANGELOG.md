@@ -10,6 +10,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **The word count no longer recounts the whole document several times per keystroke** — the status-bar count now updates once, shortly after a burst of edits.
 - **Paste from the context menu no longer gets stuck when clipboard access is denied** — on the web, a refused clipboard read left the paste waiting forever; it now does nothing and the next paste works.
 - **A failed image paste no longer blocks every later image paste** — when saving one image never got an answer, later pastes silently did nothing; a reply is now waited for at most fifteen seconds. Pasting an image over selected text also replaces the selection, as pasting text does.
 - **Formulas and diagrams no longer stay dimmed forever when their renderer fails to load** — a persistently failing download was retried on every edit while the math kept its faded placeholder look; after three failed attempts the raw source is now shown with the error.

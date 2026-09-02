@@ -40,6 +40,8 @@ const sync_log = create_logger('sync');
 const init_log = create_logger('init');
 const widget_log = create_logger('widget');
 
+const STATUS_BAR_DEBOUNCE_MS = 200;
+
 export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider {
   static readonly viewType = 'tutivog.plainmark';
 
@@ -101,6 +103,10 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
   }
 
   private static status_bar_item: vscode.StatusBarItem | null = null;
+  // The last counted document version — a view-state change or an echo fire
+  // that carries no new version reuses the label instead of rescanning.
+  private static status_bar_cache: { uri: string; version: number; text: string } | null = null;
+  private static status_bar_timer: ReturnType<typeof setTimeout> | undefined;
 
   // Custom editors get no built-in Ln/Col/selection status entry, so this item
   // is the only document indicator a Plainmark tab shows.
@@ -113,8 +119,24 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       item.hide();
       return;
     }
-    item.text = word_count_label(count_words(document.getText()));
+    const uri = document.uri.toString();
+    let cache = PlainmarkEditorProvider.status_bar_cache;
+    if (!cache || cache.uri !== uri || cache.version !== document.version) {
+      cache = { uri, version: document.version, text: word_count_label(count_words(document.getText())) };
+      PlainmarkEditorProvider.status_bar_cache = cache;
+    }
+    item.text = cache.text;
     item.show();
+  }
+
+  // Document changes arrive in bursts (each keystroke fires two or more change
+  // events, once per bound panel), so the whole-document rescan is debounced.
+  private static schedule_status_bar_refresh(): void {
+    clearTimeout(PlainmarkEditorProvider.status_bar_timer);
+    PlainmarkEditorProvider.status_bar_timer = setTimeout(
+      () => PlainmarkEditorProvider.refresh_status_bar(),
+      STATUS_BAR_DEBOUNCE_MS,
+    );
   }
 
   private static set_editor_active_context(active: boolean): void {
@@ -350,6 +372,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       select_theme,
       outline,
       status_bar,
+      new vscode.Disposable(() => clearTimeout(PlainmarkEditorProvider.status_bar_timer)),
     ];
     // Gated test command (inert in production): pushes a synthetic webview
     // message into a panel's real dispatch, keyed by document URI. Not declared
@@ -597,7 +620,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     const sub_change = vscode.workspace.onDidChangeTextDocument((e) => {
       if (e.document.uri.toString() !== document.uri.toString()) return;
       loop.handle_text_document_change(document.uri.toString());
-      PlainmarkEditorProvider.refresh_status_bar();
+      PlainmarkEditorProvider.schedule_status_bar_refresh();
     });
 
     PlainmarkEditorProvider.active_panels.add(webviewPanel);
