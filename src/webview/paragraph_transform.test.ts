@@ -1,5 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
-import { ensureSyntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import { describe, expect, it } from 'vitest';
 import { markdown_grammar_extensions } from './grammar/markdown_config.js';
@@ -47,6 +47,11 @@ describe('classify_line', () => {
     expect(classify_line('>  ')).toMatchObject({ blank: true, quote_len: 2 });
   });
 
+  it('CTX-E-6: an empty ATX heading marker is a heading of its level', () => {
+    expect(classify_line('##')).toMatchObject({ kind: 'heading', heading_level: 2, marker_end: 2 });
+    expect(classify_line('#hashtag')).toMatchObject({ kind: 'none' });
+  });
+
   it('keeps indent out of the marker span', () => {
     const shape = classify_line('  - item');
     expect(shape.marker_start).toBe(2);
@@ -69,6 +74,11 @@ describe('CTX-I-7 CTX-I-8 paragraph_transform_spec — single line', () => {
     expect(apply('2. hello', 4, 4, 'numbered_list')).toBe('hello');
     expect(apply('- [ ] hello', 8, 8, 'task_list')).toBe('hello');
     expect(apply('> hello', 3, 3, 'blockquote')).toBe('hello');
+  });
+
+  it('CTX-E-6: Heading 1 on a bare `##` swaps the marker instead of prefixing it', () => {
+    expect(with_caret('##', 2, 2, 'heading_1')).toEqual({ doc: '# ', head: 2 });
+    expect(apply('##', 2, 2, 'heading_2')).toBe('');
   });
 
   it('swaps any existing prefix for the target', () => {
@@ -176,6 +186,19 @@ describe('CBLK-E-1 paragraph_transform_spec — code regions are never rewritten
   it('fenced code body lines are skipped too', () => {
     const doc = '```\n- x\n```';
     expect(apply_md(doc, 5, 5, 'bulleted_list')).toBeNull();
+  });
+
+  it('CTX-I-7: the code-region guard sees a fence beyond the initial parse frontier', () => {
+    // A fresh state parses only its opening stretch synchronously; the fence
+    // sits well past it, so the guard must force the parse forward.
+    const doc = `${'prose line\n'.repeat(1000)}\`\`\`\n- x\n\`\`\``;
+    const state = EditorState.create({
+      doc,
+      selection: EditorSelection.single(doc.length - 6),
+      extensions: [markdown({ extensions: [markdown_grammar_extensions] })],
+    });
+    expect(syntaxTree(state).length).toBeLessThan(doc.length);
+    expect(paragraph_transform_spec(state, 'bulleted_list')).toBeNull();
   });
 
   it('deep-indented nested list items still transform (the guard is tree-based, not an indent cap)', () => {

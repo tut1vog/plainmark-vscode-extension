@@ -1,6 +1,8 @@
-import { syntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { Transaction, type EditorState, type TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
+import type { Tree } from '@lezer/common';
+import { PARSE_BUDGET_MS } from './block_spans.js';
 
 export type ParagraphStyle =
   | 'heading_1'
@@ -26,7 +28,8 @@ export interface LineShape {
 }
 
 const QUOTE_RUN = /^(?:[ \t]{0,3}>[ \t]?)+/;
-const HEADING = /^([ \t]{0,3})(#{1,6})[ \t]+/;
+// `##` alone is an empty ATX heading: the marker may end the line.
+const HEADING = /^([ \t]{0,3})(#{1,6})(?:[ \t]+|$)/;
 const TASK = /^([ \t]*)(?:[-*+]|\d{1,9}[.)])[ \t]+\[[ xX]\][ \t]+/;
 const BULLET = /^([ \t]*)[-*+][ \t]+/;
 const ORDERED = /^([ \t]*)\d{1,9}[.)][ \t]+/;
@@ -69,9 +72,9 @@ export function classify_line(text: string): LineShape {
 // lines must be skipped. Tree-based on purpose: a regex indent cap would also
 // catch legitimately deep-indented nested list items. Intersection, not a
 // line-start resolve: a CodeBlock node begins after the indent, mid-line.
-function in_code_region(state: EditorState, line: { from: number; to: number }): boolean {
+function in_code_region(tree: Tree, line: { from: number; to: number }): boolean {
   let found = false;
-  syntaxTree(state).iterate({
+  tree.iterate({
     from: line.from,
     to: line.to,
     enter(node) {
@@ -139,7 +142,10 @@ export function paragraph_transform_spec(
 
   const lines = [...line_numbers].sort((a, b) => a - b).map((n) => doc.line(n));
   const shapes = lines.map((line) => classify_line(line.text));
-  const inert = lines.map((line) => in_code_region(state, line));
+  // The background parse may not have reached the touched lines yet; a partial tree would miss a code region there.
+  const tree =
+    ensureSyntaxTree(state, lines[lines.length - 1].to, PARSE_BUDGET_MS) ?? syntaxTree(state);
+  const inert = lines.map((line) => in_code_region(tree, line));
   const visible = shapes.filter((_, i) => !inert[i]);
   const eligible = visible.filter((s) => !s.blank);
   // Blank lines are skipped only while a non-blank line is in the selection
