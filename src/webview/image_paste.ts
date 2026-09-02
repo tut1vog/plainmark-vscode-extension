@@ -8,7 +8,7 @@ const log = create_logger('widget');
 
 // A reply the host never sends (a crashed save, a dropped message) would
 // otherwise wedge every later image paste behind the unresolved promise.
-export const IMAGE_PASTE_REPLY_TIMEOUT_MS = 15_000;
+const IMAGE_PASTE_REPLY_TIMEOUT_MS = 15_000;
 
 export const PASTE_IMAGE_EVENT = 'plainmark-paste-image';
 
