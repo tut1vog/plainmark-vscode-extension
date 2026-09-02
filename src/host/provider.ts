@@ -536,13 +536,17 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         return Promise.resolve();
       }
       if (message?.type === 'read_clipboard') {
-        void vscode.env.clipboard.readText().then(
-          (text) =>
-            void webviewPanel.webview.postMessage({
-              type: 'clipboard_text',
-              text,
-            } satisfies HostToWebviewMessage),
-        );
+        const deliver = (text: string): void =>
+          void webviewPanel.webview.postMessage({
+            type: 'clipboard_text',
+            text,
+          } satisfies HostToWebviewMessage);
+        // A denied read (vscode.dev without clipboard permission) must still
+        // reply, or the webview's pending paste never clears.
+        void vscode.env.clipboard.readText().then(deliver, (err: unknown) => {
+          widget_log.warn('clipboard read failed', { detail: String(err) });
+          deliver('');
+        });
         return Promise.resolve();
       }
       return loop.handle_webview_message(raw);

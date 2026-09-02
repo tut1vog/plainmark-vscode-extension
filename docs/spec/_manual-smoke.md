@@ -82,7 +82,7 @@ A `conformance` other than `conforming` means the clause also awaits a ruling
 | Clause | Conformance | Behavior to verify |
 |---|---|---|
 | CTX-I-2 | conforming | Cut and Copy MUST write the selection's source bytes to the system clipboard; Cut MUST delete the selection only after a successful clipboard write; both are disabled with an empty selection. |
-| CTX-I-3 | conforming | Paste MUST insert the system clipboard text at the selection via a host round-trip (`vscode.env.clipboard`), normalizing CRLF to LF; an empty clipboard is a no-op. When `plainmark.paste.convertTables` is on and the text qualifies as TSV (TBL-I-36), the menu paste MUST insert the converted table per TBL-I-35 instead of the literal text. A multi-line text payload pasted with the selection start on a blockquote or callout line MUST be quote-re-prefixed per BQ-I-13. |
+| CTX-I-3 | conforming | Paste MUST insert the system clipboard text at the selection via a host round-trip (`vscode.env.clipboard`), normalizing CRLF to LF; an empty clipboard is a no-op. A denied or failed host clipboard read MUST still answer with empty text (and log the failure), so the paste is the same no-op and the webview's pending request clears instead of wedging the next menu paste. When `plainmark.paste.convertTables` is on and the text qualifies as TSV (TBL-I-36), the menu paste MUST insert the converted table per TBL-I-35 instead of the literal text. A multi-line text payload pasted with the selection start on a blockquote or callout line MUST be quote-re-prefixed per BQ-I-13. |
 
 ## `docs/spec/editor-shell.md`
 
