@@ -10,6 +10,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **Formulas and diagrams no longer stay dimmed forever when their renderer fails to load** — a persistently failing download was retried on every edit while the math kept its faded placeholder look; after three failed attempts the raw source is now shown with the error.
 - **Undoing a table inserted directly above another table no longer jumps into the other table** — the undo activated and rewrote a cell in the table below as if it were the removed one.
 - **An outside edit to the cell you are editing no longer pulls focus back into the table** — a find-and-replace from a split text editor that touched the active cell moved the keyboard focus into the Plainmark cell.
 - **Typing above a table no longer redraws every cell on each keystroke** — the table rebuilt all of its cells whenever text above it changed, which lagged on long tables.

@@ -165,3 +165,6 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 - **MATH-E-16** — Every typeset (widget, block preview, inline preview) MUST reset MathJax's TeX label state first (`texReset`). MathJax keeps `\label` registrations for the page lifetime and rejects a later typeset of the same label as "multiply defined", so without the reset an equation carrying `\label` errors as soon as its preview re-typesets it, and the error is cached under MATH-R-8. Macro definitions (`\newcommand`) are not part of this reset and still persist for the session.
   _Example:_ `$$E = mc^2 \label{eq1}$$` typesets on open; clicking into it re-typesets the same source in the preview with no `TeX error`.
+
+- **MATH-E-17** — The lazy MathJax load (MATH-R-5) MUST retry after a transient failure but MUST stop injecting `<script>` after three failed injections per session; past that cap `mathjax_loadable()` is false, `load_mathjax` returns the cached rejection, and the typeset plugin MUST give every pending widget an error result so it falls back to raw source (MATH-R-8) instead of staying dimmed forever. A bundle that later appears on `window.MathJax` MUST still be honoured.
+  _Example:_ the MathJax script 404s three times → every `$…$` in the document shows its raw source with the load error as its tooltip; no fourth `<script>` is added.
