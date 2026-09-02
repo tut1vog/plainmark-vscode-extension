@@ -54,7 +54,7 @@ function get_mermaid(): MermaidApi | undefined {
   return window.PlainmarkMermaid as unknown as MermaidApi | undefined;
 }
 
-function current_theme_name(): string {
+function current_color_mode(): 'dark' | 'light' {
   // A fixed built-in theme forces the mermaid palette regardless of VS Code's color mode (fixed-appearance contract).
   const fixed = typeof window !== 'undefined' ? window.__plainmark_theme : undefined;
   if (fixed === 'github-dark') return 'dark';
@@ -65,6 +65,19 @@ function current_theme_name(): string {
   return cls.contains('vscode-dark') || cls.contains('vscode-high-contrast')
     ? 'dark'
     : 'light';
+}
+
+// The theme key names the color mode AND the palette baked into the SVG: a
+// dark→dark theme switch keeps the body class but changes the colors, and a
+// mode-only key would serve the stale render (MMD-E-6, MMD-E-10).
+function current_theme_name(): string {
+  const mode = current_color_mode();
+  const p = resolve_palette(mode === 'dark');
+  return `${mode}:${p.bg}:${p.fg}:${p.node_bg}:${p.node_border}`;
+}
+
+function theme_is_dark(theme: string): boolean {
+  return theme.startsWith('dark');
 }
 
 // dist/mermaid.js is injected on first diagram encounter — diagram-free docs never load it.
@@ -84,18 +97,37 @@ function resolve_css_var(name: string, fallback: string): string {
   return value || fallback;
 }
 
-// Mermaid bakes resolved colors into the SVG — a theme switch needs a full re-render keyed on the new theme.
 // Colors resolve through the --plainmark-* layer so a built-in theme's pinned palette flows into the SVG;
 // under the default theme each resolves to the same --vscode-* value as before by construction.
+function resolve_palette(is_dark: boolean): {
+  bg: string;
+  fg: string;
+  node_bg: string;
+  node_border: string;
+} {
+  return {
+    bg: resolve_css_var(
+      '--plainmark-editor-background',
+      resolve_css_var('--vscode-editor-background', is_dark ? '#1e1e1e' : '#ffffff'),
+    ),
+    fg: resolve_css_var(
+      '--plainmark-editor-foreground',
+      resolve_css_var('--vscode-editor-foreground', is_dark ? '#d4d4d4' : '#1e1e1e'),
+    ),
+    node_bg: resolve_css_var(
+      '--plainmark-mermaid-node-background',
+      resolve_css_var('--vscode-editorWidget-background', is_dark ? '#252526' : '#f3f3f3'),
+    ),
+    node_border: resolve_css_var(
+      '--plainmark-mermaid-node-border-color',
+      resolve_css_var('--vscode-widget-border', is_dark ? '#454545' : '#c8c8c8'),
+    ),
+  };
+}
+
+// Mermaid bakes resolved colors into the SVG — a theme switch needs a full re-render keyed on the new theme.
 function configure_mermaid_theme(mermaid: MermaidApi, is_dark: boolean): void {
-  const bg = resolve_css_var(
-    '--plainmark-editor-background',
-    resolve_css_var('--vscode-editor-background', is_dark ? '#1e1e1e' : '#ffffff'),
-  );
-  const fg = resolve_css_var(
-    '--plainmark-editor-foreground',
-    resolve_css_var('--vscode-editor-foreground', is_dark ? '#d4d4d4' : '#1e1e1e'),
-  );
+  const p = resolve_palette(is_dark);
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
@@ -105,18 +137,12 @@ function configure_mermaid_theme(mermaid: MermaidApi, is_dark: boolean): void {
     theme: 'base',
     themeVariables: {
       darkMode: is_dark,
-      background: bg,
-      primaryColor: resolve_css_var(
-        '--plainmark-mermaid-node-background',
-        resolve_css_var('--vscode-editorWidget-background', is_dark ? '#252526' : '#f3f3f3'),
-      ),
-      primaryTextColor: fg,
-      primaryBorderColor: resolve_css_var(
-        '--plainmark-mermaid-node-border-color',
-        resolve_css_var('--vscode-widget-border', is_dark ? '#454545' : '#c8c8c8'),
-      ),
-      lineColor: fg,
-      edgeLabelBackground: bg,
+      background: p.bg,
+      primaryColor: p.node_bg,
+      primaryTextColor: p.fg,
+      primaryBorderColor: p.node_border,
+      lineColor: p.fg,
+      edgeLabelBackground: p.bg,
     },
   });
 }
@@ -129,7 +155,7 @@ let configured_theme: string | null = null;
 
 function ensure_mermaid_theme(mermaid: MermaidApi, theme: string): void {
   if (configured_theme === theme) return;
-  configure_mermaid_theme(mermaid, theme === 'dark');
+  configure_mermaid_theme(mermaid, theme_is_dark(theme));
   configured_theme = theme;
 }
 
@@ -477,6 +503,12 @@ const mermaid_render_plugin = ViewPlugin.fromClass(
         this.theme_observer.observe(document.body, {
           attributes: true,
           attributeFilter: ['class'],
+        });
+        // VS Code writes the --vscode-* palette to the <html> style attribute; a
+        // same-mode theme switch changes it without touching the body class.
+        this.theme_observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['style'],
         });
       }
       this.schedule(view.state);

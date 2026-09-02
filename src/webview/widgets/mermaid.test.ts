@@ -217,9 +217,15 @@ describe('mermaid_widgets_field — decoration emission MMD-R-1 MMD-I-1 MMD-SP-1
 
   it('rebuilds widgets when the theme changes', () => {
     let state = make_state(DIAGRAM);
-    expect(decorations(state)[0].widget.theme).toBe('light');
+    expect(decorations(state)[0].widget.theme).toMatch(/^light:/);
     state = state.update({ effects: set_mermaid_theme.of('dark') }).state;
     expect(decorations(state)[0].widget.theme).toBe('dark');
+  });
+  it('MMD-E-6: the theme key carries the resolved palette, not just the color mode', () => {
+    const theme = make_state(DIAGRAM).field(mermaid_theme_field);
+    // mode + four baked colors (background, foreground, node fill, node border)
+    expect(theme.split(':')).toHaveLength(5);
+    expect(theme.split(':')[0]).toBe('light');
   });
 });
 
