@@ -16,14 +16,13 @@ describe('refine_cjk_group_head — NAV-N-6', () => {
     expect(refine_cjk_group_head('中文', 0, true)).toBeNull();
   });
 
+  // 今天 | 天气 | 很好 — three words so the forward and backward seams differ.
   it('forward stops after the first CJK word', () => {
-    // 你好 | 世界
-    expect(refine_cjk_group_head('你好世界', 5, true)).toBe(7);
+    expect(refine_cjk_group_head('今天天气很好', 5, true)).toBe(7);
   });
 
   it('backward stops at the start of the last CJK word', () => {
-    // start of 世界, offset from the span base
-    expect(refine_cjk_group_head('你好世界', 5, false)).toBe(7);
+    expect(refine_cjk_group_head('今天天气很好', 5, false)).toBe(9);
   });
 
   it('segments japanese kana and kanji runs', () => {
@@ -46,11 +45,11 @@ describe('delete_group_head — NAV-N-7', () => {
   const state_of = (doc: string) => EditorState.create({ doc });
 
   it('backward stops at the last CJK word of a run', () => {
-    expect(delete_group_head(state_of('你好世界'), 4, false)).toBe(2);
+    expect(delete_group_head(state_of('今天天气很好'), 6, false)).toBe(4);
   });
 
   it('forward stops after the first CJK word of a run', () => {
-    expect(delete_group_head(state_of('你好世界'), 0, true)).toBe(2);
+    expect(delete_group_head(state_of('今天天气很好'), 0, true)).toBe(2);
   });
 
   it('backward over a latin+CJK seam takes only the CJK word', () => {
