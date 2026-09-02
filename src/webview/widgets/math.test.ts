@@ -12,6 +12,7 @@ import {
 import {
   MathBlockPreviewWidget,
   MathWidget,
+  block_math_content_range,
   find_block_math_source,
   find_inline_math_source,
   math_cache_field,
@@ -151,6 +152,24 @@ describe('math_cache_field — failed typeset results are cached', () => {
       }),
     }).state;
     expect(decorations(state)[0].widget.result).toEqual({ ok: false, message: 'boom' });
+  });
+});
+
+describe('block_math_content_range MATH-I-15 MATH-E-13: quote prefixes are outside the content', () => {
+  it('a quoted block selects only the TeX, not the `> ` on its first or closing line', () => {
+    // "> $$\n> x+y\n> $$" — node at 2..15, TeX `x+y` at 7..10
+    const state = make_state('> $$\n> x+y\n> $$', 0);
+    expect(block_math_content_range(state, 2, 15)).toEqual({ from: 7, to: 10 });
+  });
+
+  it('a nested `> > ` prefix is stripped mark by mark', () => {
+    const state = make_state('> > $$\n> > x\n> > $$', 0);
+    expect(block_math_content_range(state, 4, 19)).toEqual({ from: 11, to: 12 });
+  });
+
+  it('an unquoted block is unchanged', () => {
+    const state = make_state('$$\na = b\n$$', 0);
+    expect(block_math_content_range(state, 0, 11)).toEqual({ from: 3, to: 8 });
   });
 });
 

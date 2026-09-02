@@ -6,6 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **Clicking a rendered equation inside a quote no longer selects the quote markers** — the selection started at the `> ` before the formula and ran past the one before the closing `$$`; it now covers exactly the formula.
 - **A code block inside a quote no longer collapses the quote marker on its fence lines** — the hidden fence swallowed the `> ` in front of it, so the quote bar's marker box shrank on those two rows while the caret was elsewhere.
 - **Enter on a fence-like line inside an open code block no longer inserts a stray closing fence** — pressing Enter after typing ` ~~~ ` or `$$` as code inside an unclosed ``` block appended a second closer into the code; only the block's own opening line auto-closes now.
 - **Tab and Shift-Tab with a selection that reaches outside a code block leave the surrounding text alone** — lines above or below the block were indented by four spaces along with the code, and whether it happened depended on the direction you dragged; only the code lines move now.

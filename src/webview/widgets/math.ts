@@ -8,6 +8,7 @@ import {
   StateField,
 } from '@codemirror/state';
 import { type OffsetRange, ranges_overlap } from '../ranges.js';
+import { enclosing } from '../tree_ancestors.js';
 import {
   doc_change_regions,
   frontier_growth,
@@ -308,18 +309,32 @@ export interface MathInfo {
   to: number;
 }
 
-// The document range of the inner TeX of a block `$$…$$`: the leading `$$\n` and
-// trailing `\n$$` markers stripped, so the range is exactly what gets typeset.
+const block_lead_re = /^\$\$\s*\n?/;
+// Optional close-line group: `\n` plus that line's quote prefix (`> ` runs)
+// before the closing `$$`. The closing line's QuoteMark is NOT injected into
+// the node (the leaf parser claims the line before its markers reach
+// leaf.marks), so the prefix is stripped textually here.
+const block_trail_re = /(?:\n[ \t>]*)?\$\$\s*$/;
+
+// The document range of the inner TeX of a block `$$…$$`: the leading `$$\n`,
+// the first content line's quote prefix, and the trailing `\n> $$` stripped, so
+// the range starts and ends exactly where the typeset slice does (MATH-I-15).
 export function block_math_content_range(
   state: EditorState,
   from: number,
   to: number,
 ): OffsetRange {
   const raw = state.doc.sliceString(from, to);
-  const lead = raw.match(/^\$\$\s*\n?/)?.[0].length ?? 0;
-  const trail = raw.match(/\n?\$\$\s*$/)?.[0].length ?? 0;
-  const content_from = from + lead;
-  return { from: content_from, to: Math.max(content_from, to - trail) };
+  const lead = raw.match(block_lead_re)?.[0].length ?? 0;
+  const trail = raw.match(block_trail_re)?.[0].length ?? 0;
+  let content_from = from + lead;
+  const content_to = Math.max(content_from, to - trail);
+  const node = enclosing(syntaxTree(state).resolveInner(from, 1), 'BlockMath');
+  for (const mark of node?.getChildren('QuoteMark') ?? []) {
+    if (mark.from !== content_from || mark.to >= content_to) continue;
+    content_from = state.doc.sliceString(mark.to, mark.to + 1) === ' ' ? mark.to + 1 : mark.to;
+  }
+  return { from: content_from, to: Math.max(content_from, content_to) };
 }
 
 export function find_block_math_source(
@@ -355,13 +370,6 @@ export function block_math_reveal_range(
 ): OffsetRange {
   return { from, to: state.doc.lineAt(to).to };
 }
-
-const block_lead_re = /^\$\$\s*\n?/;
-// Optional close-line group: `\n` plus that line's quote prefix (`> ` runs)
-// before the closing `$$`. The closing line's QuoteMark is NOT injected into
-// the node (the leaf parser claims the line before its markers reach
-// leaf.marks), so the prefix is stripped textually here.
-const block_trail_re = /(?:\n[ \t>]*)?\$\$\s*$/;
 
 // The LaTeX source of a BlockMath for typesetting, with quote markup removed
 // (MATH-E-13): interior-line `>` markers are stripped via the node's own
