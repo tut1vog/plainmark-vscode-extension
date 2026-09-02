@@ -10,6 +10,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 - **An outside edit that changes both text above a table and the cell you are editing is no longer undone by your next keystroke** — a find-and-replace, formatter, or git checkout that rewrote both at once left the active cell showing its old text, and typing then wrote that old text back over the change.
 - **Backspace after an emoji on a list's continuation line now removes the whole emoji** — it removed half of the character, leaving a broken glyph in the file; accented letters written as a base letter plus accent are also deleted as one.
 - **A lone `---` on the first line no longer blanks the rest of the document** — an opening frontmatter fence with no closing fence made every heading, list, table, and formula below it render as plain text until the closer was typed; the rest of the document now renders normally and the `---` shows as a horizontal rule.
+- **`$$` in the middle of a line no longer turns the text after it into math** — `a $$x$$ b $y$` typeset `$x`, swallowed ` b ` as a formula, and broke `$y$`; the `$$` now stays literal text and `$y$` renders. An escaped `\$` inside a formula and a `$` inside a code span within a formula no longer end it early.
 
 ## [1.11.9] - 2026-08-30
 

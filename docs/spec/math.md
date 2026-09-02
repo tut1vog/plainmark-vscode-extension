@@ -125,7 +125,7 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
   _Example:_ `empty $$ here` → no inline math node; raw text shown.
 
 - **MATH-E-3** `[accepted]` — Inline math matches **permissively** (Typora-style): any two unescaped `$` on one line delimit math regardless of surrounding text, so an interior-space-bearing currency pair typesets as math. This is an accepted disambiguation, not a defect: literal dollars are escaped with `\$`, which lezer-markdown's built-in `Escape` parser consumes before the math rule sees it, so `\$5` is safe; the backslash itself is hidden in live preview and the dollar renders as a literal — see `escapes.md` ESC-R-1 / ESC-E-5.
-  _Example:_ `$5.00 + $3.00` → parses `$5.00 + $` as one `InlineMath` span; `\$5.00 and \$10` → no math (both dollars escaped).
+  _Example:_ `$5.00 + $3.00` → parses `$5.00 + $` as one `InlineMath` span; `\$5.00 and \$10` → no math (both dollars escaped); `$\$5 + \$3$` → one `InlineMath` whose content keeps both escaped dollars.
 
 - **MATH-E-4** — A line beginning `$$` MUST be handled by the block parser as `BlockMath`, never as inline math; both the single-line form `$$…$$` and the multi-line `$$` … `$$` form are recognized.
   _Example:_ `$$x$$` → one `BlockMath` (offsets 0–5) with two `BlockMathMark` children; `$$\nx\n$$` → one multi-line `BlockMath`.
@@ -136,8 +136,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **MATH-E-6** — An opening `$$` with no later `$$` close MUST NOT form a `BlockMath` node and MUST NOT suppress parsing of the lines below it. The multi-line opener defers to a leaf parser whose `finish` returns false, so it falls back to a paragraph and the following lines parse as ordinary markdown (headings, lists, etc.) rather than being swallowed to end-of-document. The source stays visible/editable and no typeset block widget is shown.
   _Example:_ `$$\na = b` (no closer) → no `BlockMath` node; `$$\n# Heading\n- item` → the heading and list parse normally rather than being absorbed by the opener.
 
-- **MATH-E-7** — Math delimiters MUST NOT be recognized inside code spans or code blocks; the grammar yields to lezer's code constructs, so `$…$` and `$$…$$` there stay literal text.
-  _Example:_ `` `$x$` `` and a fenced block containing `$$\na=b\n$$` → no math nodes; the dollars render verbatim.
+- **MATH-E-7** — Math delimiters MUST NOT be recognized inside code spans or code blocks; the grammar yields to lezer's code constructs, so `$…$` and `$$…$$` there stay literal text. This holds for a code span that begins inside inline math too: the closer scan skips a backtick run to its matching run, so a `$` inside the span never closes the math.
+  _Example:_ `` `$x$` `` and a fenced block containing `$$\na=b\n$$` → no math nodes; the dollars render verbatim. `` $a `b$` c$ `` → one `InlineMath` spanning the whole span.
 
 - **MATH-E-8** `[accepted]` — LaTeX content is not parsed as markdown and is passed verbatim to MathJax; markdown-significant characters inside math have no markdown meaning.
   _Example:_ `$a * b$` → typeset a·b, not markdown emphasis.
@@ -159,3 +159,6 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 - **MATH-E-14** — When a `$$` opener and a later `$$` close pair up textually but no `BlockMath` node forms (the MATH-E-12 dissolve — e.g. the transient state right after Enter inserts a blank caret line inside a block), the raw source between the fences MUST display byte-accurate: inline decorations (escape/marker hiding, inline styling) are suppressed inside the closed fence pair so math source is never mangled by markdown rendering (`\\` must not display as `\`). Fence detection mirrors the grammar's top-level predicates and skips `$$` lines inside code constructs (MATH-E-7). An unpaired opener produces no suppression region, so lines below it keep normal markdown rendering (MATH-E-6). Regions coinciding with a formed `BlockMath` are no-ops (its content is not inline-parsed).
   _Example:_ `$$\n\begin{align}\n  &a = b\\\n\n\end{align}\n$$` (blank line from mid-edit Enter) → the trailing `\\` stays fully visible and no emphasis/escape hiding applies between the fences; `$$\nno close` → prose below still renders normally.
+
+- **MATH-E-15** — A `$$` run that does not begin a line MUST NOT open inline math and MUST NOT leave a stray `$` behind: the inline parser treats the whole run as literal text and resumes after it. Display math is a line-start construct only (MATH-E-4).
+  _Example:_ `a $$x$$ b $y$` → `$$x$$` and ` b ` render verbatim and only `y` typesets; previously `$x` typeset and ` b ` was swallowed as math.

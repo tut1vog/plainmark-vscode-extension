@@ -278,6 +278,54 @@ describe('math grammar — inline MATH-R-1 MATH-E-3 MATH-E-4 MATH-E-6 MATH-E-7',
     expect(doc.slice(inline[0].from, inline[0].to)).toBe('$5.00 + $');
   });
 
+  it('MATH-E-15: a mid-line `$$…$$` stays literal and does not swallow the prose after it', () => {
+    const doc = 'a $$x$$ b $y$ end\n';
+    const inline = inline_math_ranges(doc);
+    expect(inline).toHaveLength(1);
+    expect(doc.slice(inline[0].from, inline[0].to)).toBe('$y$');
+    expect(block_math_ranges(doc)).toHaveLength(0);
+  });
+
+  it('MATH-E-15: a mid-line `$$` run followed by nothing pairable is literal', () => {
+    expect(inline_math_ranges('cost $$ and $$$ end\n')).toHaveLength(0);
+  });
+
+  it('MATH-E-3: an escaped `\\$` inside inline math is content, not the closer', () => {
+    const doc = '$\\$5 + \\$3$ later\n';
+    const inline = inline_math_ranges(doc);
+    expect(inline).toHaveLength(1);
+    expect(doc.slice(inline[0].from, inline[0].to)).toBe('$\\$5 + \\$3$');
+  });
+
+  it('MATH-E-7: a `$` inside a code span within inline math does not close it', () => {
+    const doc = '$a `b$` c$ tail\n';
+    const inline = inline_math_ranges(doc);
+    expect(inline).toHaveLength(1);
+    expect(doc.slice(inline[0].from, inline[0].to)).toBe('$a `b$` c$');
+  });
+
+  it('MATH-E-7: a double-backtick code span containing a single backtick and a `$` is skipped whole', () => {
+    const doc = '$a ``b ` $`` c$\n';
+    const inline = inline_math_ranges(doc);
+    expect(inline).toHaveLength(1);
+    expect(doc.slice(inline[0].from, inline[0].to)).toBe('$a ``b ` $`` c$');
+  });
+
+  it('an unmatched backtick inside inline math is literal content', () => {
+    const doc = '$a ` b$ tail\n';
+    const inline = inline_math_ranges(doc);
+    expect(inline).toHaveLength(1);
+    expect(doc.slice(inline[0].from, inline[0].to)).toBe('$a ` b$');
+  });
+
+  it('a code span that continues onto the next line prevents the math from closing', () => {
+    expect(inline_math_ranges('$a `b\nc` d$\n')).toHaveLength(0);
+  });
+
+  it('a trailing backslash before the line break does not let math cross the line', () => {
+    expect(inline_math_ranges('$a \\\nb$\n')).toHaveLength(0);
+  });
+
   it('parses inline and block math in the same document independently', () => {
     const doc = 'see $a$ below\n\n$$\nb\n$$\n\nand $c$\n';
     expect(inline_math_ranges(doc)).toHaveLength(2);
