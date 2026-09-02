@@ -632,6 +632,15 @@ const math_typeset_plugin = ViewPlugin.fromClass(
           // transient failure must not blank math for the session — the next schedule retries
           this.load_requested = false;
           log.warn('mathjax bundle load failed', { err });
+          // Attempts spent: pending widgets would stay dimmed forever, so give
+          // each an error result and let them fall back to raw source.
+          if (!mathjax_loadable()) {
+            const message = err instanceof Error ? err.message : String(err);
+            const effects = pending_from_field(this.view.state).map(({ display, src }) =>
+              set_typeset_effect.of({ display, src, result: { ok: false, message } }),
+            );
+            if (effects.length > 0) this.view.dispatch({ effects });
+          }
         });
     }
 

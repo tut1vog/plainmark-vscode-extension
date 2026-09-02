@@ -69,4 +69,42 @@ describe('load_mathjax lazy-load contract MATH-R-5', () => {
     expect(second).not.toBe(first);
     await expect(second).resolves.toBeUndefined();
   });
+
+  it('MATH-E-17: stops injecting scripts after three failed loads and reports not loadable', async () => {
+    win.__plainmark_mathjax = { url: 'mathjax.js', nonce: 'n' };
+    const scripts: Array<{ handlers: Record<string, () => void> }> = [];
+    create_element.mockImplementation(() => {
+      const script = {
+        nonce: '',
+        src: '',
+        handlers: {} as Record<string, () => void>,
+        addEventListener(name: string, fn: () => void) {
+          script.handlers[name] = fn;
+        },
+        remove: vi.fn(),
+      };
+      scripts.push(script);
+      return script;
+    });
+    const { load_mathjax, mathjax_loadable } = await load_module();
+    let last: Promise<void> | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      expect(mathjax_loadable()).toBe(true);
+      last = load_mathjax();
+      scripts[attempt].handlers['error']();
+      await expect(last).rejects.toThrow('mathjax bundle failed to load');
+      await Promise.resolve();
+    }
+    expect(scripts).toHaveLength(3);
+    // Fourth call: the spent cap hands back the cached rejection, no new <script>.
+    const again = load_mathjax();
+    expect(again).toBe(last);
+    await expect(again).rejects.toThrow();
+    expect(scripts).toHaveLength(3);
+    expect(mathjax_loadable()).toBe(false);
+    // A bundle that does appear later is still honoured.
+    win.MathJax = { tex2chtmlPromise: () => Promise.resolve() };
+    await expect(load_mathjax()).resolves.toBeUndefined();
+    expect(mathjax_loadable()).toBe(true);
+  });
 });

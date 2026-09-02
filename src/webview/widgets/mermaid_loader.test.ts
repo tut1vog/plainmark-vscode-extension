@@ -66,6 +66,38 @@ describe('load_mermaid lazy-load contract MMD-E-8', () => {
     expect(second).not.toBe(first);
     await expect(second).resolves.toBeUndefined();
   });
+
+  it('stops injecting scripts after three failed loads but still picks up a bundle that appears', async () => {
+    win.__plainmark_mermaid = { url: 'mermaid.js', nonce: 'n' };
+    const scripts: Array<{ handlers: Record<string, () => void> }> = [];
+    create_element.mockImplementation(() => {
+      const script = {
+        nonce: '',
+        src: '',
+        handlers: {} as Record<string, () => void>,
+        addEventListener(name: string, fn: () => void) {
+          script.handlers[name] = fn;
+        },
+        remove: vi.fn(),
+      };
+      scripts.push(script);
+      return script;
+    });
+    const { load_mermaid } = await load_module();
+    let last: Promise<void> | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      last = load_mermaid();
+      scripts[attempt].handlers['error']();
+      await expect(last).rejects.toThrow('mermaid bundle failed to load');
+      await Promise.resolve();
+    }
+    const again = load_mermaid();
+    expect(again).toBe(last);
+    await expect(again).rejects.toThrow();
+    expect(scripts).toHaveLength(3);
+    win.PlainmarkMermaid = { initialize: vi.fn(), render: vi.fn() };
+    await expect(load_mermaid()).resolves.toBeUndefined();
+  });
 });
 
 describe('MermaidBlockPreviewWidget.eq MMD-R-7', () => {

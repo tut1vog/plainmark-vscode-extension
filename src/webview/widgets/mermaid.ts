@@ -70,15 +70,17 @@ function current_theme_name(): string {
 
 // Correct only for the single production webview / single EditorView realm; a second realm would share this one-shot load promise.
 let mermaid_load_promise: Promise<void> | null = null;
+// Script injections that failed; past the cap the rejected promise stays cached
+// so a persistent failure stops re-injecting a <script> on every update.
+let mermaid_script_failures = 0;
+const MAX_SCRIPT_ATTEMPTS = 3;
 
 // dist/mermaid.js is injected on first diagram encounter — diagram-free docs never load it.
 export function load_mermaid(): Promise<void> {
+  if (get_mermaid()) return Promise.resolve();
   if (mermaid_load_promise) return mermaid_load_promise;
+  let injected = false;
   const promise = new Promise<void>((resolve, reject) => {
-    if (get_mermaid()) {
-      resolve();
-      return;
-    }
     const boot = window.__plainmark_mermaid;
     if (!boot) {
       reject(new Error('mermaid bootstrap missing'));
@@ -96,11 +98,13 @@ export function load_mermaid(): Promise<void> {
       reject(new Error('mermaid bundle failed to load'));
     });
     document.head.appendChild(script);
+    injected = true;
   });
   mermaid_load_promise = promise;
   // a transient load failure must not poison the cache — clear so the next schedule retries
   promise.catch(() => {
-    mermaid_load_promise = null;
+    if (injected) mermaid_script_failures++;
+    if (mermaid_script_failures < MAX_SCRIPT_ATTEMPTS) mermaid_load_promise = null;
   });
   return promise;
 }
