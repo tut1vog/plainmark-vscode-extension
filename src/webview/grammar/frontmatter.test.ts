@@ -90,6 +90,31 @@ describe('frontmatter grammar — edge cases', () => {
     expect(nodes_of(doc, 'FrontMatter')).toHaveLength(0);
   });
 
+  it('FM-E-4: an unclosed opener leaves every line below it parsing normally', () => {
+    const doc = '---\nfoo: bar\n# Heading\n- item\n\n| a | b |\n|---|---|\n| 1 | 2 |\n';
+    const names = parse(doc).map((n) => n.name);
+    expect(names).not.toContain('FrontMatter');
+    expect(names).toContain('HorizontalRule');
+    expect(names).toContain('Paragraph');
+    expect(names).toContain('ATXHeading1');
+    expect(names).toContain('BulletList');
+    expect(names).toContain('Table');
+  });
+
+  it('FM-E-4: an unclosed opener with a blank line below still parses the rest', () => {
+    const doc = '---\n\n**bold** text\n';
+    const names = parse(doc).map((n) => n.name);
+    expect(names).not.toContain('FrontMatter');
+    expect(names).toContain('StrongEmphasis');
+  });
+
+  it('FM-E-1: a closer far below the opener is still found', () => {
+    const body = Array.from({ length: 200 }, (_, i) => `k${i}: v${i}`).join('\n');
+    const doc = `---\n${body}\n---\n# H\n`;
+    expect(nodes_of(doc, 'FrontMatter')).toHaveLength(1);
+    expect(parse(doc).map((n) => n.name)).toContain('ATXHeading1');
+  });
+
   it('FM-E-4: does not parse a single --- on line 1 with no closer (no FrontMatter)', () => {
     const doc = '---\nfoo\n';
     expect(nodes_of(doc, 'FrontMatter')).toHaveLength(0);

@@ -86,8 +86,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **FM-E-3** — A `---` (or `...`) NOT on line 1 MUST NOT be treated as frontmatter; mid-document fences and post-blank-line fences are ignored by the parser.
   _Example:_ `# Heading\n---\nfoo: bar\n---\n` → no `FrontMatter` node; `text\n\n---\nfoo: bar\n---\n` → no `FrontMatter` node.
 
-- **FM-E-4** — Unclosed frontmatter (opening `---` with no `---`/`...` closer before EOF) MUST NOT parse as frontmatter and MUST NOT crash the parser; the block parser aborts (returns false) at EOF or on a non-advancing line.
-  _Example:_ `---\nfoo: bar\nno-closer-here\n` → zero `FrontMatter` nodes, no throw; `---\nfoo\n` → no `FrontMatter`.
+- **FM-E-4** — Unclosed frontmatter (opening `---` with no `---`/`...` closer before EOF) MUST NOT parse as frontmatter, MUST NOT crash the parser, and MUST leave every line below the opener to parse as ordinary markdown: the block parser confirms a closer exists by looking ahead before it consumes any line, because a block parser that consumes lines and then declines strands the parse at EOF with those lines never reparsed. The lone `---` then parses as a horizontal rule.
+  _Example:_ `---\nfoo: bar\n# Heading\n- item\n` → zero `FrontMatter` nodes; `HorizontalRule`, the paragraph, `ATXHeading1`, and `BulletList` all parse. `---\nfoo\n` → no `FrontMatter`.
 
 - **FM-E-5** — Frontmatter detection MUST tolerate CRLF line endings.
   _Example:_ `---\r\nfoo: bar\r\n---\r\n` parses as one `FrontMatter` node.

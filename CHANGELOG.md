@@ -9,6 +9,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 - **A table whose header line ends in stray spaces no longer grows an empty extra column** — trailing whitespace after the last `|` was read as a cell, so the table rendered one column too wide and the first edit wrote that empty column into the file.
 - **An outside edit that changes both text above a table and the cell you are editing is no longer undone by your next keystroke** — a find-and-replace, formatter, or git checkout that rewrote both at once left the active cell showing its old text, and typing then wrote that old text back over the change.
 - **Backspace after an emoji on a list's continuation line now removes the whole emoji** — it removed half of the character, leaving a broken glyph in the file; accented letters written as a base letter plus accent are also deleted as one.
+- **A lone `---` on the first line no longer blanks the rest of the document** — an opening frontmatter fence with no closing fence made every heading, list, table, and formula below it render as plain text until the closer was typed; the rest of the document now renders normally and the `---` shows as a horizontal rule.
 
 ## [1.11.9] - 2026-08-30
 

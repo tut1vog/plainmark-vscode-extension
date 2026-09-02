@@ -1,7 +1,7 @@
 // YAML frontmatter parser for @lezer/markdown. Synthesizes SilverBullet's BlockParser
 // (MIT) with retronav/ixora's parseMixed overlay (Apache-2.0) plus Zettlr's `...` closer
 // (GPL-3 design reference only — fresh code).
-import { parseMixed } from '@lezer/common';
+import { type Input, parseMixed } from '@lezer/common';
 import { yamlLanguage } from '@codemirror/lang-yaml';
 import type {
   BlockContext,
@@ -13,6 +13,30 @@ import type {
 const OPEN_RE = /^---\s*$/;
 const CLOSE_RE = /^(?:---|\.\.\.)\s*$/;
 
+// BlockContext.input is @internal, but a block parser has no public multi-line
+// lookahead, and consuming lines before returning false strands the context at
+// EOF with every consumed line unparsed.
+function closer_below(cx: BlockContext, from: number): boolean {
+  const input = (cx as unknown as { input?: Input }).input;
+  if (!input) return true;
+  let pos = from;
+  let carry = '';
+  while (pos < input.length) {
+    const chunk = input.chunk(pos);
+    if (chunk.length === 0) break;
+    const text = carry + chunk;
+    let start = 0;
+    let nl: number;
+    while ((nl = text.indexOf('\n', start)) >= 0) {
+      if (CLOSE_RE.test(text.slice(start, nl))) return true;
+      start = nl + 1;
+    }
+    carry = text.slice(start);
+    pos += chunk.length;
+  }
+  return CLOSE_RE.test(carry);
+}
+
 const frontmatter_block_parser: BlockParser = {
   name: 'FrontMatter',
   before: 'HorizontalRule',
@@ -22,6 +46,7 @@ const frontmatter_block_parser: BlockParser = {
 
     const open_from = cx.lineStart;
     const open_to = cx.lineStart + line.text.length;
+    if (!closer_below(cx, open_to + 1)) return false;
 
     if (!cx.nextLine()) return false;
     const content_from = cx.lineStart;
@@ -30,9 +55,8 @@ const frontmatter_block_parser: BlockParser = {
 
     while (!CLOSE_RE.test(line.text)) {
       content_to = cx.lineStart + line.text.length;
-      // Unclosed-frontmatter abort: cx.nextLine() returns false at EOF; the
-      // identity check catches the degenerate case where it returns true but
-      // does not advance (defends against ixora's latent crash).
+      // Unreachable after closer_below unless the context fails to advance
+      // (ixora's latent crash); kept as the last-resort abort.
       if (!cx.nextLine() || cx.parsedPos === last_pos) return false;
       last_pos = cx.parsedPos;
     }
