@@ -95,29 +95,71 @@ describe.each([
   });
 });
 
+function token(css: string, name: string): string {
+  const m = new RegExp(`--plainmark-${name}:\\s*([^;]+);`).exec(css);
+  if (!m) throw new Error(`--plainmark-${name} not declared`);
+  return m[1].trim();
+}
+
+// Relative luminance (WCAG) of a #rrggbb value — the light/dark relationship
+// is the contract, not any particular hex.
+function luminance(hex: string): number {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) throw new Error(`not a #rrggbb color: ${hex}`);
+  const [r, g, b] = [0, 2, 4].map((i) => {
+    const c = parseInt(m[1].slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function families(stack: string): string[] {
+  return stack.split(',').map((f) => f.trim());
+}
+
 describe('theme palette divergence', () => {
-  it('light and dark assign different editor surfaces', () => {
-    expect(GITHUB_LIGHT_CSS).toContain('--plainmark-editor-background: #ffffff');
-    expect(GITHUB_DARK_CSS).toContain('--plainmark-editor-background: #0d1117');
-    expect(GITHUB_LIGHT_CSS).toContain('--plainmark-editor-foreground: #1f2328');
-    expect(GITHUB_DARK_CSS).toContain('--plainmark-editor-foreground: #f0f6fc');
+  it('light paints dark ink on a light page and dark inverts both', () => {
+    const light_bg = token(GITHUB_LIGHT_CSS, 'editor-background');
+    const light_fg = token(GITHUB_LIGHT_CSS, 'editor-foreground');
+    const dark_bg = token(GITHUB_DARK_CSS, 'editor-background');
+    const dark_fg = token(GITHUB_DARK_CSS, 'editor-foreground');
+    expect(luminance(light_bg)).toBeGreaterThan(luminance(light_fg));
+    expect(luminance(dark_bg)).toBeLessThan(luminance(dark_fg));
+    expect(light_bg).not.toBe(dark_bg);
+    expect(light_fg).not.toBe(dark_fg);
+  });
+
+  it('keeps readable contrast between page and ink in every fixed palette', () => {
+    for (const css of [GITHUB_LIGHT_CSS, GITHUB_DARK_CSS, CLAUDIFY_CSS]) {
+      const [a, b] = [token(css, 'editor-background'), token(css, 'editor-foreground')].map(
+        luminance,
+      );
+      const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      expect(ratio).toBeGreaterThanOrEqual(7);
+    }
   });
 });
 
 describe('claudify palette', () => {
-  it('paints the warm cream page with slate ink', () => {
-    expect(CLAUDIFY_CSS).toContain('--plainmark-editor-background: #f0eee6');
-    expect(CLAUDIFY_CSS).toContain('--plainmark-editor-foreground: #141413');
+  it('paints dark ink on a light page', () => {
+    expect(luminance(token(CLAUDIFY_CSS, 'editor-background'))).toBeGreaterThan(
+      luminance(token(CLAUDIFY_CSS, 'editor-foreground')),
+    );
   });
 
-  it('drives interactive surfaces with the terracotta accent', () => {
-    expect(CLAUDIFY_CSS).toContain('--plainmark-link-color: #b5420c');
-    expect(CLAUDIFY_CSS).toContain('--plainmark-cursor-color: #cc785c');
-    expect(CLAUDIFY_CSS).toContain('--plainmark-footnote-marker-color: #b5420c');
+  it('drives links and footnote markers from one accent, distinct from the ink', () => {
+    const link = token(CLAUDIFY_CSS, 'link-color');
+    expect(token(CLAUDIFY_CSS, 'footnote-marker-color')).toBe(link);
+    expect(link).not.toBe(token(CLAUDIFY_CSS, 'editor-foreground'));
+    expect(luminance(token(CLAUDIFY_CSS, 'link-color-hover'))).toBeLessThan(luminance(link));
   });
 
-  it('sets a serif heading stack over a system sans body', () => {
-    expect(CLAUDIFY_CSS).toMatch(/--plainmark-heading-font-family:[^;]*serif;/);
-    expect(CLAUDIFY_CSS).toContain('--plainmark-font-text: system-ui');
+  it('sets a serif heading stack over a sans-serif body stack', () => {
+    const heading = families(token(CLAUDIFY_CSS, 'heading-font-family'));
+    const body = families(token(CLAUDIFY_CSS, 'font-text'));
+    expect(heading).toContain('serif');
+    expect(heading).not.toContain('sans-serif');
+    expect(body).toContain('sans-serif');
+    expect(body).not.toContain('serif');
   });
 });
