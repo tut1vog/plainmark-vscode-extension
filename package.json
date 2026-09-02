@@ -278,6 +278,7 @@
     "spec:matrix": "node scripts/gen-spec-matrix.mjs",
     "spec:check": "node scripts/gen-spec-matrix.mjs --check",
     "spec:smoke": "node scripts/gen-smoke-list.mjs",
+    "fixtures:large": "node scripts/gen-large-fixture.mjs && node scripts/gen-large-visual-fixture.mjs",
     "deadcode": "knip",
     "test:unit": "vitest run src",
     "test:source-preservation": "vitest run tests/source-preservation",
