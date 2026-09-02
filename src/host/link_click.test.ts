@@ -71,9 +71,39 @@ describe('classify_link_click — file: opens in-editor SHELL-M-3', () => {
 
 describe('classify_link_click — document-relative hrefs SHELL-M-3 LINK-I-12', () => {
   it('routes relative paths to open-workspace-relative when the document has a dir', () => {
-    for (const href of ['./doc.md', 'sub/dir.md', '../up.md', 'doc.md', 'a/b/c.md', 'img.png#frag']) {
+    for (const href of ['./doc.md', 'sub/dir.md', '../up.md', 'doc.md', 'a/b/c.md']) {
       expect(classify_link_click(href, WITH_DIR)).toEqual({ kind: 'open-workspace-relative', href });
     }
+  });
+
+  it('strips a #fragment or ?query from a relative href so the file itself is opened', () => {
+    expect(classify_link_click('docs/api.md#auth', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'docs/api.md',
+    });
+    expect(classify_link_click('img.png#frag', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'img.png',
+    });
+    expect(classify_link_click('file.md?raw=1#x', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'file.md',
+    });
+    expect(classify_link_click('a%20b.md#sec', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'a b.md',
+    });
+  });
+
+  it('keeps an encoded %23 in a filename because decoding runs after the split', () => {
+    expect(classify_link_click('c%231/note.md#top', WITH_DIR)).toEqual({
+      kind: 'open-workspace-relative',
+      href: 'c#1/note.md',
+    });
+  });
+
+  it('drops a query-only href', () => {
+    expect(classify_link_click('?x=1', WITH_DIR)).toEqual({ kind: 'ignore-empty' });
   });
 
   it('drops a relative href on a parentless (untitled) document — never resolved, never opened', () => {

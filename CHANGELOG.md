@@ -6,6 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **Links to another file with a heading anchor now open the file** — clicking `[API](docs/api.md#auth)` tried to open a file literally named `api.md#auth`; the anchor is now dropped and the file opens.
 - **Pasted images saved under a folder name with spaces now render** — the inserted path was not escaped, so a save location such as `assets/${documentBaseName}` with a space in the document name produced a link Markdown could not read; the path is now percent-encoded.
 - **A quote nested inside a list inside another quote now draws one clean bar** — the inner quote was styled twice, giving its lines mismatched indents and a first-line tint mid-block, and a nested callout there wrongly got callout chrome.
 - **A stray `$$` line no longer strips formatting from everything below it** — an unclosed `$$` paired itself with the next real math block, so headings, bold text, lists, and links between the two rendered as raw source; the rest of the document now renders and only the real block typesets.

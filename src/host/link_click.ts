@@ -72,6 +72,13 @@ function decode_relative_href(href: string): string {
   }
 }
 
+// `doc.md#heading` and `doc.md?x` name the file `doc.md`; a literal `#` in a
+// filename is written `%23` and survives because decoding runs after the split.
+function strip_fragment_and_query(href: string): string {
+  const cut = href.search(/[#?]/);
+  return cut < 0 ? href : href.slice(0, cut);
+}
+
 export function classify_link_click(href: unknown, ctx: LinkClickContext): LinkClickDecision {
   if (typeof href !== 'string' || href.length === 0) return { kind: 'ignore-empty' };
   if (href.startsWith('#')) return { kind: 'ignore-fragment' };
@@ -83,5 +90,7 @@ export function classify_link_click(href: unknown, ctx: LinkClickContext): LinkC
     return { kind: 'blocked-scheme', href, scheme };
   }
   if (!ctx.has_document_dir) return { kind: 'noop-untitled', href };
-  return { kind: 'open-workspace-relative', href: decode_relative_href(href) };
+  const path = strip_fragment_and_query(href);
+  if (path.length === 0) return { kind: 'ignore-empty' };
+  return { kind: 'open-workspace-relative', href: decode_relative_href(path) };
 }
