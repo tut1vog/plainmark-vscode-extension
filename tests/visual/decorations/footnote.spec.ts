@@ -41,6 +41,16 @@ describe('footnote decorations — reference render', () => {
     expect(first.classList.contains('broken')).toBe(false);
   });
 
+  it('FN-R-5: a label referenced twice gets distinct ids', async () => {
+    const doc = 'a[^1] b[^1] c.\n\n[^1]: body';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await next_frame();
+    const ids = refs_in(container).map((r) => r.getAttribute('id'));
+    expect(ids).toEqual(['fnref:1', 'fnref:1:2']);
+    expect(refs_in(container).map((r) => r.getAttribute('data-plainmark-footnote-ref'))).toEqual(['1', '1']);
+  });
+
   it('renders broken (?) for an undefined reference', async () => {
     const doc = 'See [^missing] ref.\n\nelsewhere';
     view = mount_editor(container, doc);
@@ -258,6 +268,20 @@ describe('footnote popover — hover + click', () => {
     ref.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: container }));
     await new Promise((r) => setTimeout(r, 250));
     expect(document.querySelector('.plainmark-footnote-popover')).toBeNull();
+  });
+
+  it('a pending hover timer does not fire into a destroyed view', async () => {
+    const doc = 'Word[^x] more.\n\n[^x]: hovered body';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await next_frame();
+    const ref = refs_in(container)[0];
+    ref.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    const dispatch = vi.spyOn(view, 'dispatch').mockImplementation(() => {});
+    view.destroy();
+    view = undefined;
+    await new Promise((r) => setTimeout(r, 400));
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it('closes hover popover when pointer leaves the popover itself', async () => {

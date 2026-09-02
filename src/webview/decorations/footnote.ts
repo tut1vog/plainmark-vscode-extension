@@ -22,12 +22,21 @@ import {
 const FOOTNOTE_REF_ATTR = 'data-plainmark-footnote-ref';
 
 class FootnoteRefWidget extends WidgetType {
-  constructor(readonly label: string, readonly defined: boolean) {
+  constructor(
+    readonly label: string,
+    readonly defined: boolean,
+    // 1-based occurrence of the label among the rendered references — keeps `id` unique in the DOM (FN-R-5).
+    readonly ordinal: number,
+  ) {
     super();
   }
 
   eq(other: FootnoteRefWidget): boolean {
-    return other.label === this.label && other.defined === this.defined;
+    return (
+      other.label === this.label &&
+      other.defined === this.defined &&
+      other.ordinal === this.ordinal
+    );
   }
 
   toDOM(): HTMLElement {
@@ -35,7 +44,10 @@ class FootnoteRefWidget extends WidgetType {
     sup.className = this.defined
       ? 'plainmark-footnote-ref'
       : 'plainmark-footnote-ref broken';
-    sup.setAttribute('id', `fnref:${this.label}`);
+    sup.setAttribute(
+      'id',
+      this.ordinal === 1 ? `fnref:${this.label}` : `fnref:${this.label}:${this.ordinal}`,
+    );
     sup.setAttribute('role', 'doc-noteref');
     sup.setAttribute(FOOTNOTE_REF_ATTR, this.label);
     if (!this.defined) {
@@ -94,6 +106,7 @@ function build_footnote_decorations(
 ): DecorationSet {
   const decorations: Range<Decoration>[] = [];
   const tree = syntaxTree(state);
+  const rendered_per_label = new Map<string, number>();
 
   for (const { from, to } of visible_ranges) {
     tree.iterate({
@@ -108,9 +121,11 @@ function build_footnote_decorations(
           const revealed = should_reveal_for_selection(state, node.from, node.to);
           if (revealed) return;
           const defined = defined_labels.has(label);
+          const ordinal = (rendered_per_label.get(label) ?? 0) + 1;
+          rendered_per_label.set(label, ordinal);
           decorations.push(
             Decoration.replace({
-              widget: new FootnoteRefWidget(label, defined),
+              widget: new FootnoteRefWidget(label, defined, ordinal),
             }).range(node.from, node.to),
           );
           return;

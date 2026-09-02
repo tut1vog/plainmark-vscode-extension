@@ -8,6 +8,7 @@ import {
   showTooltip,
   type Tooltip,
   type TooltipView,
+  ViewPlugin,
 } from '@codemirror/view';
 import { FOOTNOTE_REF_ATTR } from './footnote.js';
 import { DEFINITION_HEAD_STRIP_RE, footnote_node_label } from './footnote_parser.js';
@@ -301,6 +302,15 @@ function hover_tracker_for(view: EditorView): HoverTracker {
   return t;
 }
 
+// A pending hover timer would otherwise dispatch into a destroyed view.
+const hover_timer_cleanup = ViewPlugin.define((view) => ({
+  destroy() {
+    const tracker = hover_trackers.get(view);
+    tracker?.cancel();
+    tracker?.cancel_close();
+  },
+}));
+
 // Click outside a popover closes it; relies on capture phase so it fires
 // before any handler that might preventDefault.
 const click_outside_handler = EditorView.domEventHandlers({
@@ -355,6 +365,7 @@ export const footnote_popover_extension = [
   popover_state_field,
   popover_tooltip_provider,
   popover_dom_handlers,
+  hover_timer_cleanup,
   click_outside_handler,
   popover_theme,
 ];

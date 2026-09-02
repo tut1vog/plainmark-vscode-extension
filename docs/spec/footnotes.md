@@ -27,8 +27,8 @@ autocomplete and no rendered back-reference (`↩`) affordance.
 - **FN-R-4** `[smoke]` — A reference whose label has no matching `FootnoteDefinition` MUST render as `<sup class="plainmark-footnote-ref broken">` with text content `?`, `aria-label="Undefined footnote <label>"`, while a defined reference omits the `broken` class and the `aria-label`.
   _Example:_ `[^ghost]` with no definition → superscript reads `?`, styled broken.
 
-- **FN-R-5** — The reference widget MUST set `id="fnref:<label>"`, `role="doc-noteref"`, and the `data-plainmark-footnote-ref="<label>"` attribute the popover handlers key on.
-  _Example:_ `[^a]` → `<sup id="fnref:a" role="doc-noteref" data-plainmark-footnote-ref="a">`.
+- **FN-R-5** — The reference widget MUST set `id="fnref:<label>"`, `role="doc-noteref"`, and the `data-plainmark-footnote-ref="<label>"` attribute the popover handlers key on. When the same label is referenced more than once among the rendered references, the second and later widgets MUST take `id="fnref:<label>:<n>"` (n = their 1-based occurrence) so ids stay unique in the DOM; the `data-plainmark-footnote-ref` attribute stays the bare label on every occurrence.
+  _Example:_ `[^a]` → `<sup id="fnref:a" role="doc-noteref" data-plainmark-footnote-ref="a">`; `x[^a] y[^a]` → ids `fnref:a` and `fnref:a:2`, both with `data-plainmark-footnote-ref="a"`.
 
 - **FN-R-6** — A definition MUST be parsed by the block parser only when a line matches `/^\[\^([^\s[\]]+)\]:/`; the parser MUST register `before: 'LinkReference'` so `[^id]: text` is not consumed as a `LinkReference`.
   _Example:_ `[^a]: First note.` → one `FootnoteDefinition` node, not a `LinkReference`.
