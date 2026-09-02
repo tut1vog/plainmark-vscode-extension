@@ -10,15 +10,12 @@
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { TreeFragment } from '@lezer/common';
-import { parser as base_parser } from '@lezer/markdown';
-import { markdown_grammar_extensions } from '../../src/webview/grammar/markdown_config.js';
 import { create_sync_loop } from '../../src/sync/loop.js';
 import { compareTree } from './compare-tree.js';
 import { gen_markdown } from './gen-markdown.js';
 import { CURATED, mutate_markdown, type MalformedCase } from './gen-malformed.js';
+import { plainmark_parser } from './parsers.js';
 import { mulberry32 } from './rng.js';
-
-const plainmark_parser = base_parser.configure(markdown_grammar_extensions);
 
 const SEED = 0xbadba5e;
 const MUTANT_COUNT = 300;

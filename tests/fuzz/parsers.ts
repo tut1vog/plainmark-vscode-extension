@@ -1,11 +1,9 @@
-// Lezer-markdown parser configurations for the fuzz suite.
-//
-// `gfm_parser` is the CommonMark + GFM parser — enough for the spec corpus
-// drivers in `spec-corpus.test.ts` (the CommonMark and cmark-gfm corpora are
-// pure CommonMark + GFM). Plainmark's full parser (math + footnote +
-// frontmatter on top) is reserved for later fuzz tasks that exercise
-// constructs unique to Plainmark.
+// The parser under fuzz: Plainmark's full grammar (GFM + math + footnote +
+// frontmatter + quote-exit), the same list the editor loads. Fuzzing base GFM
+// would miss the extensions' own block/inline parsers — and a reduced grammar
+// reclassifies constructs, so the CommonMark corpus must go through this one.
 
-import { GFM, parser as base_parser } from '@lezer/markdown';
+import { parser as base_parser } from '@lezer/markdown';
+import { markdown_grammar_extensions } from '../../src/webview/grammar/markdown_config.js';
 
-export const gfm_parser = base_parser.configure(GFM);
+export const plainmark_parser = base_parser.configure(markdown_grammar_extensions);

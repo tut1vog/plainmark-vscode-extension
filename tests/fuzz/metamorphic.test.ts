@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 import type { Tree } from '@lezer/common';
 import { native_to_lf } from '../../src/sync/translate.js';
 import { load_commonmark, load_gfm_extensions, type SpecEntry } from './load-corpora.js';
-import { gfm_parser } from './parsers.js';
+import { plainmark_parser } from './parsers.js';
 import { structurally_equal } from './structural-equal.js';
 
 const commonmark = load_commonmark();
@@ -32,7 +32,7 @@ const gfm_extensions = load_gfm_extensions();
 const all = [...commonmark, ...gfm_extensions];
 
 function parse(src: string): Tree {
-  return gfm_parser.parse(src);
+  return plainmark_parser.parse(src);
 }
 
 // Known upstream divergences — entries where lezer-markdown's parse is

@@ -13,17 +13,17 @@ import { describe, expect, it } from 'vitest';
 import { TreeFragment } from '@lezer/common';
 import { compareTree } from './compare-tree.js';
 import { load_commonmark, load_gfm_extensions } from './load-corpora.js';
-import { gfm_parser } from './parsers.js';
+import { plainmark_parser } from './parsers.js';
 
 const commonmark = load_commonmark();
 const gfm_extensions = load_gfm_extensions();
 
-describe('spec corpus: lezer-markdown parses without throwing', () => {
+describe('spec corpus: the Plainmark parser parses without throwing', () => {
   it(`CommonMark 0.31.2: ${commonmark.length} entries`, () => {
     expect(commonmark.length).toBeGreaterThan(600);
     for (const entry of commonmark) {
       try {
-        gfm_parser.parse(entry.markdown);
+        plainmark_parser.parse(entry.markdown);
       } catch (err) {
         throw new Error(
           `CommonMark example ${entry.example} (${entry.section}) threw: ${
@@ -38,7 +38,7 @@ describe('spec corpus: lezer-markdown parses without throwing', () => {
     expect(gfm_extensions.length).toBeGreaterThan(20);
     for (const entry of gfm_extensions) {
       try {
-        gfm_parser.parse(entry.markdown);
+        plainmark_parser.parse(entry.markdown);
       } catch (err) {
         throw new Error(
           `GFM extension example ${entry.example} (${entry.section}) threw: ${
@@ -59,7 +59,7 @@ describe('spec corpus: incremental reparse equals full reparse (compareTree)', (
   // lezer-markdown's fragment-reuse logic for that input shape.
   function check(corpus: { markdown: string; section: string; example: number }[]): void {
     for (const entry of corpus) {
-      const tree_a = gfm_parser.parse(entry.markdown);
+      const tree_a = plainmark_parser.parse(entry.markdown);
       const fragments_a = TreeFragment.addTree(tree_a);
       const edited = entry.markdown + 'x';
       const changed = [
@@ -71,8 +71,8 @@ describe('spec corpus: incremental reparse equals full reparse (compareTree)', (
         },
       ];
       const fragments_b = TreeFragment.applyChanges(fragments_a, changed, 2);
-      const tree_incremental = gfm_parser.parse(edited, fragments_b);
-      const tree_full = gfm_parser.parse(edited);
+      const tree_incremental = plainmark_parser.parse(edited, fragments_b);
+      const tree_full = plainmark_parser.parse(edited);
       try {
         compareTree(tree_incremental, tree_full);
       } catch (err) {

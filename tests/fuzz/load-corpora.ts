@@ -1,11 +1,12 @@
 // Spec-corpus loaders for the fuzz suite.
 //
 // CommonMark: vendored from https://spec.commonmark.org/0.31.2/spec.json
-// (652 entries, JSON `{markdown, html, example, start_line, end_line, section}[]`).
+// (652 entries, JSON `{markdown, example, start_line, end_line, section}[]`) with
+// the upstream `html` field stripped — the fuzz tiers parse, they never render.
 // GFM extensions: vendored from
 // https://raw.githubusercontent.com/github/cmark-gfm/master/test/extensions.txt
 // in the standard CommonMark `.txt` example block format
-// (`<delim> example\n<markdown>\n.\n<html>\n<delim>\n`).
+// (`<delim> example\n<markdown>\n.\n<html>\n<delim>\n`); the HTML half is skipped.
 
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -13,7 +14,6 @@ import { fileURLToPath } from 'url';
 
 export interface SpecEntry {
   markdown: string;
-  html: string;
   example: number;
   start_line: number;
   end_line: number;
@@ -64,17 +64,12 @@ export function load_gfm_extensions(): SpecEntry[] {
     }
     if (i >= lines.length) break;
     i++; // skip the `.` separator
-    const html_lines: string[] = [];
-    while (i < lines.length && lines[i] !== fence) {
-      html_lines.push(lines[i]);
-      i++;
-    }
+    while (i < lines.length && lines[i] !== fence) i++;
     const end_line = i + 1;
     if (i < lines.length) i++; // skip the closing fence
     example_no++;
     entries.push({
       markdown: md_lines.join('\n') + (md_lines.length ? '\n' : ''),
-      html: html_lines.join('\n') + (html_lines.length ? '\n' : ''),
       example: example_no,
       start_line,
       end_line,
