@@ -482,8 +482,8 @@ describe('dispatch_host_sync — CJK IME composition guard SYNC-G-7', () => {
   });
 });
 
-describe('CM6 history owns undo — Mod-z reverts the doc locally without posting to host', () => {
-  it('Mod-z runs CM6 history undo: reverts the user edit; no post_message is invoked by the binding', () => {
+describe('SYNC-H-6 CM6 history owns undo — a Mod-z undo flows out as one ordinary update', () => {
+  it('Mod-z reverts the doc locally and the listener posts the reverted text as an `update`', () => {
     const posted: WebviewToHostMessage[] = [];
     const listener = create_update_listener((m) => posted.push(m), () => 7);
 
@@ -496,19 +496,24 @@ describe('CM6 history owns undo — Mod-z reverts the doc locally without postin
     listener(make_view_update(state, [edit_tr]));
     state = edit_tr.state;
     expect(state.doc.toString()).toBe('hello!');
-
-    const before_undo_posts = posted.length;
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toMatchObject({ type: 'update', text: 'hello!' });
 
     const undo_binding = historyKeymap.find((b) => b.key === 'Mod-z');
     expect(undo_binding).toBeDefined();
 
+    // Every dispatch, the undo included, runs through the production listener —
+    // the same path a real EditorView takes.
     const view_stub = {
-      state,
+      get state() {
+        return state;
+      },
       dispatch: (tr_or_spec: Transaction | TransactionSpec) => {
         const tr =
           tr_or_spec instanceof Transaction
             ? (tr_or_spec as Transaction)
             : state.update(tr_or_spec as TransactionSpec);
+        listener(make_view_update(state, [tr]));
         state = tr.state;
       },
     };
@@ -516,9 +521,11 @@ describe('CM6 history owns undo — Mod-z reverts the doc locally without postin
     expect(consumed).toBe(true);
 
     expect(state.doc.toString()).toBe('hello');
-    expect(posted.length).toBe(before_undo_posts);
-    expect(posted.some((m) => (m as { type: string }).type === 'undo')).toBe(false);
-    expect(posted.some((m) => (m as { type: string }).type === 'redo')).toBe(false);
+    // The undo is nothing special on the wire: exactly one more message, an
+    // `update` carrying the reverted text, and no other message type ever.
+    expect(posted).toHaveLength(2);
+    expect(posted[1]).toMatchObject({ type: 'update', text: 'hello' });
+    expect(posted.map((m) => m.type)).toEqual(['update', 'update']);
   });
 });
 
