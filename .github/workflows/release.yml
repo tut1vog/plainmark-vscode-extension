@@ -73,19 +73,22 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
+      # vsce is a lockfile-pinned devDependency run through pnpm — never
+      # `npx @vscode/vsce`, which would fetch whatever `latest` is at release
+      # time and run it next to VSCE_PAT.
       - name: Build and package
         if: steps.gate.outputs.new == 'true'
         run: |
           pnpm install --frozen-lockfile
           pnpm run build
-          npx @vscode/vsce package --no-dependencies
+          pnpm run package
 
       - name: Publish to the VS Code Marketplace
         if: steps.gate.outputs.new == 'true'
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: >-
-          npx @vscode/vsce publish --no-dependencies
+          pnpm exec vsce publish --no-dependencies
           --packagePath "plainmark-${{ steps.gate.outputs.version }}.vsix"
 
       - name: Create tag and GitHub release

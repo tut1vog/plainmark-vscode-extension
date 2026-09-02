@@ -1,6 +1,11 @@
 allowBuilds:
   '@playwright/browser-chromium': true
+  # vsce transitive install scripts: keytar builds a native credential store
+  # (vsce login only) and vsce-sign fetches a signing binary (verify only); the
+  # PAT-driven package/publish path uses neither.
+  '@vscode/vsce-sign': false
   esbuild: true
+  keytar: false
   simple-git-hooks: true
 patchedDependencies:
   '@codemirror/lang-markdown@6.5.0': patches/@codemirror__lang-markdown@6.5.0.patch
