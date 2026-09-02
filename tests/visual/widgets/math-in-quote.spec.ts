@@ -10,15 +10,8 @@
 // block:true range to full lines instead.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor } from '../util.js';
+import { frames, mount_editor, move_cursor } from '../util.js';
 import { ensure_mathjax } from '../mathjax-ready.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 
 describe('quote-nested block math — rendered widget, byte safety', () => {
   let container: HTMLElement;

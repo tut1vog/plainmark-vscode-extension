@@ -1,29 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { startCompletion } from '@codemirror/autocomplete';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { get_cell, get_table_block, mount_editor, next_frame } from '../util.js';
 import { table_completions } from '../../../src/webview/widgets/table_autocomplete.js';
-
-function get_table_block(container: HTMLElement): HTMLElement | null {
-  return container.querySelector('.plainmark-table-block') as HTMLElement | null;
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const block = get_table_block(container);
-  if (!block) throw new Error('no .plainmark-table-block');
-  const td = block.querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
 
 async function wait_for_tooltip(timeout_ms = 500): Promise<HTMLElement | null> {
   const deadline = performance.now() + timeout_ms;

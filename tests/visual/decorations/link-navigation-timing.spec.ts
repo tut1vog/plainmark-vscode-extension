@@ -4,11 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from '../util.js';
 
 function find_link_span(container: HTMLElement, href: string): HTMLElement {
   const el = container.querySelector(`[data-plainmark-href="${href}"]`) as HTMLElement | null;

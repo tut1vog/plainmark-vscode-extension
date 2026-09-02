@@ -9,7 +9,7 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import { ensure_mathjax } from '../mathjax-ready.js';
-import { mount_editor } from '../util.js';
+import { get_cell, mount_editor, next_frame } from '../util.js';
 import { math_extension as math_grammar_extension } from '../../../src/webview/grammar/math.js';
 import { image_extension, set_image_base_effect } from '../../../src/webview/widgets/image.js';
 import { math_extension } from '../../../src/webview/widgets/math.js';
@@ -63,10 +63,6 @@ function mount_main(parent: HTMLElement, doc: string, options: MountOptions = {}
   return view;
 }
 
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
 async function settle(): Promise<void> {
   await new Promise<void>((r) => setTimeout(r, 20));
   await next_frame();
@@ -75,23 +71,6 @@ async function settle(): Promise<void> {
 
 async function wait_past_group_delay(): Promise<void> {
   await new Promise<void>((r) => setTimeout(r, 600));
-}
-
-function get_table_block(container: HTMLElement): HTMLElement {
-  const block = container.querySelector('.plainmark-table-block') as HTMLElement | null;
-  if (!block) throw new Error('no .plainmark-table-block');
-  return block;
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const td = get_table_block(container).querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
 }
 
 function active_subview_container(): HTMLElement | null {

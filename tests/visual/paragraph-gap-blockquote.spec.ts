@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
+import { frames } from './util.js';
 
 // Guards PARA-R-9, and its construct mirrors
 // BQ-R-13 (quote interiors) and CALL-R-11 (callout bodies): quote and callout
@@ -17,13 +18,6 @@ import { editor_extensions } from '../../src/webview/editor_extensions.js';
 // first-line stack over the tripled rule.
 
 const GAP_CLASS = 'plainmark-paragraph-gap';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r(null as never)));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 
 describe('paragraph gap inside blockquotes and callouts (PARA-R-9)', () => {
   let host: HTMLElement;

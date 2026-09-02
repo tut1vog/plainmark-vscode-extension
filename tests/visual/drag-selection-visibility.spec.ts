@@ -13,7 +13,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
 import { EditorSelection } from '@codemirror/state';
-import { mount_editor } from './util.js';
+import { mount_editor, next_frame } from './util.js';
 
 interface SetupHandle {
   container: HTMLElement;
@@ -22,10 +22,6 @@ interface SetupHandle {
 
 function make_setup(): SetupHandle {
   return { container: document.createElement('div') };
-}
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
 async function set_selection(view: EditorView, from: number, to: number): Promise<void> {

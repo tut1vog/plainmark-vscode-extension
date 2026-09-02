@@ -1,12 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { mount_editor, next_frame } from '../util.js';
 import { table_completions } from '../../../src/webview/widgets/table_autocomplete.js';
 import { table_widgets_field } from '../../../src/webview/widgets/table.js';
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
 
 function fire_accept(view: EditorView): void {
   const ctx = {

@@ -3,6 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { completionStatus, startCompletion } from '@codemirror/autocomplete';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
+import { frames, next_frame } from './util.js';
 
 // Guards the keymap precedence between the completion accept and the
 // configured list-continuation Enter (LIST-I-7). The completion keymap is
@@ -11,13 +12,6 @@ import { editor_extensions } from '../../src/webview/editor_extensions.js';
 // regression once placed it in the earlier Prec.highest block, it outranked
 // the accept at equal precedence (earlier-in-array wins) and Enter on an open
 // callout popup inserted a newline into the quote instead of the selection.
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r(null as never)));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 
 describe('Enter accepts the callout completion inside a quote', () => {
   let host: HTMLElement;

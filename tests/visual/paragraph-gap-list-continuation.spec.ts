@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
+import { frames } from './util.js';
 
 // Guards PARA-R-8 / PARA-R-12: an item continuation line (lazy or
 // indented — a line inside a list on which no ListItem starts) carries the
@@ -14,13 +15,6 @@ import { editor_extensions } from '../../src/webview/editor_extensions.js';
 // reflow them. Blank lines carry the gap in and out of lists alike.
 
 const GAP_CLASS = 'plainmark-paragraph-gap';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 
 describe('paragraph gap on list lines (PARA-R-7 PARA-R-8 PARA-R-12)', () => {
   let host: HTMLElement;

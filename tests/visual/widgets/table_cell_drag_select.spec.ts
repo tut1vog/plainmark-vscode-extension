@@ -8,26 +8,8 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { get_cell, mount_editor, next_frame } from '../util.js';
 import { pointer_down_field } from '../../../src/webview/decorations/pointer_state.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const block = container.querySelector('.plainmark-table-block') as HTMLElement | null;
-  if (!block) throw new Error('no .plainmark-table-block');
-  const td = block.querySelector(
-    `[data-row-index="${row_index}"][data-col-index="${col_index}"]`,
-  ) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
 
 function active_subview_view(): EditorView {
   const sub = document.querySelector('.plainmark-table-cell-edit') as HTMLElement | null;

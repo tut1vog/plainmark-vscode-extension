@@ -19,11 +19,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from './util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from './util.js';
 
 describe('ArrowUp from below stacked hidden-marker lines', () => {
   let container: HTMLElement;

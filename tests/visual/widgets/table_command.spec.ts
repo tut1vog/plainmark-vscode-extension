@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { get_cell, mount_editor, next_frame } from '../util.js';
 import { insert_table_at_caret } from '../../../src/webview/widgets/insert_table_command.js';
 
 const STARTER = [
@@ -11,27 +11,6 @@ const STARTER = [
 ].join('\n');
 
 const SAMPLE_TABLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n';
-
-function get_table_block(container: HTMLElement): HTMLElement | null {
-  return container.querySelector('.plainmark-table-block') as HTMLElement | null;
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const block = get_table_block(container);
-  if (!block) throw new Error('no .plainmark-table-block');
-  const td = block.querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
 
 describe('insert_table_at_caret — ED command webview path', () => {
   let container: HTMLElement;

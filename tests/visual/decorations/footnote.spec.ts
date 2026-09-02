@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor } from '../util.js';
+import { mount_editor, move_cursor, next_frame } from '../util.js';
 import { insert_footnote } from '../../../src/webview/decorations/footnote_insert.js';
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
 
 function refs_in(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll('.plainmark-footnote-ref'));

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from './util.js';
+import { mount_editor, next_frame } from './util.js';
 import { create_clipboard_paste_controller } from '../../src/webview/clipboard.js';
 import type { WebviewToHostMessage } from '../../src/sync/protocol.js';
 
@@ -28,10 +28,6 @@ function right_click_at(view: EditorView, pos: number): { x: number; y: number }
     }),
   );
   return point;
-}
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
 describe('editor context menu — DOM behavior', () => {

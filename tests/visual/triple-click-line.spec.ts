@@ -4,11 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from './util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from './util.js';
 
 // Real triple-click at the rendered coordinates of a document position, then
 // release. CM6's mousedown handler reads event.detail to pick the click type.

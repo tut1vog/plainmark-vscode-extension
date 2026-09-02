@@ -7,10 +7,7 @@ import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
 import { scroll_caret_to } from '../../src/webview/outline_scroll.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { next_frame } from './util.js';
 
 function build_doc(): { text: string; far_line: number; far_offset: number } {
   const lines = ['# Top'];

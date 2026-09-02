@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from '../util.js';
 
 // BQ-R-11: the pinned blockquote marker slot is display:inline-block with
 // overflow:hidden, which takes its bottom edge as the box baseline (CSS 2.1

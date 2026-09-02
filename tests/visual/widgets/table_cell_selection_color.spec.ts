@@ -1,23 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const block = container.querySelector('.plainmark-table-block');
-  if (!block) throw new Error('no .plainmark-table-block');
-  const td = block.querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
+import { get_cell, mount_editor, next_frame } from '../util.js';
 
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 const SAMPLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n';

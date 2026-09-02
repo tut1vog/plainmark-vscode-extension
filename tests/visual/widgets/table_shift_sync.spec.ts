@@ -1,19 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
 import { syncAnnotation } from '../../../src/webview/sync.js';
-import { mount_editor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-function get_cell(container: HTMLElement, row: number, col: number): HTMLTableCellElement {
-  const td = container.querySelector(
-    `.plainmark-table-block [data-row-index="${row}"][data-col-index="${col}"]`,
-  ) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row}, ${col})`);
-  return td;
-}
+import { get_cell, mount_editor, next_frame } from '../util.js';
 
 function press(td: HTMLTableCellElement): void {
   const rect = td.getBoundingClientRect();

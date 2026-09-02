@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor } from '../util.js';
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, move_cursor, next_frame } from '../util.js';
 
 function header_in(container: HTMLElement): HTMLElement | null {
   return container.querySelector('.plainmark-callout-header');

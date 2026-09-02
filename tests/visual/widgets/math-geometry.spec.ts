@@ -6,15 +6,9 @@
 // pixel value, so they hold identically on macOS and ubuntu Chromium.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor } from '../util.js';
+import { frames, mount_editor, move_cursor } from '../util.js';
 import { ensure_mathjax } from '../mathjax-ready.js';
 
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 function line_by_text(container: HTMLElement, text: string): HTMLElement {
   const el = Array.from(container.querySelectorAll<HTMLElement>('.cm-line')).find(
     (l) => (l.textContent ?? '').trim() === text,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { get_cell, mount_editor, next_frame } from '../util.js';
 import { table_completions } from '../../../src/webview/widgets/table_autocomplete.js';
 
 const STARTER = [
@@ -10,31 +10,10 @@ const STARTER = [
   '|     |     |     |',
 ].join('\n');
 
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
 async function settle(): Promise<void> {
   // teardown rides setTimeout(0); allow a macrotask drain + one frame.
   await new Promise((r) => setTimeout(r, 20));
   await next_frame();
-}
-
-function get_table_block(container: HTMLElement): HTMLElement {
-  const block = container.querySelector('.plainmark-table-block') as HTMLElement | null;
-  if (!block) throw new Error('no .plainmark-table-block in DOM');
-  return block;
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const td = get_table_block(container).querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
 }
 
 function active_subview_container(): HTMLElement | null {

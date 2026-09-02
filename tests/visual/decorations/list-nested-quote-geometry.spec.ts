@@ -4,14 +4,7 @@
 // the bar as at the top level, and nothing may shift when the caret enters.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
+import { frames, mount_editor, move_cursor } from '../util.js';
 
 const left = (el: Element): number => el.getBoundingClientRect().left;
 // The depth-grid column of a list line: its padding edge, where wrapped rows hang.

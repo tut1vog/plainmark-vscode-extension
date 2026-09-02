@@ -15,10 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { next_frame } from './util.js';
 
 describe('marker reveal after mousedown/mouseup cycle (regression)', () => {
   let container: HTMLElement;

@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
 import { allow_console } from '../console-sentinel.js';
-import { mount_editor, move_cursor } from '../util.js';
+import { frames, mount_editor, move_cursor } from '../util.js';
 
 interface MermaidGlobal {
   PlainmarkMermaid?: {
@@ -27,13 +27,6 @@ const OK_SVG =
   '<svg data-test="mermaid-ok" xmlns="http://www.w3.org/2000/svg" ' +
   'viewBox="0 0 200 120" style="max-width:200px;width:100%" role="img">' +
   '<rect width="200" height="120" fill="#888"/></svg>';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 
 describe('mermaid widget geometry oracles', () => {
   let container: HTMLElement;

@@ -1,29 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { undoDepth } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-function get_table_block(container: HTMLElement): HTMLElement {
-  const block = container.querySelector('.plainmark-table-block') as HTMLElement | null;
-  if (!block) throw new Error('no .plainmark-table-block');
-  return block;
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const block = get_table_block(container);
-  const td = block.querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
+import { get_cell, mount_editor, next_frame } from '../util.js';
 
 function active_subview_container(): HTMLElement | null {
   return document.querySelector('.plainmark-table-cell-edit');

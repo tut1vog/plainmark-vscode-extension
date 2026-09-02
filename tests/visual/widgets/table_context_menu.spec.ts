@@ -1,24 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { get_cell, get_table_block, mount_editor, next_frame } from '../util.js';
 import { TABLE_KEYBINDING_DEFAULTS } from '../../../src/common/table_keybindings.js';
-
-function get_table_block(container: HTMLElement): HTMLElement {
-  const block = container.querySelector('.plainmark-table-block') as HTMLElement | null;
-  if (!block) throw new Error('no .plainmark-table-block in DOM');
-  return block;
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const td = get_table_block(container).querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
 
 function right_click(td: Element, x = 10, y = 10): void {
   td.dispatchEvent(
@@ -34,10 +17,6 @@ function get_menu_item(id: string): HTMLElement | null {
   return document.querySelector(
     `.plainmark-table-context-menu-item[data-menu-item-id="${id}"]`,
   );
-}
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
 const SAMPLE_TABLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n';

@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { mount_editor, next_frame } from '../util.js';
 import { ensure_mathjax } from '../mathjax-ready.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
 
 // SHELL-X-10 / MATH: a long inline `$…$` whose MathJax render breaks across
 // visual rows (via the `mjx-break` boxes it inserts at relations/operators) is a

@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from '../util.js';
 
 // BQ-R-12 / CALL-R-10 / SHELL-X-9 / SHELL-X-10: every selected line's highlight
 // (drawn by clipped_selection_layer via per-line RectangleMarker.forRange) tracks

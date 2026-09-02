@@ -12,11 +12,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from './util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from './util.js';
 
 describe('inline-marker drag-selection draws no spurious rectangle', () => {
   let container: HTMLElement;

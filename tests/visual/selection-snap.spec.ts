@@ -17,11 +17,7 @@ import {
   set_frozen_reveal_selection,
   set_pointer_down,
 } from '../../src/webview/decorations/pointer_state.js';
-import { mount_editor } from './util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from './util.js';
 
 // Simulate the press-drag-release sequence: latch pointer_down via the
 // exported effect (a real mousedown on contentDOM would do the same), then

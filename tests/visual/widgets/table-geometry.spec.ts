@@ -6,14 +6,7 @@
 // layout breakage without asserting any font-rasterized absolute pixel value.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
+import { frames, mount_editor } from '../util.js';
 
 const ALIGN_TOL = 1.5; // shared-edge tolerance band (sub-pixel AA / collapsed border)
 

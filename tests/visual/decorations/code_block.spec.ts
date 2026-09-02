@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
 import { ROOT_DEFAULTS_CSS } from '../../../src/theme/root_defaults.js';
-import { mount_editor, move_cursor } from '../util.js';
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, move_cursor, next_frame } from '../util.js';
 
 async function wait_frames(n: number): Promise<void> {
   for (let i = 0; i < n; i++) await next_frame();

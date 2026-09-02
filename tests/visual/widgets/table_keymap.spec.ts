@@ -1,33 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { get_cell, get_table_block, mount_editor, next_frame } from '../util.js';
 import { TABLE_KEYBINDING_DEFAULTS } from '../../../src/common/table_keybindings.js';
 import { dispatch_table_edit } from '../../../src/webview/widgets/table_keymap.js';
 import { insert_row_below } from '../../../src/webview/widgets/table_ops.js';
 
-function get_table_block(container: HTMLElement): HTMLElement {
-  const block = container.querySelector('.plainmark-table-block') as HTMLElement | null;
-  if (!block) throw new Error('no .plainmark-table-block in DOM');
-  return block;
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const sel = `[data-row-index="${row_index}"][data-col-index="${col_index}"]`;
-  const td = get_table_block(container).querySelector(sel) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
-
 function active_subview_container(): HTMLElement | null {
   return document.querySelector('.plainmark-table-cell-edit');
-}
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
 async function activate_cell(

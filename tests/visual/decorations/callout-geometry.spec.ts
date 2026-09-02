@@ -13,14 +13,7 @@
 // with the title WIDGET's left edge, not the label span.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
+import { frames, mount_editor, move_cursor } from '../util.js';
 
 describe('callout geometry oracles', () => {
   let container: HTMLElement;

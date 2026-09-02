@@ -9,11 +9,7 @@ import {
   set_frozen_reveal_selection,
   set_pointer_down,
 } from '../../src/webview/decorations/pointer_state.js';
-import { mount_editor } from './util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from './util.js';
 
 describe('SHELL-X-10: covered-line selection clips to visible content end', () => {
   let container: HTMLElement;

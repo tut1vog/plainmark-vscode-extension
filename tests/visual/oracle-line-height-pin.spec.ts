@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
+import { frames } from './util.js';
 
 // Guards SHELL-X-15. CM6 derives the document-wide oracle line-height by sampling
 // the first short (<=20 char), all-text, ASCII rendered line. A revealed `##`
@@ -15,12 +16,6 @@ interface DocViewMeasured {
   docView: { measureTextSize: () => { lineHeight: number; charWidth: number; textHeight: number } };
 }
 
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 function sampled_line_height(view: EditorView): number {
   return (view as unknown as DocViewMeasured).docView.measureTextSize().lineHeight;
 }

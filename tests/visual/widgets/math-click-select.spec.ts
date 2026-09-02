@@ -5,12 +5,8 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { mount_editor, next_frame } from '../util.js';
 import { ensure_mathjax } from '../mathjax-ready.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
 
 // Real plain primary single-click at the centre of a rendered widget element,
 // then release. CM6's mousedown handler reads button/detail to pick the style.

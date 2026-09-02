@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, move_cursor, next_frame } from '../util.js';
 
 // LIST-I-3: no list construct reveals, so a nested ordered line renders at the
 // same x with the caret on or off it. The retired source-true reveal (raw

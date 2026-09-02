@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from '../util.js';
 
 // SHELL-X-10: a task-list line mixes three inline geometries — the font-size:0
 // hidden "- " span (zero-height caret rect at the baseline), the checkbox

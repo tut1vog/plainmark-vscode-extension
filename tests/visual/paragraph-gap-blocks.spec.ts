@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../src/webview/editor_extensions.js';
+import { frames } from './util.js';
 
 // Guards PARA-R-10 / PARA-R-11: the FIRST line of every non-prose
 // block construct (fenced code, HTML blocks, headings, HR, tables,
@@ -14,13 +15,6 @@ import { editor_extensions } from '../../src/webview/editor_extensions.js';
 // there the gap is widget padding keyed on `plainmark-block-gap-above`.
 
 const GAP_CLASS = 'plainmark-paragraph-gap';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r(null as never)));
-}
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 
 describe('paragraph gap above block constructs (PARA-R-10 PARA-R-11)', () => {
   let host: HTMLElement;

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { editor_extensions } from '../../../src/webview/editor_extensions.js';
+import { frames, next_frame } from '../util.js';
 
 // This spec guards two height-map scroll invariants in the headless harness: the
 // scroll container reserves the scrollbar gutter (so a width-responsive block can't
@@ -22,14 +23,6 @@ const TALL_SVG =
   '<svg data-test="mermaid-ok" xmlns="http://www.w3.org/2000/svg" ' +
   'viewBox="0 0 400 450" style="max-width:400px;width:100%" role="img">' +
   '<rect width="400" height="450" fill="#888"/></svg>';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-async function frames(n: number): Promise<void> {
-  for (let i = 0; i < n; i++) await next_frame();
-}
 
 async function wait_for(predicate: () => boolean, timeout_ms = 10000): Promise<boolean> {
   const start = Date.now();

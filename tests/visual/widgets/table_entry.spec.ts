@@ -1,12 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
+import { mount_editor, next_frame } from '../util.js';
 
 const STARTER = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n';
-
-async function next_frame(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
 
 async function settle(): Promise<void> {
   // request_cell_focus chains requestMeasure → activate_cell → setTimeout(0); drain a macrotask + a few frames.

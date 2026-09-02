@@ -5,11 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from './util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from './util.js';
 
 const LINK = '[anthropics:defending-code-reference-harness](https://github.com/anthropics/defending-code-reference-harness)';
 const DOC = `x\n${LINK}\ny\n`;

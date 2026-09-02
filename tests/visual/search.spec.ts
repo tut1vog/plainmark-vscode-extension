@@ -12,11 +12,7 @@ import {
   SearchQuery,
   setSearchQuery,
 } from '@codemirror/search';
-import { mount_editor } from './util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
+import { mount_editor, next_frame } from './util.js';
 
 async function open_with_query(view: EditorView, query: string): Promise<void> {
   openSearchPanel(view);

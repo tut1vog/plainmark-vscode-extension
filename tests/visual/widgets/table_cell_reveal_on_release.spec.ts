@@ -3,23 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
-import { mount_editor } from '../util.js';
-
-function next_frame(): Promise<void> {
-  return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-function get_cell(
-  container: HTMLElement,
-  row_index: number,
-  col_index: number,
-): HTMLTableCellElement {
-  const td = container.querySelector(
-    `[data-row-index="${row_index}"][data-col-index="${col_index}"]`,
-  ) as HTMLTableCellElement | null;
-  if (!td) throw new Error(`no cell at (${row_index}, ${col_index})`);
-  return td;
-}
+import { get_cell, mount_editor, next_frame } from '../util.js';
 
 function active_subview(): { view: EditorView; container: HTMLElement } {
   const c = document.querySelector('.plainmark-table-cell-edit') as HTMLElement | null;

@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor } from './util.js';
+import { mount_editor, next_frame } from './util.js';
 import { ensure_mathjax } from './mathjax-ready.js';
 import { normalize_for_snapshot } from './normalize.js';
 
@@ -33,10 +33,6 @@ const PARTIAL_VIEWPORT_HEIGHT = 900;
 // absorbs the height the CM6 height map under-estimates for not-yet-rendered
 // lines, plus growth from async math typesetting once every line is in the DOM.
 const VIEWPORT_HEADROOM = 4000;
-
-function next_frame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
-}
 
 async function settle(view: EditorView): Promise<void> {
   view.requestMeasure();
