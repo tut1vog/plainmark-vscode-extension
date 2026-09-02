@@ -9,7 +9,8 @@ import {
   locate_table_extraction,
   request_cell_focus,
 } from './table.js';
-import { type TableModel, serialize_table } from './table_serialize.js';
+import { plan_table_edit } from './table_edit_plan.js';
+import type { TableModel } from './table_serialize.js';
 import {
   delete_column,
   delete_row,
@@ -54,39 +55,31 @@ interface DispatchOutcome {
   new_model: TableModel | null;
 }
 
-// userEvent 'input' only — syncAnnotation would suppress host-forwarding and break the sync loop.
+// The only source-mutating dispatch in the product: cell edits and structural
+// ops both go through here (TBL-SP-1, TBL-SP-2). userEvent 'input' only —
+// syncAnnotation would suppress host-forwarding and break the sync loop.
 export function dispatch_table_edit(
   main_view: EditorView,
   table_from: number,
   mutator: (model: TableModel) => TableModel,
+  failure_label = 'table structural op failed',
 ): DispatchOutcome {
   try {
-    const extraction = locate_table_extraction(main_view.state, table_from);
-    if (!extraction) return { changed: false, info: null, new_model: null };
-    const model = build_model_from_extraction(extraction, main_view.state.doc);
-    const next = mutator(model);
-    if (next === model) return { changed: false, info: extraction.info, new_model: null };
-    const serialized = serialize_table(next);
-    const t_from = extraction.info.from;
-    const t_to = extraction.info.to;
-    const doc_len = main_view.state.doc.length;
-    // TA2 — inject one trailing `\n` only when there's no `\n` immediately
-    // after the table (mirrors table.ts handle_cell_edit).
-    const next_byte = t_to < doc_len ? main_view.state.doc.sliceString(t_to, t_to + 1) : '';
-    const ta2_needed = next_byte !== '\n';
-    const insert = ta2_needed ? serialized + '\n' : serialized;
-    // Pin the main selection at t_from — mirrors handle_cell_edit (TBL-SP-2/8).
-    // Without it CM6's change-mapping drifts a caret before the table to 0 and a
-    // caret inside past the table; this is the safety net when the re-focus
-    // can't find a target, and is overwritten by the seed when it succeeds.
+    const plan = plan_table_edit(main_view.state, table_from, mutator);
+    if (plan.kind === 'missing') return { changed: false, info: null, new_model: null };
+    if (plan.kind === 'unchanged') return { changed: false, info: plan.info, new_model: null };
+    // Pin the main selection at the table start (TBL-SP-2/8). Without it CM6's
+    // change-mapping drifts a caret before the table to 0 and a caret inside
+    // past the table; this is the safety net when the re-focus can't find a
+    // target, and is overwritten by the seed when it succeeds.
     main_view.dispatch({
-      changes: { from: t_from, to: t_to, insert },
-      selection: { anchor: t_from },
+      changes: { from: plan.from, to: plan.to, insert: plan.insert },
+      selection: { anchor: plan.from },
       annotations: [Transaction.userEvent.of('input')],
     });
-    return { changed: true, info: extraction.info, new_model: next };
+    return { changed: true, info: plan.info, new_model: plan.model };
   } catch (reason) {
-    log.error('table structural op failed', {
+    log.error(failure_label, {
       table_from,
       reason: String(reason),
     });

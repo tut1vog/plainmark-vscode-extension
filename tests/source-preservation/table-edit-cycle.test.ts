@@ -13,10 +13,8 @@ import {
   locate_table_extraction,
   table_widgets_field,
 } from '../../src/webview/widgets/table.js';
-import {
-  serialize_table,
-  type TableModel,
-} from '../../src/webview/widgets/table_serialize.js';
+import { plan_table_edit } from '../../src/webview/widgets/table_edit_plan.js';
+import type { TableModel } from '../../src/webview/widgets/table_serialize.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixtures_dir = join(__dirname, 'fixtures/tables');
@@ -36,23 +34,22 @@ function make_state(doc: string): EditorState {
   });
 }
 
-// Mirrors TableWidget.handle_cell_edit's dispatch shape: whole-table replace of
-// [info.from, info.to] with the serialized model, plus the TA2 trailing newline
-// when the byte after the table is not already '\n'.
+// Applies the exact replace the editor dispatches (plan_table_edit is the
+// production planner behind every cell edit and structural op), so a drift in
+// the TA2 rule or the replace range fails here instead of passing silently.
 function apply_edit_cycle(
   doc: string,
   table_from: number,
   mutate?: (model: TableModel) => void,
 ): { result: string; from: number; to: number } {
   const state = make_state(doc);
-  const extraction = locate_table_extraction(state, table_from);
-  if (!extraction) throw new Error(`no table extraction at offset ${table_from}`);
-  const model = build_model_from_extraction(extraction, state.doc);
-  mutate?.(model);
-  const serialized = serialize_table(model);
-  const { from, to } = extraction.info;
-  const next_byte = to < doc.length ? doc.slice(to, to + 1) : '';
-  const insert = next_byte !== '\n' ? serialized + '\n' : serialized;
+  const plan = plan_table_edit(state, table_from, (model) => {
+    const next = { ...model, rows: model.rows.map((r) => r.slice()), alignment: model.alignment.slice() };
+    mutate?.(next);
+    return next;
+  });
+  if (plan.kind !== 'replace') throw new Error(`no table edit plan at offset ${table_from}: ${plan.kind}`);
+  const { from, to, insert } = plan;
   return { result: doc.slice(0, from) + insert + doc.slice(to), from, to };
 }
 

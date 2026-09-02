@@ -13,7 +13,8 @@ import {
   Transaction,
 } from '@codemirror/state';
 import { Decoration, type DecorationSet, EditorView, WidgetType, keymap } from '@codemirror/view';
-import { make_cell_keymap } from './table_keymap.js';
+import { dispatch_table_edit, make_cell_keymap } from './table_keymap.js';
+import { set_cell_text } from './table_ops.js';
 import { show_table_context_menu } from './table_context_menu.js';
 import { image_base_field } from './image.js';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
@@ -22,11 +23,7 @@ import {
   pointer_down_field,
   set_pointer_down,
 } from '../decorations/pointer_state.js';
-import {
-  type TableModel,
-  parse_cell_text,
-  serialize_table,
-} from './table_serialize.js';
+import { type TableModel, parse_cell_text } from './table_serialize.js';
 import { emit_table_cell } from './table_inline_emit.js';
 import { table_sync_annotation } from './table_sync_annotation.js';
 import type { OffsetRange } from '../ranges.js';
@@ -1004,44 +1001,13 @@ export class TableWidget extends WidgetType {
     row_index: number,
     col_index: number,
   ): void {
-    try {
-      const extraction = locate_table_extraction(main_view.state, this.table.from);
-      if (!extraction) return;
-      const model = build_model_from_extraction(extraction, main_view.state.doc);
-      const cell_text = sub.state.doc.toString();
-      if (row_index < model.rows.length && col_index < model.rows[row_index].length) {
-        model.rows[row_index][col_index] = cell_text;
-      }
-      const serialized = serialize_table(model);
-      const table_from = extraction.info.from;
-      const table_to = extraction.info.to;
-      const doc_len = main_view.state.doc.length;
-      // TA2 — inject one trailing `\n` only when there's no `\n` immediately
-      // after the table. A single `\n` suffices (last_row_to is clamped at the
-      // last pipe-row, so absorbed lines stay caret-targetable); forcing `\n\n`
-      // would visibly push the user's content down on every cell edit.
-      const next_byte = table_to < doc_len ? main_view.state.doc.sliceString(table_to, table_to + 1) : '';
-      const ta2_needed = next_byte !== '\n';
-      const insert = ta2_needed ? serialized + '\n' : serialized;
-      // Pin main selection at table_from — CM6's default change-mapping would drift selection inside a replaced range to the end of inserted text, leaving the post-undo caret past the table.
-      main_view.dispatch({
-        changes: { from: table_from, to: table_to, insert },
-        selection: { anchor: table_from },
-        annotations: [Transaction.userEvent.of('input')],
-      });
-    } catch (reason) {
-      log.error('table cell dispatch failed', {
-        from: this.table.from,
-        to: this.table.to,
-        reason: String(reason),
-      });
-      document.dispatchEvent(
-        new CustomEvent('plainmark-table-edit-error', {
-          bubbles: true,
-          detail: { reason: String(reason) },
-        }),
-      );
-    }
+    const cell_text = sub.state.doc.toString();
+    dispatch_table_edit(
+      main_view,
+      this.table.from,
+      (model) => set_cell_text(model, row_index, col_index, cell_text),
+      'table cell dispatch failed',
+    );
   }
 
   private teardown_active(view: EditorView): void {

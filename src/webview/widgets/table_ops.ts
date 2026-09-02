@@ -15,6 +15,14 @@ function empty_row(col_count: number): string[] {
   return Array.from({ length: col_count }, () => '');
 }
 
+// Always a fresh model: a cell edit dispatches even when the text is unchanged,
+// so the table is re-serialized into canonical form (TBL-SP-9).
+export function set_cell_text(model: TableModel, row: number, col: number, text: string): TableModel {
+  const next = clone_model(model);
+  if (row < next.rows.length && col < next.rows[row].length) next.rows[row][col] = text;
+  return next;
+}
+
 export function insert_row_above(model: TableModel, row: number): TableModel {
   if (row < 1) return model;
   const next = clone_model(model);
