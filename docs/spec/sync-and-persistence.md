@@ -64,6 +64,9 @@ Notation in examples: `|` = caret, `→` = action/result, `\n` = literal newline
 - **SYNC-W-8** — The host MUST reject an `update` whose `base_version` does not equal the version carried by the last `sync` it posted: no `applyEdit`, and a corrective `sync` of the current host state is posted to re-ground the webview. Conflict rule: the host-side state (the external edit the webview had not yet seen) wins; the rejected update's keystroke is dropped from the wire but remains reachable in the webview's CM6 undo history (syncs are `addToHistory: false`).
   _Example:_ an external edit forwards as `sync` v7; an in-flight `update` with `base_version: 5` arrives → no `WorkspaceEdit`, the host re-posts the v7 text; the webview's typed character is recoverable via Ctrl+Z.
 
+- **SYNC-W-9** — The corrective `sync` of SYNC-W-8 MUST be posted once per rejected `base_version` while the host document stays at the version that corrective carried; further stale `update`s on the same base against the same host version are dropped without a repeat post. Once the host document advances (a new version), the next rejection posts a fresh corrective.
+  _Example:_ two queued keystrokes both built on `base_version: 5` arrive after `sync` v7 → one corrective v7 `sync`, not two; a later external edit forwards `sync` v8 and a third stale `base_version: 5` update → a corrective v8 `sync`.
+
 ## H — host → webview
 
 - **SYNC-H-1** — On `onDidChangeTextDocument` for the bound document (after the echo gate), the host MUST post a `sync` message carrying the full LF-normalized document text, the document version, and the document-dir webview URI.

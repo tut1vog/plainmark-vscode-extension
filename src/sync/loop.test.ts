@@ -119,6 +119,49 @@ describe('create_sync_loop SYNC-H-7 SYNC-G-2 SYNC-G-3 SYNC-G-4 SYNC-W-3 SYNC-W-4
     ]);
   });
 
+  it('SYNC-W-9: repeated stale updates on the same base get one corrective sync', async () => {
+    const h = make_harness('hello');
+    const loop = create_sync_loop(h.document, h.webview, h.applier);
+    await loop.handle_webview_message({ type: 'ready' }); // sync v1
+    h.set_text('hello external'); // external edit, v2
+    loop.handle_text_document_change('file:///doc.md'); // sync v2
+
+    // Two keystrokes queued before the webview applied sync v2.
+    await loop.handle_webview_message({ type: 'update', text: 'hello!', base_version: 1 });
+    await loop.handle_webview_message({ type: 'update', text: 'hello!?', base_version: 1 });
+
+    expect(h.applies).toEqual([]);
+    expect(h.posted).toHaveLength(3);
+    expect(h.posted[2]).toEqual({
+      type: 'sync',
+      text: 'hello external',
+      version: 2,
+      document_dir_webview_uri: null,
+    });
+  });
+
+  it('SYNC-W-9: a stale update after the host moved again gets a fresh corrective sync', async () => {
+    const h = make_harness('hello');
+    const loop = create_sync_loop(h.document, h.webview, h.applier);
+    await loop.handle_webview_message({ type: 'ready' }); // sync v1
+    h.set_text('hello external'); // v2
+    loop.handle_text_document_change('file:///doc.md'); // sync v2
+    await loop.handle_webview_message({ type: 'update', text: 'hello!', base_version: 1 }); // corrective v2
+
+    h.set_text('hello external more'); // v3
+    loop.handle_text_document_change('file:///doc.md'); // sync v3
+    await loop.handle_webview_message({ type: 'update', text: 'hello!?', base_version: 1 });
+
+    expect(h.applies).toEqual([]);
+    expect(h.posted).toHaveLength(5);
+    expect(h.posted[4]).toEqual({
+      type: 'sync',
+      text: 'hello external more',
+      version: 3,
+      document_dir_webview_uri: null,
+    });
+  });
+
   it('fresh update (base_version matching the last sync) applies', async () => {
     const h = make_harness('hello');
     const loop = create_sync_loop(h.document, h.webview, h.applier);

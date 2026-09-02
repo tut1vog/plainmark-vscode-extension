@@ -69,6 +69,10 @@ export function create_sync_loop(
   // `update` whose `base_version` differs was built before the webview saw
   // that sync — applying it would full-replace over the newer host state.
   let last_synced_version = -1;
+  // The corrective sync already posted for a rejected `base_version`, keyed on
+  // the host version it carried. A burst of updates built on the same stale
+  // base would otherwise re-post one identical sync per keystroke.
+  let last_corrective: { base_version: number; version: number } | null = null;
   // Gates host→webview forwarding. An `onDidChangeTextDocument` that fires
   // before the webview's `ready` handshake completes would otherwise push a
   // `sync` to a webview whose JS isn't yet listening.
@@ -144,7 +148,14 @@ export function create_sync_loop(
         base_version: update.base_version,
         last_synced_version,
       });
+      if (
+        last_corrective?.base_version === update.base_version &&
+        last_corrective.version === document.get_version()
+      ) {
+        return;
+      }
       send_sync();
+      last_corrective = { base_version: update.base_version, version: last_synced_version };
       return;
     }
 
