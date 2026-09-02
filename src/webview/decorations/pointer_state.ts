@@ -1,5 +1,6 @@
 import {
   type EditorSelection,
+  type EditorState,
   type Extension,
   StateEffect,
   StateField,
@@ -161,3 +162,17 @@ export const pointer_state_extension: Extension = [
   mousedown_listener_plugin,
   document_mouseup_plugin,
 ];
+
+// True when the press/release pointer-freeze flipped between two states. The
+// flip lands as effects only (no doc or selection change on release), so every
+// reveal-driven decoration field must rebuild on it or the on-release reveal
+// never happens; pointer_down_field matters because should_reveal_for_selection
+// suppresses reveal while the pointer is down.
+export function reveal_gate_changed(before: EditorState, after: EditorState): boolean {
+  return (
+    before.field(frozen_reveal_selection_field, false) !==
+      after.field(frozen_reveal_selection_field, false) ||
+    (before.field(pointer_down_field, false) ?? false) !==
+      (after.field(pointer_down_field, false) ?? false)
+  );
+}

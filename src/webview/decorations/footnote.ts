@@ -1,6 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import { type EditorState, type Range, RangeSet } from '@codemirror/state';
-import { frozen_reveal_selection_field, pointer_down_field } from './pointer_state.js';
+import { reveal_gate_changed } from './pointer_state.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 import {
   Decoration,
@@ -182,14 +182,7 @@ class FootnoteDecorationsPlugin implements PluginValue {
   }
 
   update(update: ViewUpdate): void {
-    // The press/release pointer-freeze flip lands as effects only (no doc or
-    // selection change on release) — without this, the on-release reveal never
-    // rebuilds. Mirrors math.ts / inline_decorations.ts.
-    const reveal_gate_changed =
-      update.startState.field(frozen_reveal_selection_field, false) !==
-        update.state.field(frozen_reveal_selection_field, false) ||
-      (update.startState.field(pointer_down_field, false) ?? false) !==
-        (update.state.field(pointer_down_field, false) ?? false);
+    const gate_changed = reveal_gate_changed(update.startState, update.state);
     // Background parsing lands via effect-only transactions; without this,
     // late-parsed regions stay raw until the next edit/scroll/selection.
     const tree_advanced =
@@ -199,7 +192,7 @@ class FootnoteDecorationsPlugin implements PluginValue {
       update.docChanged ||
       update.viewportChanged ||
       update.selectionSet ||
-      reveal_gate_changed ||
+      gate_changed ||
       tree_advanced
     ) {
       this.decorations = build_footnote_decorations(

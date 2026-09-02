@@ -4,6 +4,7 @@ import { EditorView, type MouseSelectionStyle } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { type OffsetRange, ranges_overlap } from '../ranges.js';
 import { frozen_reveal_selection_field } from '../decorations/pointer_state.js';
+import { enclosing_math } from '../grammar/math.js';
 import { should_reveal_for_selection } from '../decorations/selection_reveal.js';
 import {
   block_math_content_range,
@@ -11,13 +12,6 @@ import {
   block_math_widget_range,
   inline_math_content_range,
 } from './math.js';
-
-function climb_to_math(node: SyntaxNode | null): SyntaxNode | null {
-  for (let n = node; n; n = n.parent) {
-    if (n.name === 'InlineMath' || n.name === 'BlockMath') return n;
-  }
-  return null;
-}
 
 // A click on a replace-widget can land at either node boundary depending on which
 // half was pressed, so resolve from both sides and take whichever finds the math.
@@ -28,13 +22,13 @@ function climb_to_math(node: SyntaxNode | null): SyntaxNode | null {
 function math_node_at(state: EditorState, pos: number): SyntaxNode | null {
   const tree = syntaxTree(state);
   const direct =
-    climb_to_math(tree.resolveInner(pos, -1)) ?? climb_to_math(tree.resolveInner(pos, 1));
+    enclosing_math(tree.resolveInner(pos, -1)) ?? enclosing_math(tree.resolveInner(pos, 1));
   if (direct) return direct;
   const line = state.doc.lineAt(pos);
   const prefix_len = /^[ \t>]*/.exec(line.text)?.[0].length ?? 0;
   const content_pos = line.from + prefix_len;
   if (content_pos === pos) return null;
-  const probed = climb_to_math(tree.resolveInner(content_pos, 1));
+  const probed = enclosing_math(tree.resolveInner(content_pos, 1));
   if (probed?.name !== 'BlockMath') return null;
   const wr = block_math_widget_range(state, probed.from, probed.to);
   return pos >= wr.from && pos <= wr.to ? probed : null;

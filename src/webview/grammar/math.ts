@@ -3,6 +3,7 @@
 // line is math; users escape literal dollar signs with `\$`. `\$` outside math is consumed by
 // lezer-markdown's built-in `Escape` parser before our rule sees the `$`, so prose dollars like
 // `\$5.00` never trigger math.
+import type { SyntaxNode } from '@lezer/common';
 import type {
   BlockContext,
   InlineContext,
@@ -174,3 +175,11 @@ export const math_extension: MarkdownConfig = {
   parseBlock: [math_block_parser],
   parseInline: [math_inline_parser],
 };
+
+// Nearest InlineMath or BlockMath on the path from `node` to the root.
+export function enclosing_math(node: SyntaxNode | null): SyntaxNode | null {
+  for (let n = node; n; n = n.parent) {
+    if (n.name === 'InlineMath' || n.name === 'BlockMath') return n;
+  }
+  return null;
+}

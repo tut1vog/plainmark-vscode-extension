@@ -6,10 +6,7 @@ import {
   StateEffect,
   StateField,
 } from '@codemirror/state';
-import {
-  frozen_reveal_selection_field,
-  pointer_down_field,
-} from '../decorations/pointer_state.js';
+import { reveal_gate_changed } from '../decorations/pointer_state.js';
 import { should_reveal_for_selection } from '../decorations/selection_reveal.js';
 import {
   Decoration,
@@ -22,6 +19,8 @@ import {
 } from '@codemirror/view';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
 import { MERMAID_SECURE_KEYS } from './mermaid_secure.js';
+import { create_lazy_bundle } from './lazy_bundle.js';
+import { BlockPreviewWidget, type PreviewRenderState, show_preview_error } from './block_preview.js';
 import type { OffsetRange } from '../ranges.js';
 import {
   doc_change_regions,
@@ -68,45 +67,15 @@ function current_theme_name(): string {
     : 'light';
 }
 
-// Correct only for the single production webview / single EditorView realm; a second realm would share this one-shot load promise.
-let mermaid_load_promise: Promise<void> | null = null;
-// Script injections that failed; past the cap the rejected promise stays cached
-// so a persistent failure stops re-injecting a <script> on every update.
-let mermaid_script_failures = 0;
-const MAX_SCRIPT_ATTEMPTS = 3;
-
 // dist/mermaid.js is injected on first diagram encounter — diagram-free docs never load it.
+const bundle = create_lazy_bundle({
+  name: 'mermaid',
+  ready: () => !!get_mermaid(),
+  boot: () => window.__plainmark_mermaid,
+});
+
 export function load_mermaid(): Promise<void> {
-  if (get_mermaid()) return Promise.resolve();
-  if (mermaid_load_promise) return mermaid_load_promise;
-  let injected = false;
-  const promise = new Promise<void>((resolve, reject) => {
-    const boot = window.__plainmark_mermaid;
-    if (!boot) {
-      reject(new Error('mermaid bootstrap missing'));
-      return;
-    }
-    const script = document.createElement('script');
-    script.nonce = boot.nonce;
-    script.src = boot.url;
-    script.addEventListener('load', () => {
-      if (get_mermaid()) resolve();
-      else reject(new Error('mermaid bundle exposed no API'));
-    });
-    script.addEventListener('error', () => {
-      script.remove();
-      reject(new Error('mermaid bundle failed to load'));
-    });
-    document.head.appendChild(script);
-    injected = true;
-  });
-  mermaid_load_promise = promise;
-  // a transient load failure must not poison the cache — clear so the next schedule retries
-  promise.catch(() => {
-    if (injected) mermaid_script_failures++;
-    if (mermaid_script_failures < MAX_SCRIPT_ATTEMPTS) mermaid_load_promise = null;
-  });
-  return promise;
+  return bundle.load();
 }
 
 function resolve_css_var(name: string, fallback: string): string {
@@ -258,49 +227,24 @@ export class MermaidWidget extends WidgetType {
   }
 }
 
-// Mermaid render is heavier than a MathJax typeset — a longer debounce keeps a multi-keystroke edit from firing a render per key.
-const PREVIEW_DEBOUNCE_MS = 300;
-
 // Correct only for the single production webview / single EditorView realm; a second realm would share this render-sequence counter.
 let preview_render_seq = 0;
 
-interface PreviewRenderState {
-  timer: ReturnType<typeof setTimeout> | null;
-  generation: number;
-  last_good_svg: string | null;
-  destroyed: boolean;
-}
-
-const preview_render_states = new WeakMap<HTMLElement, PreviewRenderState>();
-
-function show_preview_error(
-  dom: HTMLElement,
-  state: PreviewRenderState,
-  message: string,
-  view: EditorView,
-): void {
-  const alert = document.createElement('div');
-  alert.className = 'plainmark-mermaid-block-preview-error';
-  alert.textContent = `Mermaid error: ${message}`;
-  if (state.last_good_svg) {
-    const stale = document.createElement('div');
-    stale.className = 'plainmark-mermaid-block-preview-stale';
-    stale.innerHTML = state.last_good_svg;
-    dom.replaceChildren(stale, alert);
-  } else {
-    dom.replaceChildren(alert);
-  }
-  view.requestMeasure();
-}
+const PREVIEW_BASE_CLASS = 'plainmark-mermaid-block-preview';
 
 function render_block_preview(
   dom: HTMLElement,
-  state: PreviewRenderState,
+  state: PreviewRenderState<string>,
   src: string,
   theme: string,
   view: EditorView,
 ): void {
   const gen = ++state.generation;
+  const fail = (err: unknown): void => {
+    if (state.destroyed || gen !== state.generation) return;
+    const message = err instanceof Error ? err.message : String(err);
+    show_preview_error(dom, state.last_good, `Mermaid error: ${message}`, PREVIEW_BASE_CLASS, view);
+  };
   load_mermaid()
     .then(() => {
       if (state.destroyed || gen !== state.generation) return;
@@ -312,41 +256,25 @@ function render_block_preview(
         .render(`plainmark-mermaid-preview-${preview_render_seq++}`, src)
         .then((out) => {
           if (state.destroyed || gen !== state.generation) return;
-          state.last_good_svg = out.svg;
+          state.last_good = out.svg;
           const diagram = document.createElement('div');
           diagram.innerHTML = out.svg;
           dom.replaceChildren(diagram);
           view.requestMeasure();
         })
-        .catch((err: unknown) => {
-          if (state.destroyed || gen !== state.generation) return;
-          const message = err instanceof Error ? err.message : String(err);
-          show_preview_error(dom, state, message, view);
-        });
+        .catch(fail);
     })
     .catch((err: unknown) => {
       log.warn('mermaid block preview load failed', { err: String(err) });
-      if (state.destroyed || gen !== state.generation) return;
-      const message = err instanceof Error ? err.message : String(err);
-      show_preview_error(dom, state, message, view);
+      fail(err);
     });
 }
 
-function schedule_block_preview(
-  dom: HTMLElement,
-  state: PreviewRenderState,
-  src: string,
-  theme: string,
-  view: EditorView,
-): void {
-  if (state.timer != null) clearTimeout(state.timer);
-  state.timer = setTimeout(() => {
-    state.timer = null;
-    render_block_preview(dom, state, src, theme, view);
-  }, PREVIEW_DEBOUNCE_MS);
-}
+export class MermaidBlockPreviewWidget extends BlockPreviewWidget<string> {
+  protected readonly class_name = PREVIEW_BASE_CLASS;
+  // Mermaid render is heavier than a MathJax typeset — a longer debounce keeps a multi-keystroke edit from firing a render per key.
+  protected readonly debounce_ms = 300;
 
-export class MermaidBlockPreviewWidget extends WidgetType {
   constructor(readonly src: string, readonly theme: string) {
     super();
   }
@@ -355,33 +283,8 @@ export class MermaidBlockPreviewWidget extends WidgetType {
     return other.src === this.src && other.theme === this.theme;
   }
 
-  toDOM(view: EditorView): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'plainmark-mermaid-block-preview';
-    container.style.minHeight = '1.5em';
-    const state: PreviewRenderState = {
-      timer: null,
-      generation: 0,
-      last_good_svg: null,
-      destroyed: false,
-    };
-    preview_render_states.set(container, state);
-    schedule_block_preview(container, state, this.src, this.theme, view);
-    return container;
-  }
-
-  updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    const state = preview_render_states.get(dom);
-    if (!state) return false;
-    schedule_block_preview(dom, state, this.src, this.theme, view);
-    return true;
-  }
-
-  destroy(dom: HTMLElement): void {
-    const state = preview_render_states.get(dom);
-    if (!state) return;
-    if (state.timer != null) clearTimeout(state.timer);
-    state.destroyed = true;
+  protected render(dom: HTMLElement, state: PreviewRenderState<string>, view: EditorView): void {
+    render_block_preview(dom, state, this.src, this.theme, view);
   }
 }
 
@@ -472,21 +375,14 @@ export const mermaid_widgets_field = StateField.define<DecorationSet>({
         theme_changed = true;
       }
     }
-    // The press/release pointer-freeze flip lands as effects only (no doc or
-    // selection change on release) — without this, the on-release reveal never
-    // rebuilds. Mirrors math.ts / inline_decorations.ts.
-    const reveal_gate_changed =
-      tr.startState.field(frozen_reveal_selection_field, false) !==
-        tr.state.field(frozen_reveal_selection_field, false) ||
-      (tr.startState.field(pointer_down_field, false) ?? false) !==
-        (tr.state.field(pointer_down_field, false) ?? false);
+    const gate_changed = reveal_gate_changed(tr.startState, tr.state);
     const tree_changed = syntaxTree(tr.startState) !== syntaxTree(tr.state);
     if (
       !tr.docChanged &&
       !tr.selection &&
       result_keys.length === 0 &&
       !theme_changed &&
-      !reveal_gate_changed &&
+      !gate_changed &&
       !tree_changed
     ) {
       return value;
@@ -502,7 +398,7 @@ export const mermaid_widgets_field = StateField.define<DecorationSet>({
         regions.push(pair.new_region);
       }
     }
-    if (tr.selection || reveal_gate_changed || tr.docChanged) {
+    if (tr.selection || gate_changed || tr.docChanged) {
       regions.push(
         ...reveal_regions(tr.startState, tr.state, tr.docChanged ? tr.changes : null),
       );

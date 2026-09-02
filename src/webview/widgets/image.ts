@@ -9,10 +9,7 @@ import {
 } from '@codemirror/state';
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
-import {
-  frozen_reveal_selection_field,
-  pointer_down_field,
-} from '../decorations/pointer_state.js';
+import { reveal_gate_changed } from '../decorations/pointer_state.js';
 import { should_reveal_for_selection } from '../decorations/selection_reveal.js';
 import { effective_destination } from '../link_destination.js';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
@@ -262,17 +259,15 @@ export const image_widgets_field = StateField.define<DecorationSet>({
   create: (state) => build_decorations(state),
   update: (value, tr) => {
     const base_changed = tr.effects.some((e) => e.is(set_image_base_effect));
-    // The press/release pointer-freeze flip lands as effects only (no doc or
-    // selection change on release) — without this, the on-release reveal never
-    // rebuilds. Mirrors math.ts / inline_decorations.ts.
-    const reveal_gate_changed =
-      tr.startState.field(frozen_reveal_selection_field, false) !==
-        tr.state.field(frozen_reveal_selection_field, false) ||
-      (tr.startState.field(pointer_down_field, false) ?? false) !==
-        (tr.state.field(pointer_down_field, false) ?? false);
     // Lazy/background parsing extends the tree via effect-only transactions; rebuild on tree advance or a deep image never widgetizes until edited.
     const tree_advanced = syntaxTree(tr.startState) !== syntaxTree(tr.state);
-    if (tr.docChanged || tr.selection || base_changed || reveal_gate_changed || tree_advanced) {
+    if (
+      tr.docChanged ||
+      tr.selection ||
+      base_changed ||
+      reveal_gate_changed(tr.startState, tr.state) ||
+      tree_advanced
+    ) {
       return build_decorations(tr.state);
     }
     return value;

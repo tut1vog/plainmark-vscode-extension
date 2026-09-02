@@ -10,15 +10,13 @@ import { syntaxTree } from '@codemirror/language';
 import type { EditorState } from '@codemirror/state';
 import type { Command } from '@codemirror/view';
 import { LATEX_COMMANDS } from './latex_commands.js';
+import { enclosing_math } from '../grammar/math.js';
 
 const COMMAND_TOKEN = /\\[a-zA-Z]*/;
 const COMMAND_RUN = /\\[a-zA-Z]+/g;
 
 function in_math_node(state: EditorState, pos: number): boolean {
-  for (let node = syntaxTree(state).resolveInner(pos, -1); node; node = node.parent!) {
-    if (node.name === 'InlineMath' || node.name === 'BlockMath') return true;
-  }
-  return false;
+  return enclosing_math(syntaxTree(state).resolveInner(pos, -1)) !== null;
 }
 
 // Frequency of each `\command` run within the document's math ranges. Recomputed per

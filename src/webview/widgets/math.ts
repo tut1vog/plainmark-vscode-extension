@@ -25,7 +25,8 @@ import {
   type ViewUpdate,
   WidgetType,
 } from '@codemirror/view';
-import { frozen_reveal_selection_field, pointer_down_field } from '../decorations/pointer_state.js';
+import { frozen_reveal_selection_field, reveal_gate_changed } from '../decorations/pointer_state.js';
+import { BlockPreviewWidget, type PreviewRenderState, show_preview_error } from './block_preview.js';
 import { should_reveal_for_selection } from '../decorations/selection_reveal.js';
 import { load_mathjax, mathjax_loadable } from './mathjax_loader.js';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
@@ -162,20 +163,11 @@ export class MathWidget extends WidgetType {
   }
 }
 
-const PREVIEW_DEBOUNCE_MS = 120;
-
-interface PreviewRenderState {
-  timer: ReturnType<typeof setTimeout> | null;
-  generation: number;
-  last_good_html: string | null;
-  destroyed: boolean;
-}
-
-const preview_render_states = new WeakMap<HTMLElement, PreviewRenderState>();
+const PREVIEW_BASE_CLASS = 'plainmark-math-block-preview';
 
 function render_block_preview(
   dom: HTMLElement,
-  state: PreviewRenderState,
+  state: PreviewRenderState<string>,
   src: string,
   view: EditorView,
 ): void {
@@ -202,24 +194,12 @@ function render_block_preview(
       const error_el = node.querySelector('mjx-merror');
       if (error_el) {
         const message =
-          error_el.getAttribute('data-mjx-error') ??
-          error_el.textContent ??
-          'invalid TeX';
-        const alert = document.createElement('div');
-        alert.className = 'plainmark-math-block-preview-error';
-        alert.textContent = `TeX error: ${message}`;
-        if (state.last_good_html) {
-          const dimmed = document.createElement('div');
-          dimmed.className = 'plainmark-math-block-preview-stale';
-          dimmed.innerHTML = state.last_good_html;
-          dom.replaceChildren(dimmed, alert);
-        } else {
-          dom.replaceChildren(alert);
-        }
-      } else {
-        state.last_good_html = node.outerHTML;
-        dom.replaceChildren(node);
+          error_el.getAttribute('data-mjx-error') ?? error_el.textContent ?? 'invalid TeX';
+        show_preview_error(dom, state.last_good, `TeX error: ${message}`, PREVIEW_BASE_CLASS, view);
+        return;
       }
+      state.last_good = node.outerHTML;
+      dom.replaceChildren(node);
       view.requestMeasure();
     })
     .catch((err: unknown) => {
@@ -230,20 +210,10 @@ function render_block_preview(
     });
 }
 
-function schedule_block_preview(
-  dom: HTMLElement,
-  state: PreviewRenderState,
-  src: string,
-  view: EditorView,
-): void {
-  if (state.timer != null) clearTimeout(state.timer);
-  state.timer = setTimeout(() => {
-    state.timer = null;
-    render_block_preview(dom, state, src, view);
-  }, PREVIEW_DEBOUNCE_MS);
-}
+export class MathBlockPreviewWidget extends BlockPreviewWidget<string> {
+  protected readonly class_name = PREVIEW_BASE_CLASS;
+  protected readonly debounce_ms = 120;
 
-export class MathBlockPreviewWidget extends WidgetType {
   constructor(readonly src: string) {
     super();
   }
@@ -252,33 +222,8 @@ export class MathBlockPreviewWidget extends WidgetType {
     return other.src === this.src;
   }
 
-  toDOM(view: EditorView): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'plainmark-math-block-preview';
-    container.style.minHeight = '1.5em';
-    const state: PreviewRenderState = {
-      timer: null,
-      generation: 0,
-      last_good_html: null,
-      destroyed: false,
-    };
-    preview_render_states.set(container, state);
-    schedule_block_preview(container, state, this.src, view);
-    return container;
-  }
-
-  updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    const state = preview_render_states.get(dom);
-    if (!state) return false;
-    schedule_block_preview(dom, state, this.src, view);
-    return true;
-  }
-
-  destroy(dom: HTMLElement): void {
-    const state = preview_render_states.get(dom);
-    if (!state) return;
-    if (state.timer != null) clearTimeout(state.timer);
-    state.destroyed = true;
+  protected render(dom: HTMLElement, state: PreviewRenderState<string>, view: EditorView): void {
+    render_block_preview(dom, state, this.src, view);
   }
 }
 
@@ -521,22 +466,13 @@ export const math_widgets_field = StateField.define<DecorationSet>({
         typeset_keys.push(math_cache_key(e.value.display, e.value.src));
       }
     }
-    // The press/release pointer-freeze flip lands as effects only (no doc or
-    // selection change on release) — without this, the on-release reveal never
-    // rebuilds. Mirrors mermaid.ts / inline_decorations.ts; pointer_down_field
-    // matters because should_reveal_for_selection suppresses reveal while the
-    // pointer is down, so the release alone must trigger the rebuild.
-    const reveal_gate_changed =
-      tr.startState.field(frozen_reveal_selection_field, false) !==
-        tr.state.field(frozen_reveal_selection_field, false) ||
-      (tr.startState.field(pointer_down_field, false) ?? false) !==
-        (tr.state.field(pointer_down_field, false) ?? false);
+    const gate_changed = reveal_gate_changed(tr.startState, tr.state);
     const tree_changed = syntaxTree(tr.startState) !== syntaxTree(tr.state);
     if (
       !tr.docChanged &&
       !tr.selection &&
       typeset_keys.length === 0 &&
-      !reveal_gate_changed &&
+      !gate_changed &&
       !tree_changed
     ) {
       return value;
@@ -551,7 +487,7 @@ export const math_widgets_field = StateField.define<DecorationSet>({
         regions.push(pair.new_region);
       }
     }
-    if (tr.selection || reveal_gate_changed || tr.docChanged) {
+    if (tr.selection || gate_changed || tr.docChanged) {
       regions.push(
         ...reveal_regions(tr.startState, tr.state, tr.docChanged ? tr.changes : null),
       );
