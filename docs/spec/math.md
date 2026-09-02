@@ -162,3 +162,6 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 
 - **MATH-E-15** — A `$$` run that does not begin a line MUST NOT open inline math and MUST NOT leave a stray `$` behind: the inline parser treats the whole run as literal text and resumes after it. Display math is a line-start construct only (MATH-E-4).
   _Example:_ `a $$x$$ b $y$` → `$$x$$` and ` b ` render verbatim and only `y` typesets; previously `$x` typeset and ` b ` was swallowed as math.
+
+- **MATH-E-16** — Every typeset (widget, block preview, inline preview) MUST reset MathJax's TeX label state first (`texReset`). MathJax keeps `\label` registrations for the page lifetime and rejects a later typeset of the same label as "multiply defined", so without the reset an equation carrying `\label` errors as soon as its preview re-typesets it, and the error is cached under MATH-R-8. Macro definitions (`\newcommand`) are not part of this reset and still persist for the session.
+  _Example:_ `$$E = mc^2 \label{eq1}$$` typesets on open; clicking into it re-typesets the same source in the preview with no `TeX error`.

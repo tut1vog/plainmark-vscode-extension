@@ -119,6 +119,7 @@ function make_preview_view(view: EditorView): TooltipView {
       display: ctx.display,
       src_len: ctx.src.length,
     });
+    mathjax.texReset?.();
     mathjax
       .tex2chtmlPromise(ctx.src, { display: ctx.display })
       .then((node) => {

@@ -36,6 +36,9 @@ declare global {
   interface Window {
     MathJax?: {
       tex2chtmlPromise?: (src: string, options: { display: boolean }) => Promise<HTMLElement>;
+      // Clears `\label` registrations; MathJax keeps them across typesets and
+      // rejects a re-typeset of the same equation as "multiply defined".
+      texReset?: () => void;
       chtmlStylesheet?: () => HTMLStyleElement;
     };
   }
@@ -189,6 +192,7 @@ function render_block_preview(
   }
   const gen = ++state.generation;
   log.debug('math block preview typeset', { src_len: src.length });
+  mathjax.texReset?.();
   mathjax
     .tex2chtmlPromise(src, { display: true })
     .then((node) => {
@@ -651,6 +655,7 @@ const math_typeset_plugin = ViewPlugin.fromClass(
         if (this.in_flight.has(key)) continue;
         this.in_flight.add(key);
         log.debug('math typeset start', { display, src_len: src.length });
+        mathjax.texReset?.();
         tex2chtml(src, { display })
           .then((node) => {
             this.in_flight.delete(key);

@@ -169,6 +169,28 @@ describe('block math preview widget', () => {
     expect(err?.textContent ?? '').toContain('TeX error:');
   });
 
+  it('MATH-I-8: re-typesetting an equation with \\label in the preview does not report a duplicate label', async () => {
+    const doc = 'before\n\n$$\nE = mc^2 \\label{eq1}\n$$\n\nafter\n';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    // The block widget typesets first and registers the label.
+    await expect
+      .poll(() => container.querySelectorAll('mjx-container').length, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBeGreaterThan(0);
+    move_cursor(view, doc.indexOf('mc^2') + 1);
+    await expect
+      .poll(() => block_preview()?.querySelector('mjx-container') != null, {
+        timeout: 30000,
+        interval: 100,
+      })
+      .toBe(true);
+    expect(block_preview()?.querySelector('.plainmark-math-block-preview-error')).toBeNull();
+    expect(block_preview()?.querySelector('mjx-merror')).toBeNull();
+  });
+
   it('removes the preview widget when the caret leaves the block', async () => {
     const doc = 'before\n\n$$\nx^2\n$$\n\nafter\n';
     view = mount_editor(container, doc);
