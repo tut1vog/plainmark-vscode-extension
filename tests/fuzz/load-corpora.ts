@@ -84,7 +84,3 @@ export function load_gfm_extensions(): SpecEntry[] {
   }
   return entries;
 }
-
-export function load_all(): SpecEntry[] {
-  return [...load_commonmark(), ...load_gfm_extensions()];
-}

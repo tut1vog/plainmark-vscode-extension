@@ -11,11 +11,9 @@
 //      the INV-SP-1 invariant.
 //
 // Chromium's ClipboardEvent constructor rejects any `clipboardData` value
-// that is not a real DataTransfer instance, so the Lexical-style
-// `DataTransferMock` clone in `tests/fuzz/data-transfer-mock.ts` is kept
-// for hypothetical non-browser tiers but not used here — a freshly
-// constructed `new DataTransfer()` supports `setData('text/html', ...)` /
-// `setData('text/plain', ...)` in the Playwright + Chromium environment.
+// that is not a real DataTransfer instance, so no mock is used here — a
+// freshly constructed `new DataTransfer()` supports `setData('text/html', ...)`
+// / `setData('text/plain', ...)` in the Playwright + Chromium environment.
 
 import { afterAll, beforeAll, describe, it } from 'vitest';
 import { EditorState } from '@codemirror/state';
