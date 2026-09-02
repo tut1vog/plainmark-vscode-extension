@@ -98,6 +98,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **IMG-I-12** — Each `paste_image` request MUST carry a correlation `id` that the host echoes in its `paste_image_reply`; the webview MUST drop a reply whose `id` is not the one it is waiting for, and MUST give up on a request that gets no reply within a bounded time (15 s) so a lost reply cannot wedge every later image paste. The inserted `![](path)` MUST replace the current selection like every other paste path and MUST be dispatched with the `input.paste` user event.
   _Example:_ select `DROP` in `keep DROP keep`, paste an image → `keep ![](image-….png) keep`; a host that never answers → nothing is inserted and the next image paste still works.
 
+- **IMG-I-13** `[smoke]` — `plainmark.imagePasteLocation` MUST be listed in `capabilities.untrustedWorkspaces.restrictedConfigurations` (alongside `plainmark.styles`, THEME-R-13), so in a Restricted Mode workspace VS Code drops the workspace- and folder-scope value while a user-scope value still applies; a checked-out repository cannot steer where pasted images are written until the user trusts it. In a trusted workspace the value is the user's own choice and `..` segments are honoured.
+  _Example:_ a Restricted Mode workspace whose `.vscode/settings.json` sets `../../outside` → the workspace value is ignored and the image saves next to the document (or wherever the user-scope setting says).
+
 ## SP · Source preservation
 
 - **IMG-SP-1** `[inherits:INV-SP-1]` — Image rendering MUST be decoration-only: a view-layer `Decoration.replace` over the paragraph range with no document edit. The widget MUST NOT re-serialize, normalize, or rewrite any source byte (only the table widget may rewrite source). The `![alt](url)` source is preserved verbatim and re-exposed unchanged on cursor-on-line reveal.

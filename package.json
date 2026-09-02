@@ -46,10 +46,11 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "Workspace-defined plainmark.styles and plainmark.tableKeybindings are ignored until the workspace is trusted, because both inject content into the editor webview.",
+      "description": "Workspace-defined plainmark.styles, plainmark.tableKeybindings, and plainmark.imagePasteLocation are ignored until the workspace is trusted: the first two inject content into the editor webview, the last chooses where pasted images are written.",
       "restrictedConfigurations": [
         "plainmark.styles",
-        "plainmark.tableKeybindings"
+        "plainmark.tableKeybindings",
+        "plainmark.imagePasteLocation"
       ]
     },
     "virtualWorkspaces": true
@@ -256,7 +257,7 @@
           "type": "string",
           "scope": "resource",
           "default": ".",
-          "markdownDescription": "Folder where images pasted into the Plainmark editor are saved. Relative paths resolve against the current document's folder; the default `.` saves the image next to the document. Two variables are supported, matching VS Code's Markdown image-copy setting (`markdown.copyFiles.destination`):\n\n- `${documentWorkspaceFolder}` — the workspace folder that contains the document; falls back to the document's folder when it is not in a workspace.\n- `${documentBaseName}` — the document's file name without its extension.\n\nFor example, `${documentWorkspaceFolder}/assets` saves every image under a single workspace `assets` folder, while `assets/${documentBaseName}` gives each note its own image folder. Pasted files are named `image-YYYYMMDD-HHMMSS.<ext>` (the extension comes from the image type) and never overwrite an existing file. Pasting an image is unavailable in unsaved (untitled) documents and on read-only file systems."
+          "markdownDescription": "Folder where images pasted into the Plainmark editor are saved. Relative paths resolve against the current document's folder; the default `.` saves the image next to the document. Two variables are supported, matching VS Code's Markdown image-copy setting (`markdown.copyFiles.destination`):\n\n- `${documentWorkspaceFolder}` — the workspace folder that contains the document; falls back to the document's folder when it is not in a workspace.\n- `${documentBaseName}` — the document's file name without its extension.\n\nFor example, `${documentWorkspaceFolder}/assets` saves every image under a single workspace `assets` folder, while `assets/${documentBaseName}` gives each note its own image folder. Pasted files are named `image-YYYYMMDD-HHMMSS.<ext>` (the extension comes from the image type) and never overwrite an existing file. A workspace-defined value applies only once the workspace is trusted. Pasting an image is unavailable in unsaved (untitled) documents and on read-only file systems."
         },
         "plainmark.paste.convertTables": {
           "type": "boolean",
