@@ -88,7 +88,7 @@ into the webview's CSS environment. Section code `R`.
 - **THEME-R-3** — A `declined_remote` or `invalid` entry MUST be skipped and MUST surface an operator warning via `showWarningMessage`; it MUST NOT abort resolution of the remaining entries.
   _Example:_ `["https://cdn/x.css", "./ok.css"]` → one warning for the remote URL, `./ok.css` still resolved.
 
-- **THEME-R-4** — A relative entry MUST resolve against the first workspace folder, falling back to the bound document's directory when no workspace folder exists; an absolute path MUST resolve via `Uri.file`; a `file:` URI MUST resolve via `Uri.parse`.
+- **THEME-R-4** — A relative entry MUST resolve against the workspace folder that contains the bound document (`getWorkspaceFolder`), then the first workspace folder for a document outside every folder, falling back to the document's directory when no workspace folder exists; an absolute path MUST resolve via `Uri.file`; a `file:` URI MUST resolve via `Uri.parse`.
   _Example:_ in a folderless window, `"theme.css"` resolves next to the open document.
 
 - **THEME-R-5** — For each resolved stylesheet the host MUST add the stylesheet's parent directory to the webview `localResourceRoots` (deduplicated) and expose a webview-loadable `href` via `webview.asWebviewUri`.

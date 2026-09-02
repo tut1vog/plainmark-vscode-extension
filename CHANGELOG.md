@@ -10,6 +10,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **Relative stylesheet paths now resolve against the document's own workspace folder** — in a multi-root workspace a `plainmark.styles` entry for a file in the second folder was looked up in the first folder and failed to load.
 - **The word count no longer recounts the whole document several times per keystroke** — the status-bar count now updates once, shortly after a burst of edits.
 - **Paste from the context menu no longer gets stuck when clipboard access is denied** — on the web, a refused clipboard read left the paste waiting forever; it now does nothing and the next paste works.
 - **A failed image paste no longer blocks every later image paste** — when saving one image never got an answer, later pastes silently did nothing; a reply is now waited for at most fifteen seconds. Pasting an image over selected text also replaces the selection, as pasting text does.

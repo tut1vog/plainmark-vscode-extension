@@ -36,7 +36,10 @@ export function resolve_plainmark_styles(
 ): StyleResolution {
   const config = vscode.workspace.getConfiguration('plainmark', document_uri);
   const raw = config.get<unknown>('styles');
-  const folder = vscode.workspace.workspaceFolders?.[0];
+  // The folder that holds the document, not the first one — in a multi-root
+  // workspace a relative stylesheet from folder B would otherwise 404.
+  const folder =
+    vscode.workspace.getWorkspaceFolder(document_uri) ?? vscode.workspace.workspaceFolders?.[0];
 
   const bases: StyleBases<vscode.Uri> = {
     workspace_folder: folder ? folder.uri : null,
