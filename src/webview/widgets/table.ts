@@ -151,7 +151,7 @@ function extract_alignment(table_node: SyntaxNode, doc: Text, col_count: number)
   return alignment;
 }
 
-export function extract_table_info(table_node: SyntaxNode, doc: Text): TableInfo {
+function extract_table_info(table_node: SyntaxNode, doc: Text): TableInfo {
   return extract_table_full(table_node, doc).info;
 }
 
