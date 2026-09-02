@@ -448,7 +448,20 @@ function set_active_cell_snapshot(view: EditorView, snapshot: ActiveCellSnapshot
 }
 
 // CM6's updateDOM swaps tile.widget on existing DOM without re-binding listeners. Storing the current widget on the container lets listeners look it up at event time instead of closing over a stale instance.
-type TableContainer = HTMLElement & { __plainmark_table_widget?: TableWidget };
+type TableContainer = HTMLElement & {
+  __plainmark_table_widget?: TableWidget;
+  __plainmark_activation_token?: number;
+};
+
+// Activation is rAF-deferred; a later activation or a destroy in the same frame
+// must abort the earlier build, else the first leaks (orphaned EditorView + DOM
+// whose focusout handler no longer matches the live active). Keyed on the
+// container, not the widget instance: an edit inside the frame swaps the
+// container's widget, and a per-instance counter would let both builds run.
+function bump_activation_token(container: TableContainer): number {
+  container.__plainmark_activation_token = (container.__plainmark_activation_token ?? 0) + 1;
+  return container.__plainmark_activation_token;
+}
 
 function set_container_widget(container: HTMLElement, widget: TableWidget): void {
   (container as TableContainer).__plainmark_table_widget = widget;
@@ -514,10 +527,6 @@ export class TableWidget extends WidgetType {
   private active: ActiveSubview | null = null;
   // eq() input: a draw whose tree lookup missed must not compare equal to a fresh rebuild, else the empty DOM is reused forever.
   draw_failed = false;
-  // Activation is rAF-deferred; a later activation in the same frame must abort
-  // the earlier one before it builds a subview, else the first leaks (orphaned
-  // EditorView + DOM whose focusout handler no longer matches the live active).
-  private activation_token = 0;
 
   constructor(
     readonly table: TableInfo,
@@ -679,8 +688,7 @@ export class TableWidget extends WidgetType {
     // an eq()-true rebuild swaps the tile's widget without updateDOM, stranding `active` on the container's last-bound widget — resolve the live owner
     const live = (dom as TableContainer).__plainmark_table_widget;
     // invalidate any rAF-deferred activation so it can't mount into detached DOM
-    this.activation_token++;
-    if (live && live !== this) live.activation_token++;
+    bump_activation_token(dom as TableContainer);
     const owner = this.active ? this : live?.active ? live : null;
     if (!owner?.active) return;
     const main_view = owner.active.main_view;
@@ -815,11 +823,14 @@ export class TableWidget extends WidgetType {
   ): void {
     if (this.active) this.teardown_active(main_view);
 
-    const token = ++this.activation_token;
+    const container = (td.closest('.plainmark-table-block') ?? td) as TableContainer;
+    const token = bump_activation_token(container);
     const build = (): void => {
-      if (token !== this.activation_token) return;
+      if (token !== container.__plainmark_activation_token) return;
       if (!td.isConnected) return;
-      const range = lookup_cell_range(main_view.state, this.table.from, row_index, col_index);
+      // an edit landing before the frame swaps the container's widget and may shift table.from — resolve both at build time
+      const live = widget_from_td(td) ?? this;
+      const range = lookup_cell_range(main_view.state, live.table.from, row_index, col_index);
       if (!range) return;
       // Seed the main selection inside the cell on every activation (click, nav,
       // undo landing, structural re-focus). Selection-only → no undo step
@@ -838,7 +849,7 @@ export class TableWidget extends WidgetType {
       const subview_container = document.createElement('div');
       subview_container.className = 'plainmark-table-cell-edit';
 
-      const sub = this.build_cell_subview({
+      const sub = live.build_cell_subview({
         td,
         main_view,
         row_index,
@@ -875,8 +886,7 @@ export class TableWidget extends WidgetType {
       };
       sub.contentDOM.addEventListener('focusout', blur_handler);
 
-      const owner = widget_from_td(td) ?? this;
-      owner.active = {
+      live.active = {
         view: sub,
         main_view,
         row_index,
@@ -890,7 +900,7 @@ export class TableWidget extends WidgetType {
         },
       };
       set_active_cell_snapshot(main_view, {
-        table_from: this.table.from,
+        table_from: live.table.from,
         row: row_index,
         col: col_index,
         sub_view: sub,
