@@ -94,14 +94,10 @@ describe('make_starter_table_markdown — Lezer parse / table extraction', () =>
     const tables = find_tables(state);
     expect(tables).toHaveLength(1);
     const t = tables[0];
-    // find_tables collapses TableHeader and TableRow runs into row_count; the
-    // exact integer is parser-dependent (3 or 4 depending on which node names
-    // the GFM extension emits for the two empty body rows), so we just assert
-    // it has more than just a header and the full 3 columns.
-    expect(t.row_count).toBeGreaterThanOrEqual(3);
+    // header + two empty body rows (the delimiter line is not a row)
+    expect(t.row_count).toBe(3);
     expect(t.col_count).toBe(3);
-    // 3 columns × row_count rows of cells.
-    expect(t.cells.length).toBe(t.row_count * 3);
+    expect(t.cells.length).toBe(9);
 
     for (const cell of t.cells) {
       const raw = doc.slice(cell.cell_from, cell.cell_to);
@@ -128,12 +124,6 @@ describe('table_completions — gating', () => {
   });
 
   it('returns null when `|` is not at line start (e.g. ` |`)', () => {
-    const doc = ' |';
-    const ctx = context_at(doc, doc.length);
-    expect(table_completions(ctx)).toBeNull();
-  });
-
-  it('returns null when line has leading whitespace before `|` even if trim would match (e.g. ` |` with caret right after the pipe)', () => {
     const doc = ' |';
     const ctx = context_at(doc, doc.length);
     expect(table_completions(ctx)).toBeNull();

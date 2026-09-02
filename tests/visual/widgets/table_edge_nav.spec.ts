@@ -242,11 +242,18 @@ describe('table edge navigation — keymap-driven adjacency injection', () => {
     expect(Number.isFinite(coords!.left)).toBe(true);
   });
 
-  it('table at last line: trailing-\\n line is caret-reachable via dispatch (B1 byte still in place)', async () => {
+  it('table at last line: the caret on the trailing-\\n line renders outside the widget (B1 byte still in place)', async () => {
     view = mount_editor(container, STARTER + '\n');
     const doc_len = view.state.doc.length;
-    expect(() => view!.dispatch({ selection: { anchor: doc_len } })).not.toThrow();
+    view.dispatch({ selection: { anchor: doc_len } });
+    await next_frame();
     expect(view.state.selection.main.head).toBe(doc_len);
+    // coordsAtPos is null for a position swallowed by a block replace — the
+    // line after the table must stay a real, renderable caret target.
+    const coords = view.coordsAtPos(doc_len);
+    expect(coords).not.toBeNull();
+    const block = container.querySelector('.plainmark-table-block')!.getBoundingClientRect();
+    expect(coords!.top).toBeGreaterThanOrEqual(block.bottom - 1);
   });
 
   it('EB autocomplete on empty doc produces "\\n + STARTER + \\n" (Fix 5 + Fix B1)', async () => {

@@ -271,3 +271,35 @@ describe('TBL-E-1 TBL-R-12 IL1: a list-nested table is render-only (nested-in-li
     expect(ranges).toHaveLength(0);
   });
 });
+
+describe('TBL-SP-3 TBL-SP-4 TBL-SP-5 TBL-SP-9 round trip through Lezer, model, and serializer', () => {
+  const doc = '| Left | Center | Right |\n|:-----|:------:|------:|\n| a \\| b | c<br>d | e |\n';
+  const canonical =
+    '| Left   | Center | Right |\n| :----- | :----: | ----: |\n| a \\| b | c<br>d |     e |';
+
+  it('alignment markers, an escaped pipe, and <br> survive into the model verbatim', () => {
+    const state = make_state(doc);
+    const [table] = find_tables(state);
+    const extraction = locate_table_extraction(state, table.from);
+    expect(extraction).not.toBeNull();
+    const model = build_model_from_extraction(extraction!, state.doc);
+    expect(model).toEqual({
+      rows: [
+        ['Left', 'Center', 'Right'],
+        ['a \\| b', 'c\nd', 'e'],
+      ],
+      alignment: ['left', 'center', 'right'],
+      header_row_count: 1,
+    });
+  });
+
+  it('the first edit cycle writes the canonical form and a second cycle is byte-stable', () => {
+    const first = apply_edit_cycle(doc, 0);
+    expect(first.result).toBe(canonical + '\n');
+    const second = apply_edit_cycle(first.result, 0);
+    expect(second.result).toBe(first.result);
+    const reparsed = find_tables(make_state(second.result));
+    expect(reparsed).toHaveLength(1);
+    expect(reparsed[0].alignment).toEqual(['left', 'center', 'right']);
+  });
+});

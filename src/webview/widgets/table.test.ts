@@ -10,7 +10,6 @@ import {
   type TableInfo,
   TableWidget,
   build_model_from_extraction,
-  extract_table_info,
   find_tables,
   locate_table_extraction,
   lookup_cell_range,
@@ -249,11 +248,12 @@ describe('TBL-E-7 TBL-SP-6 pipe-bearing line after a table — GFM absorption se
 });
 
 describe('TBL-R-12 TBL-E-1 IL1 — table nested inside list or blockquote', () => {
-  it('finds the table via the extractor (extract path stays unaware of IL1)', () => {
+  it('find_tables skips a table nested in a list item (IL1 — only document-level tables are widgets)', () => {
     const doc = '- list item before\n  | A | B |\n  |---|---|\n  | 1 | 2 |\n';
-    // The extractor runs over every Table node; IL1 gating happens in the decoration builder.
-    const tables = find_tables(make_state(doc));
-    expect(tables.length).toBeGreaterThanOrEqual(0);
+    // find_tables descends only into Document-level blocks, so the nested
+    // table never reaches the widget path; the same doc at top level is found.
+    expect(find_tables(make_state(doc))).toHaveLength(0);
+    expect(find_tables(make_state('| A | B |\n|---|---|\n| 1 | 2 |\n'))).toHaveLength(1);
   });
 
   it('produces zero decorations for a table inside a list item', () => {
@@ -506,7 +506,6 @@ describe('extract_table_info exposes canonical shape via find_tables', () => {
     expect(t.row_count).toBe(2);
     expect(t.col_count).toBe(2);
     expect(t.cells).toHaveLength(4);
-    expect(typeof extract_table_info).toBe('function');
   });
 });
 

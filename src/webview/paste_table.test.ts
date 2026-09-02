@@ -51,9 +51,14 @@ describe('TBL-I-36 table_markdown_from_tsv qualification gate', () => {
 });
 
 describe('TBL-I-36 convert_pasted_table branch order', () => {
-  it('converts a text-only TSV payload', () => {
-    expect(convert_pasted_table({ html: '', text: GC_TSV })).toEqual(
-      table_markdown_from_tsv(GC_TSV),
+  it('converts a text-only TSV payload into the canonical P3 table (widths are source-byte lengths)', () => {
+    expect(convert_pasted_table({ html: '', text: GC_TSV })).toBe(
+      [
+        '| 方法        | 优化目标                | 代价 / 局限性          |',
+        '| ------------- | --------------------------- | --------------------------- |',
+        '| 引用计数  | 立即回收，实现简单 | 无法回收循环引用    |',
+        '| 标记-清除 | 简单，能处理循环    | 暂停程序，产生碎片 |',
+      ].join('\n'),
     );
   });
 
