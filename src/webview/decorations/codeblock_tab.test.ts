@@ -123,3 +123,34 @@ describe('codeblock_backspace — strict single-char Backspace in fenced code CB
     expect(applied).toHaveLength(0);
   });
 });
+
+describe('codeblock_tab — a selection reaching outside the fence CBLK-I-13', () => {
+  // prose\n```\ncode\n```\nafter — `prose` is 0–5, `code` is 10–14, `after` is 19–24.
+  const DOC = 'prose\n```\ncode\n```\nafter';
+
+  it('(a) Tab indents only the fenced body lines, never the prose above', () => {
+    const { view, doc } = make_view(DOC, 0, 12);
+    expect(codeblock_tab_indent(view)).toBe(true);
+    expect(doc()).toBe('prose\n```\n    code\n```\nafter');
+  });
+
+  it('(b) the same selection dragged the other way gives the same result', () => {
+    const { view, doc } = make_view(DOC, 12, 0);
+    expect(codeblock_tab_indent(view)).toBe(true);
+    expect(doc()).toBe('prose\n```\n    code\n```\nafter');
+  });
+
+  it('(c) Shift-Tab dedents only the fenced body lines', () => {
+    const indented = '  prose\n```\n    code\n```\n  after';
+    const { view, doc } = make_view(indented, 0, indented.length);
+    expect(codeblock_tab_dedent(view)).toBe(true);
+    expect(doc()).toBe('  prose\n```\ncode\n```\n  after');
+  });
+
+  it('(d) a selection touching no fence yields to the editor-wide indent', () => {
+    const { view, applied } = make_view(DOC, 0, 5);
+    expect(codeblock_tab_indent(view)).toBe(false);
+    expect(codeblock_tab_dedent(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+});

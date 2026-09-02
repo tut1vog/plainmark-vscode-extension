@@ -1,6 +1,6 @@
 import { deleteCharBackwardStrict } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
-import { Transaction, type ChangeSpec, type EditorState } from '@codemirror/state';
+import { Transaction, type ChangeSpec, type EditorState, type Line } from '@codemirror/state';
 import type { Command } from '@codemirror/view';
 import { enclosing } from '../tree_ancestors.js';
 
@@ -11,11 +11,23 @@ function in_fenced_code(state: EditorState, pos: number): boolean {
   return enclosing(syntaxTree(state).resolveInner(pos, -1), 'FencedCode') !== null;
 }
 
-// A fence delimiter shifted to 4+ indent stops being a fence — indent/dedent must never move those lines.
-function is_fence_delimiter_line(
-  state: EditorState,
-  line: { from: number; to: number },
-): boolean {
+// The selected lines that lie inside a fenced block, minus its delimiter lines
+// (a delimiter shifted to 4+ indent stops being a fence). Lines outside any
+// fence are never touched, whichever way the selection was dragged.
+function fenced_body_lines(state: EditorState): { lines: Line[]; any_fenced: boolean } {
+  const { first, last } = selected_lines(state);
+  const lines: Line[] = [];
+  let any_fenced = false;
+  for (let n = first; n <= last; n++) {
+    const line = state.doc.line(n);
+    if (!in_fenced_code(state, line.to)) continue;
+    any_fenced = true;
+    if (!is_fence_delimiter_line(state, line)) lines.push(line);
+  }
+  return { lines, any_fenced };
+}
+
+function is_fence_delimiter_line(state: EditorState, line: { from: number; to: number }): boolean {
   let found = false;
   syntaxTree(state).iterate({
     from: line.from,
@@ -45,9 +57,9 @@ export const codeblock_tab_indent: Command = (view) => {
   const { state } = view;
   if (state.selection.ranges.length !== 1) return false;
   const { main } = state.selection;
-  if (!in_fenced_code(state, main.head)) return false;
 
   if (main.empty) {
+    if (!in_fenced_code(state, main.head)) return false;
     view.dispatch({
       changes: { from: main.head, insert: CODE_INDENT },
       selection: { anchor: main.head + CODE_INDENT.length },
@@ -57,13 +69,9 @@ export const codeblock_tab_indent: Command = (view) => {
     return true;
   }
 
-  const { first, last } = selected_lines(state);
-  const changes: ChangeSpec[] = [];
-  for (let n = first; n <= last; n++) {
-    const line = state.doc.line(n);
-    if (is_fence_delimiter_line(state, line)) continue;
-    changes.push({ from: line.from, insert: CODE_INDENT });
-  }
+  const { lines, any_fenced } = fenced_body_lines(state);
+  if (!any_fenced) return false;
+  const changes: ChangeSpec[] = lines.map((line) => ({ from: line.from, insert: CODE_INDENT }));
   // Consume the key even with nothing to indent — falling through would hand the fence lines to indentMore.
   if (changes.length > 0) {
     view.dispatch({
@@ -78,14 +86,10 @@ export const codeblock_tab_indent: Command = (view) => {
 export const codeblock_tab_dedent: Command = (view) => {
   const { state } = view;
   if (state.selection.ranges.length !== 1) return false;
-  const { main } = state.selection;
-  if (!in_fenced_code(state, main.head)) return false;
-
-  const { first, last } = selected_lines(state);
+  const { lines, any_fenced } = fenced_body_lines(state);
+  if (!any_fenced) return false;
   const changes: ChangeSpec[] = [];
-  for (let n = first; n <= last; n++) {
-    const line = state.doc.line(n);
-    if (is_fence_delimiter_line(state, line)) continue;
+  for (const line of lines) {
     const lead = /^ {1,4}/.exec(line.text);
     if (lead) changes.push({ from: line.from, to: line.from + lead[0].length, insert: '' });
   }
