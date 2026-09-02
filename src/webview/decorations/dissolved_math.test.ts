@@ -34,12 +34,19 @@ describe('closed_math_fence_regions', () => {
     expect(closed_math_fence_regions(state)).toEqual([]);
   });
 
-  it('closes an open fence on a $$x$$-shaped line', () => {
-    const doc = '$$\na\n\n$$x$$\n';
-    const state = make_state(doc);
-    expect(closed_math_fence_regions(state)).toEqual([
-      { from: 0, to: doc.length - 1 },
-    ]);
+  it('a self-contained $$x$$ line is a block of its own and never closes a dissolved opener', () => {
+    const state = make_state('$$\na\n\n$$x$$\n');
+    expect(closed_math_fence_regions(state)).toEqual([]);
+  });
+
+  it('MATH-E-6: a stray opener does not pair with the opener of a later real block', () => {
+    const doc = '$$\na = b\n\n# Heading **bold**\n\n$$\nc = d\n$$\n';
+    expect(closed_math_fence_regions(make_state(doc))).toEqual([]);
+  });
+
+  it('MATH-E-6: a stray opener above two real blocks yields no region and no cascade', () => {
+    const doc = '$$\nstray\n\ntext\n\n$$\na\n$$\n\nmore **x**\n\n$$\nb\n$$\n';
+    expect(closed_math_fence_regions(make_state(doc))).toEqual([]);
   });
 
   it('ignores $$ lines inside a fenced code block (MATH-E-7)', () => {
@@ -47,12 +54,13 @@ describe('closed_math_fence_regions', () => {
     expect(closed_math_fence_regions(state)).toEqual([]);
   });
 
-  it('pairs multiple blocks into separate regions', () => {
-    const doc = '$$\na\n\n$$\ntext\n$$\nb\n\n$$\n';
-    const state = make_state(doc);
-    const regions = closed_math_fence_regions(state);
-    expect(regions).toHaveLength(2);
-    expect(regions[0]).toEqual({ from: 0, to: doc.indexOf('text') - 1 });
+  it('pairs multiple dissolved blocks into separate regions', () => {
+    const doc = '$$\na\n\n$$\n\ntext\n\n$$\nb\n\n$$\n';
+    const second = doc.indexOf('$$', 10);
+    expect(closed_math_fence_regions(make_state(doc))).toEqual([
+      { from: 0, to: doc.indexOf('$$', 1) + 2 },
+      { from: second, to: doc.indexOf('$$', second + 2) + 2 },
+    ]);
   });
 });
 
@@ -97,6 +105,12 @@ describe('inline decoration suppression inside a dissolved block (MATH-E-14)', (
 
   it('still hides escapes below an unclosed opener', () => {
     const doc = '$$\nno close here\n\npay \\$5 now\n';
+    const state = make_state(doc, 0);
+    expect(hidden_marker_count(state)).toBe(1);
+  });
+
+  it('still hides escapes between an unclosed opener and a later real block', () => {
+    const doc = '$$\nno close here\n\npay \\$5 now\n\n$$\nc = d\n$$\n';
     const state = make_state(doc, 0);
     expect(hidden_marker_count(state)).toBe(1);
   });

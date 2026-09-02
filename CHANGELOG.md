@@ -6,6 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **A stray `$$` line no longer strips formatting from everything below it** — an unclosed `$$` paired itself with the next real math block, so headings, bold text, lists, and links between the two rendered as raw source; the rest of the document now renders and only the real block typesets.
 - **A table whose header line ends in stray spaces no longer grows an empty extra column** — trailing whitespace after the last `|` was read as a cell, so the table rendered one column too wide and the first edit wrote that empty column into the file.
 - **An outside edit that changes both text above a table and the cell you are editing is no longer undone by your next keystroke** — a find-and-replace, formatter, or git checkout that rewrote both at once left the active cell showing its old text, and typing then wrote that old text back over the change.
 - **Backspace after an emoji on a list's continuation line now removes the whole emoji** — it removed half of the character, leaving a broken glyph in the file; accented letters written as a base letter plus accent are also deleted as one.

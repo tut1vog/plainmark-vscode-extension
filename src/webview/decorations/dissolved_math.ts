@@ -21,17 +21,20 @@ function is_self_contained(text: string): boolean {
   );
 }
 
-// MATH-E-7: dollars inside code constructs are literal text, never fences.
-function inside_code(tree: Tree, pos: number): boolean {
+function inside(tree: Tree, pos: number, names: readonly string[]): boolean {
   for (
     let node: SyntaxNode | null = tree.resolveInner(pos, 1);
     node;
     node = node.parent
   ) {
-    if (node.name === 'FencedCode' || node.name === 'CodeBlock') return true;
+    if (names.includes(node.name)) return true;
   }
   return false;
 }
+
+// MATH-E-7: dollars inside code constructs are literal text, never fences.
+const code_names = ['FencedCode', 'CodeBlock'];
+const block_math_names = ['BlockMath'];
 
 const cache = new WeakMap<Tree, readonly OffsetRange[]>();
 
@@ -41,8 +44,11 @@ const cache = new WeakMap<Tree, readonly OffsetRange[]>();
 // block), the content gets inline-parsed as markdown and marker-hiding mangles
 // the math source (`\\` displays as `\`). These regions gate inline decoration
 // off so the raw source stays byte-accurate. Regions coinciding with a real
-// BlockMath are harmless no-ops (its content has no inline nodes), and an
-// unpaired opener yields no region, preserving MATH-E-6 behavior below it.
+// BlockMath are harmless no-ops (its content has no inline nodes). A `$$` line
+// the grammar already parsed into a BlockMath is never a textual fence, and it
+// discards any stray opener pending above it — otherwise one unclosed `$$`
+// would pair with the next real block's opener and un-render everything
+// between them (MATH-E-6).
 export function closed_math_fence_regions(
   state: EditorState,
 ): readonly OffsetRange[] {
@@ -59,7 +65,11 @@ export function closed_math_fence_regions(
     const from = pos;
     pos += text.length + 1;
     if (!fence_re.test(text)) continue;
-    if (inside_code(tree, from)) continue;
+    if (inside(tree, from, code_names)) continue;
+    if (inside(tree, from, block_math_names)) {
+      open_from = -1;
+      continue;
+    }
     if (open_from < 0) {
       if (is_self_contained(text)) continue;
       open_from = from;

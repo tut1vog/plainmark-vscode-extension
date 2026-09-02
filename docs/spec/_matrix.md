@@ -84,7 +84,7 @@
 | CALL-E-3 | tier-a | conforming | `callout_detect.test.ts` |
 | CALL-E-4 | tier-a | conforming | `callout_detect.test.ts` |
 | CALL-E-5 | tier-a + accepted | accepted | `callout_detect.test.ts` |
-| CALL-E-6 | accepted | accepted | — |
+| CALL-E-6 | tier-a + accepted | accepted | `callout_nest.test.ts` |
 | CALL-E-7 | smoke | conforming | — |
 | CALL-E-8 | UNCOVERED | unknown | — |
 | CALL-I-1 | tier-b + smoke | conforming | `callout-geometry.spec.ts`, `callout.spec.ts` |
@@ -670,7 +670,7 @@
 | MATH-I-5 | tier-a | conforming | `math_preview.test.ts` |
 | MATH-I-6 | tier-a + tier-b + smoke | conforming | `math.test.ts`, `math_preview.test.ts`, `math-geometry.spec.ts` |
 | MATH-I-7 | tier-a + smoke | conforming | `block_autoclose.test.ts` |
-| MATH-I-8 | smoke | conforming | — |
+| MATH-I-8 | tier-b + smoke | conforming | `math-preview.spec.ts` |
 | MATH-I-9 | tier-a + smoke | conforming | `math.test.ts` |
 | MATH-I-10 | smoke | conforming | — |
 | MATH-I-11 | tier-a | conforming | `latex_autocomplete.test.ts` |
