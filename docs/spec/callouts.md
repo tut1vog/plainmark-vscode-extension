@@ -109,8 +109,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CALL-E-5** `[accepted]` — Obsidian pipe-metadata syntax (`[!NOTE|meta]`) MUST NOT be parsed; the `|` breaks the `[A-Za-z]+` type match, so `detect_callout` returns null and the line renders as a plain blockquote. Pipe-metadata is deferred; the forward-compatible expansion path keeps source bytes intact.
   _Example:_ `> [!NOTE|meta]` → plain blockquote, not an unknown-type callout.
 
-- **CALL-E-6** `[accepted]` — A nested callout inside another blockquote/callout MUST NOT receive its own callout chrome: the inner `Blockquote` handler short-circuits (parent is `Blockquote`), and the outer detector strips all `>` prefixes so only the outer node is a callout. Matches GitHub "callouts cannot be nested"; Obsidian-style nesting is deferred.
-  _Example:_ `> > [!NOTE]\n> > body` → one outer callout (detector strips both `>`); `> [!NOTE]\n> > [!WARNING]` → outer note callout, inner line is plain quoted text.
+- **CALL-E-6** `[accepted]` — A nested callout inside another blockquote/callout MUST NOT receive its own callout chrome: the inner `Blockquote` handler short-circuits on any `Blockquote` ancestor — direct or through a list item — and the outer detector strips all `>` prefixes so only the outer node is a callout. Matches GitHub "callouts cannot be nested"; Obsidian-style nesting is deferred.
+  _Example:_ `> > [!NOTE]\n> > body` → one outer callout (detector strips both `>`); `> [!NOTE]\n> > [!WARNING]` → outer note callout, inner line is plain quoted text; `> - a\n>   > [!NOTE] t` → a plain quote, the inner line quoted text with no callout chrome.
 
 - **CALL-E-7** `[smoke]` — Callout chrome MUST suppress the plain-blockquote multi-bar chrome for the node's range: no `data-blockquote-depth` attribute and no stacked depth bars are emitted on callout lines (cross-ref BQ-E-10). The `>` markers follow the inherited per-line reveal (BQ-R-2): hidden off the caret's line, shown on it.
   _Example:_ `> [!NOTE]` → header line has `data-callout-type` but no `data-blockquote-depth`; `> plain` → normal depth-1 bar chrome.

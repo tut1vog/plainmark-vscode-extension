@@ -103,12 +103,9 @@ describe('CALL-R-12: list-nested callout takes content-column geometry', () => {
     expect(nest_marks).toEqual([{ from: 2, to: 4 }]);
   });
 
-  it('emits no nested geometry for a callout in a list inside a quote', () => {
-    const { lines, nest_marks } = build('> - a\n>   > [!NOTE] t\n');
-    for (const line of lines) {
-      expect(line.class).not.toContain('plainmark-callout-nested');
-      expect(line.style ?? '').not.toContain('--plainmark-quote-nest');
-    }
+  it('CALL-E-6: a callout in a list inside a quote gets no callout chrome at all', () => {
+    const { lines, nest_marks } = build('> - a\n>   > [!NOTE] t\n>   > body\n');
+    expect(lines).toEqual([]);
     expect(nest_marks).toEqual([]);
   });
 });

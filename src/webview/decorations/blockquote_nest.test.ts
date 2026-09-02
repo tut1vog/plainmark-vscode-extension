@@ -179,4 +179,11 @@ describe('BQ-E-14: a quote inside a quoted list keeps quoted geometry', () => {
     }
     expect(nest_marks).toEqual([]);
   });
+
+  it('decorates each line once — the inner quote handler yields to the outer', () => {
+    const { lines } = build('> - a\n>   > q\n>   > r\n');
+    expect(lines.map((l) => l.from)).toEqual([0, 6, 14]);
+    expect(lines[1].class ?? '').not.toContain('plainmark-blockquote-first');
+    expect(lines[2].class ?? '').not.toContain('plainmark-blockquote-first');
+  });
 });

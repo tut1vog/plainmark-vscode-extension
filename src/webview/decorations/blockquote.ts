@@ -57,6 +57,13 @@ export function quote_prefix_counts(line_text: string): { gt: number; ws: number
   return { gt, ws };
 }
 
+function has_blockquote_ancestor(node: SyntaxNode): boolean {
+  for (let p = node.parent; p; p = p.parent) {
+    if (p.name === 'Blockquote') return true;
+  }
+  return false;
+}
+
 // Enclosing list depth of a quote block (0 at the top level). A quote inside
 // another quote keeps quoted geometry regardless of any list between them.
 export function list_nest_depth(node: SyntaxNode): number {
@@ -236,8 +243,9 @@ function depth_at_line(state: EditorState, line_from: number, line_to: number): 
 const blockquote_handler: NodeHandler = {
   nodeNames: ['Blockquote'],
   handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
-    // outer iterate covers all descendant QuoteMarks; skip inner Blockquote to avoid duplicates
-    if (node.node.parent?.name === 'Blockquote') return [];
+    // The outermost quote decorates every descendant line and QuoteMark; an
+    // inner quote — direct or through a list item — would duplicate them.
+    if (has_blockquote_ancestor(node.node)) return [];
 
     const callout_info = detect_callout(state, node.node);
     if (callout_info) return build_callout_decorations(state, node, callout_info);
