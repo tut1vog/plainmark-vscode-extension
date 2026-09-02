@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PlainmarkEditorProvider } from './host/provider';
+import { PlainmarkEditorProvider } from './host/provider.js';
 import { create_logger } from './log.js';
 
 const log = create_logger('init');

@@ -45,12 +45,8 @@ describe('theme_css_for', () => {
     expect(theme_css_for('default')).toBe('');
   });
 
-  it('returns an empty block for unknown or missing values', () => {
-    expect(theme_css_for('solarized')).toBe('');
-    expect(theme_css_for(undefined)).toBe('');
-    expect(theme_css_for(null)).toBe('');
-    expect(theme_css_for(42)).toBe('');
-    expect(theme_css_for('')).toBe('');
+  it('returns an empty block for an unknown value once normalized', () => {
+    expect(theme_css_for(normalize_theme_id('solarized'))).toBe('');
   });
 });
 

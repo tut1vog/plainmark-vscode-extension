@@ -16,6 +16,6 @@ export function normalize_theme_id(theme: unknown): ThemeId {
   return 'default';
 }
 
-export function theme_css_for(theme: unknown): string {
-  return THEME_CSS[normalize_theme_id(theme)] ?? '';
+export function theme_css_for(theme: ThemeId): string {
+  return THEME_CSS[theme] ?? '';
 }
