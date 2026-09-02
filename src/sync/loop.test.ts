@@ -494,3 +494,139 @@ describe('create_sync_loop SYNC-H-7 SYNC-G-2 SYNC-G-3 SYNC-G-4 SYNC-W-3 SYNC-W-4
     });
   });
 });
+
+// Pure host-loop races (no DOM): every fire of one applyEdit, including fires
+// that land during the await and a late fire of an earlier intermediate.
+describe('create_sync_loop multi-fire echo regression SYNC-G-2 SYNC-G-3 SYNC-G-6 SYNC-H-1 SYNC-H-4', () => {
+  it('arms the gate before applyEdit awaits, suppressing fires that arrive during the await (d)', async () => {
+    const h = make_harness('hello');
+    let resolve_apply!: () => void;
+    let signal_entered!: () => void;
+    const entered_apply = new Promise<void>((r) => {
+      signal_entered = r;
+    });
+
+    // Model VS Code's real sequence: text-model is mutated, listeners are
+    // dispatched, THEN applyEdit's promise resolves. The default fake
+    // applier resolves synchronously and hides the race.
+    h.applier.apply_full_replace = async (uri_string, lf_text) => {
+      h.applies.push({ uri_string, text: lf_text });
+      h.set_text(lf_text);
+      signal_entered();
+      await new Promise<void>((r) => {
+        resolve_apply = r;
+      });
+      return true;
+    };
+
+    const loop = create_sync_loop(h.document, h.webview, h.applier);
+    await loop.handle_webview_message({ type: 'ready' });
+    expect(h.posted.length).toBe(1);
+
+    const update_done = loop.handle_webview_message({ type: 'update', text: 'hello!', base_version: 1 });
+    await entered_apply;
+
+    loop.handle_text_document_change('file:///doc.md');
+    loop.handle_text_document_change('file:///doc.md');
+
+    resolve_apply();
+    await update_done;
+
+    loop.handle_text_document_change('file:///doc.md');
+
+    expect(h.posted.length).toBe(1);
+  });
+
+  it('back-to-back applies: a late fire of an earlier intermediate is suppressed (e)', async () => {
+    // Two keystrokes faster than one host round-trip ('a' → 'ab' → 'abc') put two
+    // applyEdits back-to-back. apply('ab') settles and mutates the model; apply
+    // ('abc') then enters and BLOCKS before mutating, so the live document still
+    // reads the intermediate 'ab' while the gate has already advanced to 'abc'.
+    // A single-snapshot gate forwards that stale 'ab' as a `sync`, whose min-diff
+    // strands the caret before the just-typed char. The recorded self-version of
+    // apply('ab') suppresses it.
+    const h = make_harness('a');
+    let n = 0;
+    let resolve_second!: () => void;
+    let signal_second_entered!: () => void;
+    const second_entered = new Promise<void>((r) => {
+      signal_second_entered = r;
+    });
+    h.applier.apply_full_replace = async (uri_string, lf_text) => {
+      h.applies.push({ uri_string, text: lf_text });
+      n++;
+      if (n === 1) {
+        h.set_text(lf_text);
+        return true;
+      }
+      signal_second_entered();
+      await new Promise<void>((r) => {
+        resolve_second = r;
+      });
+      h.set_text(lf_text);
+      return true;
+    };
+
+    const loop = create_sync_loop(h.document, h.webview, h.applier);
+    await loop.handle_webview_message({ type: 'ready' }); // sync('a')
+
+    await loop.handle_webview_message({ type: 'update', text: 'ab', base_version: 1 });
+    loop.handle_text_document_change('file:///doc.md'); // model 'ab' — suppressed
+
+    const second = loop.handle_webview_message({ type: 'update', text: 'abc', base_version: 1 });
+    await second_entered; // window now holds 'ab' and 'abc'; model still 'ab'
+
+    // apply('ab')'s deferred dirty-state fire lands here, while the model is 'ab'.
+    loop.handle_text_document_change('file:///doc.md');
+
+    resolve_second();
+    await second;
+    loop.handle_text_document_change('file:///doc.md'); // model 'abc' — suppressed
+
+    const sync_texts = h.posted
+      .filter(
+        (m): m is { type: 'sync'; text: string } =>
+          !!m && typeof m === 'object' && (m as { type?: string }).type === 'sync',
+      )
+      .map((s) => s.text);
+    // Only the initial ready sync — the intermediate 'ab' must never escape.
+    expect(sync_texts).toEqual(['a']);
+  });
+
+  it('idempotent external edit while the apply is in flight is absorbed (c, known degenerate)', async () => {
+    // The version-keyed gate narrowed SYNC-G-6: the
+    // byte check now exists only to classify the in-flight apply's first fire,
+    // so an idempotent external edit is absorbed only inside that await window
+    // (harmless — the webview already shows the matching text). This test pins
+    // the residual degenerate so future agents don't "fix" it.
+    const h = make_harness('hello');
+    let resolve_apply!: () => void;
+    let signal_entered!: () => void;
+    const entered = new Promise<void>((r) => {
+      signal_entered = r;
+    });
+    h.applier.apply_full_replace = async (uri_string, lf_text) => {
+      h.applies.push({ uri_string, text: lf_text });
+      signal_entered();
+      await new Promise<void>((r) => {
+        resolve_apply = r;
+      });
+      return true;
+    };
+    const loop = create_sync_loop(h.document, h.webview, h.applier);
+    await loop.handle_webview_message({ type: 'ready' });
+
+    const update_done = loop.handle_webview_message({ type: 'update', text: 'hello!', base_version: 1 });
+    await entered;
+
+    // An external write of the exact in-flight bytes lands mid-await — it is
+    // indistinguishable from our own echo and is absorbed.
+    h.set_text('hello!');
+    loop.handle_text_document_change('file:///doc.md');
+
+    resolve_apply();
+    await update_done;
+
+    expect(h.posted.length).toBe(1);
+  });
+});
