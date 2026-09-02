@@ -313,12 +313,18 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
           });
         }
         const source_tab = find_tab_for(editor_target, 'default');
-        await vscode.commands.executeCommand(
-          'vscode.openWith',
-          editor_target,
-          PlainmarkEditorProvider.viewType,
-          source_tab?.group.viewColumn ?? text_editor?.viewColumn,
-        );
+        try {
+          await vscode.commands.executeCommand(
+            'vscode.openWith',
+            editor_target,
+            PlainmarkEditorProvider.viewType,
+            source_tab?.group.viewColumn ?? text_editor?.viewColumn,
+          );
+        } catch (err) {
+          // A failed reopen resolves no panel, so nothing would consume the stash — the next open would replay it.
+          PlainmarkEditorProvider.pending_initial_cursor.delete(editor_target.toString());
+          throw err;
+        }
         if (source_tab) {
           await vscode.window.tabGroups.close(source_tab);
         }
