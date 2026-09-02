@@ -22,10 +22,12 @@ export function refine_cjk_group_head(
 ): number | null {
   if (!segmenter || skipped.length < 2) return null;
   if (!/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(skipped)) return null;
-  const segments = Array.from(segmenter.segment(skipped));
-  if (segments.length < 2) return null;
-  const boundary = forward ? segments[1] : segments[segments.length - 1];
-  return from + boundary.index;
+  // Whitespace the group walk absorbed segments on its own; the boundary is the
+  // seam between the outermost two words, never the edge of that whitespace.
+  const words = Array.from(segmenter.segment(skipped)).filter((s) => s.isWordLike);
+  if (words.length < 2) return null;
+  const first = words[0];
+  return from + (forward ? first.index + first.segment.length : words[words.length - 1].index);
 }
 
 function move_by_group_cjk(
@@ -91,7 +93,10 @@ export function delete_group_head(state: EditorState, head: number, forward: boo
       break;
     }
     const next = findClusterBreak(line.text, pos - line.from, forward) + line.from;
-    const next_char = line.text.slice(Math.min(pos, next) - line.from, Math.max(pos, next) - line.from);
+    const next_char = line.text.slice(
+      Math.min(pos, next) - line.from,
+      Math.max(pos, next) - line.from,
+    );
     const next_cat = categorize(next_char);
     if (cat !== null && next_cat !== cat) break;
     if (next_char !== ' ' || pos !== head) cat = next_cat;

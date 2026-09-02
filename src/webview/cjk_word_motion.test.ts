@@ -78,3 +78,23 @@ describe('delete_group_head — NAV-N-7', () => {
     expect(delete_group_head(state_of('你好\n世界'), 3, false)).toBe(2);
   });
 });
+
+describe('NAV-N-6 NAV-N-7: whitespace at the span edge is not a word boundary', () => {
+  const state_of = (doc: string) => EditorState.create({ doc });
+
+  it('Ctrl+Backspace after `世界中国 ` deletes the last word with its space', () => {
+    // upstream absorbs the single trailing space into the group; the refined
+    // head must sit before 中国, not before the space
+    expect(delete_group_head(state_of('世界中国 '), 5, false)).toBe(2);
+  });
+
+  it('Ctrl+Delete before ` 世界中国` lands between the words, not before the run', () => {
+    expect(delete_group_head(state_of('a 世界中国'), 1, true)).toBe(4);
+  });
+
+  it('refine ignores leading and trailing whitespace segments', () => {
+    expect(refine_cjk_group_head(' 世界中国', 0, true)).toBe(3);
+    expect(refine_cjk_group_head('世界中国 ', 0, false)).toBe(2);
+    expect(refine_cjk_group_head(' 世界 ', 0, true)).toBeNull();
+  });
+});

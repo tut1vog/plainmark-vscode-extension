@@ -680,7 +680,7 @@
 | MATH-I-12 | tier-a | conforming | `latex_autocomplete.test.ts`, `latex_commands.test.ts` |
 | MATH-I-13 | tier-a | conforming | `latex_autocomplete.test.ts` |
 | MATH-I-14 | smoke | conforming | — |
-| MATH-I-15 | tier-a + tier-b + smoke | conforming | `math_click_select.test.ts`, `math-click-select.spec.ts` |
+| MATH-I-15 | tier-a + tier-b + smoke | conforming | `math.test.ts`, `math_click_select.test.ts`, `math-click-select.spec.ts` |
 | MATH-R-1 | tier-a | conforming | `math.test.ts` |
 | MATH-R-2 | tier-a + tier-b | conforming | `math.test.ts`, `math-geometry.spec.ts`, `math-in-quote.spec.ts` |
 | MATH-R-3 | tier-a + tier-b + smoke | conforming | `math.test.ts`, `math-geometry.spec.ts` |
