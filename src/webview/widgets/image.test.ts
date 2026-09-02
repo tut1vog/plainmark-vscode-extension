@@ -1,6 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
-import { Decoration } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import {
@@ -267,9 +266,5 @@ describe('image_widgets_field — decoration emission', () => {
       effects: set_image_base_effect.of('https://other.example/dir/'),
     }).state;
     expect(decorations(state)[0].widget.resolved_src).toBe('https://other.example/dir/cover.png');
-  });
-
-  it('exports Decoration (sanity ref so static analyzers do not drop the import)', () => {
-    expect(typeof Decoration.replace).toBe('function');
   });
 });

@@ -217,10 +217,6 @@ describe('mermaid_widgets_field — decoration emission MMD-R-1 MMD-I-1 MMD-SP-1
     state = state.update({ effects: set_mermaid_theme.of('dark') }).state;
     expect(decorations(state)[0].widget.theme).toBe('dark');
   });
-
-  it('does not modify the document text', () => {
-    expect(make_state(DIAGRAM).doc.toString()).toBe(DIAGRAM);
-  });
 });
 
 describe('mermaid_cache_field MMD-R-6', () => {

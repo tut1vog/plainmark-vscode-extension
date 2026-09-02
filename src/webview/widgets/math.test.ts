@@ -402,12 +402,6 @@ describe('math_widgets_field — block decoration emission MATH-R-2 MATH-I-2 MAT
     }).state;
     expect(decorations(state)[0].widget.result).toEqual({ ok: true, html: '<mjx-math>a</mjx-math>' });
   });
-
-  it('does not modify the document text', () => {
-    const doc = '$$\na = b\n$$\n';
-    const state = make_state(doc);
-    expect(state.doc.toString()).toBe(doc);
-  });
 });
 
 describe('math_widgets_field — inline decoration emission MATH-R-3 MATH-I-1 MATH-SP-1', () => {
@@ -479,12 +473,6 @@ describe('math_widgets_field — inline decoration emission MATH-R-3 MATH-I-1 MA
     expect(inline?.block).toBe(false);
     expect(block?.widget.src).toBe('b');
     expect(inline?.widget.src).toBe('a');
-  });
-
-  it('does not modify the document text when inline math is present', () => {
-    const doc = 'value: $x = y$ end\n';
-    const state = make_state(doc);
-    expect(state.doc.toString()).toBe(doc);
   });
 });
 

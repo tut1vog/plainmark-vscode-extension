@@ -5,6 +5,7 @@ import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import { math_extension as math_grammar_extension } from '../grammar/math.js';
 import { latex_completions } from './latex_autocomplete.js';
+import { LATEX_COMMANDS } from './latex_commands.js';
 
 const md = markdown({ extensions: [GFM, math_grammar_extension] });
 
@@ -22,11 +23,21 @@ function opt(result: CompletionResult, label: string): Completion | undefined {
 }
 
 describe('MATH-I-11 latex_completions — gating', () => {
-  it('offers commands inside a parsed inline-math node', () => {
+  it('offers the whole catalog, in catalog order, inside a parsed inline-math node', () => {
     const doc = '$\\var$';
     const result = complete(doc, after(doc, '\\var'));
     expect(result).not.toBeNull();
-    expect(result!.options).toHaveLength(417);
+    expect(result!.options.map((o) => o.label)).toEqual(LATEX_COMMANDS.map((c) => c.label));
+  });
+
+  it('carries each command\'s glyph as detail and a snippet apply only for templates', () => {
+    const doc = '$\\var$';
+    const result = complete(doc, after(doc, '\\var'))!;
+    for (const cmd of LATEX_COMMANDS) {
+      const option = opt(result, cmd.label)!;
+      expect(option.detail, cmd.label).toBe(cmd.glyph);
+      expect(typeof option.apply, cmd.label).toBe(cmd.template ? 'function' : 'undefined');
+    }
   });
 
   it('offers commands inside a parsed block-math node', () => {
@@ -67,7 +78,7 @@ describe('MATH-I-11 latex_completions — gating', () => {
     const pos = after(doc, 'x\\');
     const result = complete(doc, pos, true);
     expect(result).not.toBeNull();
-    expect(result!.options).toHaveLength(417);
+    expect(result!.options.map((o) => o.label)).toEqual(LATEX_COMMANDS.map((c) => c.label));
   });
 });
 

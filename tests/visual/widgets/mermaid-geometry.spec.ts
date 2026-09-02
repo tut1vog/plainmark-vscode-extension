@@ -89,6 +89,19 @@ describe('mermaid widget geometry oracles', () => {
     expect(block.right).toBeLessThanOrEqual(content.right + 1);
   });
 
+  it('MMD-R-6: a landed render leaves the document text unchanged', async () => {
+    const doc = 'above\n\n```mermaid\ngraph TD; A-->B\n```\n\nbelow';
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await expect
+      .poll(() => container.querySelectorAll('[data-test="mermaid-ok"]').length, {
+        timeout: 30000,
+        interval: 50,
+      })
+      .toBe(1);
+    expect(view.state.doc.toString()).toBe(doc);
+  });
+
   it('MMD-E-12: a list-nested indented diagram renders and receives the full source', async () => {
     const seen: string[] = [];
     (window as MermaidGlobal).PlainmarkMermaid = {

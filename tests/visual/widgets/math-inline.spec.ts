@@ -31,6 +31,15 @@ describe('math inline widget', () => {
       .toBeGreaterThan(0);
   });
 
+  it('typesetting leaves the document text unchanged', async () => {
+    const doc = `prose with $x^2$ math\n\ntail`;
+    view = mount_editor(container, doc);
+    await expect
+      .poll(() => container.querySelectorAll('mjx-container').length, { timeout: 30000, interval: 100 })
+      .toBeGreaterThan(0);
+    expect(view.state.doc.toString()).toBe(doc);
+  });
+
   it('reveals source when cursor enters the inline range', async () => {
     const doc = `prose with $x^2$ math\n\ntail`;
     view = mount_editor(container, doc);

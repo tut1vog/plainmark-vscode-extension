@@ -32,6 +32,16 @@ describe('math block widget', () => {
       .toBeGreaterThan(0);
   });
 
+  it('typesetting lands as a cache effect and leaves the document text unchanged', async () => {
+    const doc = `$$\n\\frac{a}{b}\n$$\n\ntail`;
+    view = mount_editor(container, doc);
+    move_cursor(view, doc.length);
+    await expect
+      .poll(() => container.querySelectorAll('mjx-container').length, { timeout: 30000, interval: 100 })
+      .toBeGreaterThan(0);
+    expect(view.state.doc.toString()).toBe(doc);
+  });
+
   it('reveals source when cursor enters the block range', async () => {
     const doc = `$$\n\\frac{a}{b}\n$$\n\ntail`;
     view = mount_editor(container, doc);
