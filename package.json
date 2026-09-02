@@ -293,7 +293,7 @@
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm run lint && pnpm run test:unit && pnpm run test:source-preservation && pnpm run build:check"
+    "pre-commit": "pnpm run spec:check && pnpm run test:fuzz && pnpm run test:source-preservation && pnpm run lint && pnpm run test:unit && pnpm run deadcode && pnpm run build:check"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
