@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorView } from '@codemirror/view';
-import { mount_editor, move_cursor, next_frame } from '../util.js';
+import { frames, mount_editor, move_cursor, next_frame } from '../util.js';
 
 function header_in(container: HTMLElement): HTMLElement | null {
   return container.querySelector('.plainmark-callout-header');
@@ -314,5 +314,41 @@ describe('BQ-I-2: callout decorations — empty-quote-exit (regression)', () => 
     const after = h.view.state.doc.toString();
     // The empty `> ` marker is stripped in one transaction (single-transaction contract).
     expect(after.endsWith('> ')).toBe(false);
+  });
+});
+
+describe('CALL-E-4: extra whitespace after `>` is prefix, not title', () => {
+  let h: SetupHandle;
+  beforeEach(() => {
+    h = make_setup();
+    document.body.appendChild(h.container);
+  });
+  afterEach(() => {
+    h.view?.destroy();
+    h.container.remove();
+  });
+
+  it('leaves no visible text between the hidden marker and the title, and the header indent matches the body', async () => {
+    const doc = '>  [!NOTE]\n> body';
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, doc.length);
+    const header = header_in(h.container)!;
+    // The probe writes the measured indent as an inline style once the marker has painted.
+    for (let i = 0; i < 40 && !header.getAttribute('style')?.includes('padding-left'); i++) {
+      await next_frame();
+    }
+    await frames(2);
+
+    const walker = document.createTreeWalker(header, NodeFilter.SHOW_TEXT);
+    let outside = '';
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const parent = n.parentElement;
+      if (parent?.closest('.plainmark-quote-marker, .plainmark-callout-title')) continue;
+      outside += n.textContent ?? '';
+    }
+    expect(outside.replace(/\u200B/g, '')).toBe('');
+
+    const body = bodies_in(h.container)[0];
+    expect(getComputedStyle(header).paddingLeft).toBe(getComputedStyle(body).paddingLeft);
   });
 });

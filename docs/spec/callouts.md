@@ -103,8 +103,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CALL-E-3** — A bare callout (`> [!NOTE]` with no body line) MUST render as a callout (header chrome only), and a plain or non-callout blockquote line MUST NOT.
   _Example:_ `> [!NOTE]` alone → callout header band; `> just a quote` and `> [foo] bar` → plain blockquotes.
 
-- **CALL-E-4** — Whitespace variants MUST be tolerated: `>  [!NOTE]` (extra space), `>[!NOTE]` (no space after `>`), and trailing-only whitespace after the marker (treated as no title via the title trim).
-  _Example:_ `>[!NOTE]` → canonical `note`; `> [!NOTE]   ` → title synthesized to "Note".
+- **CALL-E-4** — Whitespace variants MUST be tolerated: `>  [!NOTE]` (extra space), `>[!NOTE]` (no space after `>`), and trailing-only whitespace after the marker (treated as no title via the title trim). Whitespace between the hidden `> ` and the `[!TYPE]` marker is prefix, not title: the title widget MUST cover it (no stray visible space before the title) and it MUST NOT count into the header line's hanging indent (CALL-R-10), so the header's title starts on the same x as a `> ` body line's text.
+  _Example:_ `>[!NOTE]` → canonical `note`; `> [!NOTE]   ` → title synthesized to "Note"; `>  [!NOTE]\n> body` → no visible gap before the title and the header's padding-left equals the body line's.
 
 - **CALL-E-5** `[accepted]` — Obsidian pipe-metadata syntax (`[!NOTE|meta]`) MUST NOT be parsed; the `|` breaks the `[A-Za-z]+` type match, so `detect_callout` returns null and the line renders as a plain blockquote. Pipe-metadata is deferred; the forward-compatible expansion path keeps source bytes intact.
   _Example:_ `> [!NOTE|meta]` → plain blockquote, not an unknown-type callout.

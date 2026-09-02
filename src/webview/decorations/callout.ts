@@ -96,6 +96,12 @@ export function build_callout_decorations(
 
   const header_line = state.doc.line(start_line_no);
   const header_revealed = line_revealed(state, header_line.from, header_line.to);
+  // `>  [!NOTE]`: whitespace between the hidden `> ` and the marker is prefix, not title — the widget swallows it and it adds no indent (CALL-E-4).
+  const last_gt = header_line.text.lastIndexOf('>', info.marker_from - header_line.from);
+  const title_from = Math.min(
+    marker_end_with_space(state.doc, header_line.from + last_gt + 1),
+    info.marker_from,
+  );
 
   // Same list-nesting model as a plain quote: the enclosing list depth rides a
   // transparent border (theme) and the container indent before `>` is hidden.
@@ -112,9 +118,11 @@ export function build_callout_decorations(
     if (lead > 0 && lead === quote_col) {
       decorations.push(hide_nest_indent.range(line.from, line.from + lead));
     }
-    const style_parts = [nest_style, indent_style(line.text.slice(quote_col)) ?? ''].filter(
-      Boolean,
-    );
+    const prefix_text =
+      i === start_line_no && !header_revealed
+        ? line.text.slice(quote_col, title_from - line.from)
+        : line.text.slice(quote_col);
+    const style_parts = [nest_style, indent_style(prefix_text) ?? ''].filter(Boolean);
     const style = style_parts.length > 0 ? style_parts.join(';') : undefined;
     // aria-label on Decoration.line (vs aria-labelledby + per-toDOM id) — the line element is rebuilt independently of the widget; carrying a static label string is simpler than threading an id between two passes.
     const deco =
@@ -148,7 +156,7 @@ export function build_callout_decorations(
   if (!header_revealed) {
     decorations.push(
       Decoration.replace({ widget: new CalloutTitleWidget(info) }).range(
-        info.marker_from,
+        title_from,
         info.marker_to,
       ),
     );
