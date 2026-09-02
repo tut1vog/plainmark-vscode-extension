@@ -6,6 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **Undoing a table inserted directly above another table no longer jumps into the other table** — the undo activated and rewrote a cell in the table below as if it were the removed one.
 - **Clicking a rendered equation inside a quote no longer selects the quote markers** — the selection started at the `> ` before the formula and ran past the one before the closing `$$`; it now covers exactly the formula.
 - **Ctrl+Backspace and Ctrl+Arrow next to a space beside Chinese or Japanese text now stop at the word boundary** — with a space at the edge of the run, Ctrl+Backspace deleted only the space and Ctrl+Right jumped to the start of the run instead of between its words.
 - **A code block inside a quote no longer collapses the quote marker on its fence lines** — the hidden fence swallowed the `> ` in front of it, so the quote bar's marker box shrank on those two rows while the caret was elsewhere.

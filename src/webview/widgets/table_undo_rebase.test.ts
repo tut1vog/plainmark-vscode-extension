@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import { locate_table_extraction } from './table.js';
-import { find_differing_cell } from './table_undo_rebase.js';
+import { find_differing_cell, locate_post_table } from './table_undo_rebase.js';
 
 function make_state(doc: string): EditorState {
   return EditorState.create({ doc, extensions: [markdown({ extensions: [GFM] })] });
@@ -64,5 +64,33 @@ describe('find_differing_cell — removed-cells landing branch (undo shrank the 
     const pre = '| A | B | C |\n|---|---|---|\n| 1 | 2 | 3 |\n';
     const post = '| A | B |\n|---|---|\n| 1 | 2 |\n';
     expect(differ(pre, post)).toEqual({ row: 0, col: 1 });
+  });
+});
+
+describe('locate_post_table — a deleted table is not the table that now starts there', () => {
+  const A = '| a |\n|---|\n| 1 |\n';
+  const B = '| b |\n|---|\n| 2 |\n';
+
+  it('TBL-I-39: undoing an insert directly above another table resolves to no table', () => {
+    const pre = make_state(A + '\n' + B);
+    const pre_ext = locate_table_extraction(pre, 0);
+    // undo removes table A and its blank line, so B now starts at offset 0
+    const tr = pre.update({ changes: { from: 0, to: A.length + 1, insert: '' } });
+    expect(tr.state.doc.toString()).toBe(B);
+    expect(locate_post_table(pre_ext, 0, tr.changes, tr.state)).toBeNull();
+  });
+
+  it('a table shifted by an edit above it is still found', () => {
+    const pre = make_state('x\n\n' + A);
+    const pre_ext = locate_table_extraction(pre, 3);
+    const tr = pre.update({ changes: { from: 0, to: 1, insert: 'xyz' } });
+    expect(locate_post_table(pre_ext, 3, tr.changes, tr.state)?.info.from).toBe(5);
+  });
+
+  it('a table whose text a sync rewrote in place is still found', () => {
+    const pre = make_state(A);
+    const pre_ext = locate_table_extraction(pre, 0);
+    const tr = pre.update({ changes: { from: 0, to: A.length, insert: B } });
+    expect(locate_post_table(pre_ext, 0, tr.changes, tr.state)?.info.from).toBe(0);
   });
 });

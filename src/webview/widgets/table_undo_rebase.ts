@@ -1,5 +1,5 @@
 import { Transaction } from '@codemirror/state';
-import type { EditorState } from '@codemirror/state';
+import type { ChangeDesc, EditorState } from '@codemirror/state';
 import { ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import {
   type ActiveCellSnapshot,
@@ -60,15 +60,22 @@ export function find_differing_cell(
   return null;
 }
 
-// Find the post-state table corresponding to a pre-state table_from. Uses the
+// Find the post-state table corresponding to a pre-state table. Uses the
 // transaction's change mapping; falls back to a same-position lookup if the
 // mapped position doesn't land on a table start (covers undo/redo cases where
-// the table itself shifted minimally).
-function locate_post_table(
+// the table itself shifted minimally). Exported for unit tests.
+export function locate_post_table(
+  pre_ext: TableExtraction | null,
   pre_table_from: number,
-  changes: { mapPos: (pos: number, assoc?: number) => number },
+  changes: ChangeDesc,
   post: EditorState,
 ): TableExtraction | null {
+  // The whole table was deleted: its span maps to nothing, so a table that now
+  // starts at that offset is a different one (undoing an insert directly
+  // above an existing table), not this one shifted.
+  if (pre_ext && changes.mapPos(pre_ext.info.to, 1) <= changes.mapPos(pre_table_from, -1)) {
+    return null;
+  }
   const mapped = changes.mapPos(pre_table_from, -1);
   const at_mapped = locate_table_extraction(post, mapped);
   if (at_mapped) return at_mapped;
@@ -113,7 +120,7 @@ function rebase_subview_to_cell(
       Transaction.addToHistory.of(false),
     ],
   });
-  // Refocus — a multi-line→single-line cell shrink on undo can drop the subview's `.cm-focused`, which hides drawSelection's caret entirely.
+  // Refocus — a multi-line→single-line cell shrink on undo can drop the subview's `.cm-focused`, which hides drawSelection's caret.
   sub.focus();
 }
 
@@ -168,7 +175,8 @@ export const table_undo_rebase = ViewPlugin.fromClass(
       const snapshot = get_active_cell_snapshot(vu.view);
       if (snapshot === null) return;
       const post = vu.state;
-      const post_ext = locate_post_table(snapshot.table_from, tr.changes, post);
+      const pre_ext = locate_table_extraction(vu.startState, snapshot.table_from);
+      const post_ext = locate_post_table(pre_ext, snapshot.table_from, tr.changes, post);
       // Table deleted by the sync — TableWidget.destroy tears the subview down.
       if (post_ext === null) return;
       // Keep the snapshot resolvable for the next sync/undo after the table shifts.
@@ -197,7 +205,8 @@ export const table_undo_rebase = ViewPlugin.fromClass(
       }
 
       const pre_table_from = snapshot.table_from;
-      const post_ext = locate_post_table(pre_table_from, tr.changes, post);
+      const pre_ext = locate_table_extraction(pre, pre_table_from);
+      const post_ext = locate_post_table(pre_ext, pre_table_from, tr.changes, post);
       if (post_ext === null) {
         // Table no longer exists post-undo (e.g., reverting EB autocomplete).
         // TableWidget.destroy clears the snapshot during the decoration update.
@@ -206,7 +215,6 @@ export const table_undo_rebase = ViewPlugin.fromClass(
       // Keep the snapshot resolvable for the next sync/undo after the table shifts.
       snapshot.table_from = post_ext.info.from;
 
-      const pre_ext = locate_table_extraction(pre, pre_table_from);
       const diff =
         pre_ext !== null ? find_differing_cell(pre, pre_ext, post, post_ext) : null;
 
