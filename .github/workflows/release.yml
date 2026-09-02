@@ -3,8 +3,8 @@ name: Release
 # Publishes to the VS Code Marketplace and cuts a GitHub release (tag +
 # .vsix asset) after CI succeeds on a main-branch push whose package.json
 # version has no v<version> tag yet. Ordinary pushes no-op at the gate;
-# a release is triggered by the version-bump commit (see
-# .claude/commands/release.md in the workspace).
+# a release is triggered by the commit that bumps package.json version and
+# renames the CHANGELOG's [Unreleased] block.
 #
 # Re-running a failed run is safe: publish is skipped when the Marketplace
 # already lists the version, and the release step attaches the .vsix to an
