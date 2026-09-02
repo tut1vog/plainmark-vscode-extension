@@ -82,6 +82,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **BQ-I-13** — A multi-line plain-text paste whose selection starts on a `Blockquote` line (callouts included) MUST re-prefix the pasted text so the whole insertion stays inside the quote: every pasted line after the first gains the caret line's literal quote-marker run before the selection start (each `>` plus the single trailing space when present), preserving depth — without it the marker-less pasted lines would exit the quote (BQ-E-1). Both paste surfaces MUST share the transform — the DOM paste path (after the IMG-I-6 image sniff and TBL-I-35 table conversion) and the context-menu host round-trip (CTX-I-3) — and the paste MUST land as a single `input.paste` edit (one Ctrl+Z reverts it). The transform MUST yield to the default paste for single-line text, a multi-range selection, a selection start at or before the line's first `>`, and `>`-led lines outside a `Blockquote` node (e.g. inside a code fence).
   _Example:_ `> alpha|\n> beta` → paste `one\ntwo` → `> alphaone\n> two\n> beta`; `> > deep|` → paste `a\nb` → `> > deepa\n> > b`; a blank pasted line lands as a marker-only `> ` line.
 
+- **BQ-I-14** — The Enter outdent (BQ-I-2) and Backspace (BQ-I-4/BQ-I-5) overrides MUST classify a line by the `Blockquote` node at its first `>`, not at the line start, so a quote on a list continuation line (`- a\n  > x`) is a quote line. When that quote sits inside a `ListItem`, the outdent MUST remove only the `>` and its optional space and keep the list indent before it, so the caret stays in the item; at the top level the quote indent goes with the marker as before.
+  _Example:_ `- a\n  > x\n  > |` → Enter → `- a\n  > x\n  |`; `  > x\n  > |` → Enter → `  > x\n|`.
+
 ## SP · Source preservation
 
 - **BQ-SP-1** — Marker continuation/outdent (Enter) and marker outdent (Backspace) MUST each be a single user-initiated edit at the caret; no bytes elsewhere change.

@@ -2,13 +2,18 @@ import { deleteCharBackward } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
 import { Transaction, type EditorState, type Line } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import { enclosing } from '../tree_ancestors.js';
+import type { SyntaxNode } from '@lezer/common';
+import { ancestor, enclosing } from '../tree_ancestors.js';
 
 const EMPTY_QUOTE_LINE_RE = /^[\s>]*>[\s>]*$/;
-const ONE_LEVEL_RE = /^[ \t]*>[ \t]?/;
+const ONE_LEVEL_RE = /^([ \t]*)>[ \t]?/;
 
-function line_in_blockquote(state: EditorState, line: Line): boolean {
-  return enclosing(syntaxTree(state).resolveInner(line.from, 1), 'Blockquote') !== null;
+// The Blockquote a line belongs to, probed at its first `>` — on a list
+// continuation line the Blockquote node starts after the list indent.
+function line_blockquote(state: EditorState, line: Line): SyntaxNode | null {
+  const gt = line.text.indexOf('>');
+  const probe = gt < 0 ? line.from : line.from + gt;
+  return enclosing(syntaxTree(state).resolveInner(probe, 1), 'Blockquote');
 }
 
 interface OutdentOp {
@@ -28,13 +33,15 @@ function empty_quote_line_outdent(view: EditorView): OutdentOp | null {
   if (!main.empty) return null;
   const line = state.doc.lineAt(main.head);
   if (!EMPTY_QUOTE_LINE_RE.test(line.text)) return null;
-  if (!line_in_blockquote(state, line)) return null;
-  const strip = ONE_LEVEL_RE.exec(line.text)?.[0].length ?? 0;
-  return {
-    from: line.from,
-    to: line.from + strip,
-    anchor: line.from + (line.text.length - strip),
-  };
+  const quote = line_blockquote(state, line);
+  if (!quote) return null;
+  const m = ONE_LEVEL_RE.exec(line.text);
+  if (!m) return null;
+  // Whitespace before the marker is list indent inside a list item — keep it
+  // so the caret stays in the item; elsewhere it is quote indent and goes too.
+  const from = ancestor(quote, 'ListItem') ? line.from + m[1].length : line.from;
+  const to = line.from + m[0].length;
+  return { from, to, anchor: line.to - (to - from) };
 }
 
 export function blockquote_empty_line_outdent(view: EditorView): boolean {
@@ -64,6 +71,6 @@ export function blockquote_plain_backspace(view: EditorView): boolean {
   if (main.head === 0) return false;
   const line = state.doc.lineAt(main.head);
   if (main.head === line.from) return false;
-  if (!line_in_blockquote(state, line)) return false;
+  if (!line_blockquote(state, line)) return false;
   return deleteCharBackward(view);
 }

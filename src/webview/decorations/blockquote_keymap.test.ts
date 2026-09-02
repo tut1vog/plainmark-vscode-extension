@@ -164,3 +164,33 @@ describe('BQ-I-4 BQ-I-5: blockquote_plain_backspace (plain single-char delete in
     expect(applied).toHaveLength(0);
   });
 });
+
+describe('BQ-I-14: quote lines nested in a list item', () => {
+  it('(a) Enter on an empty `  > ` continuation line drops the marker but keeps the list indent', () => {
+    // - a\n  > x\n  > | — the quote starts after the two-space continuation indent.
+    const { view, doc, head } = make_view('- a\n  > x\n  > ', 14);
+    expect(blockquote_empty_line_outdent(view)).toBe(true);
+    expect(doc()).toBe('- a\n  > x\n  ');
+    expect(head()).toBe(12);
+  });
+
+  it('(b) a top-level indented `  > ` still loses its quote indent with the marker', () => {
+    const { view, doc, head } = make_view('  > x\n  > ', 10);
+    expect(blockquote_empty_line_outdent(view)).toBe(true);
+    expect(doc()).toBe('  > x\n');
+    expect(head()).toBe(6);
+  });
+
+  it('(c) Backspace on a list-nested quote line is plain single-char deletion', () => {
+    const { view, doc } = make_view('- a\n  > x', 9);
+    expect(blockquote_plain_backspace(view)).toBe(true);
+    expect(doc()).toBe('- a\n  > ');
+  });
+
+  it('(d) a `>` inside list-item prose is not a quote line', () => {
+    const { view, applied } = make_view('- a > b', 7);
+    expect(blockquote_plain_backspace(view)).toBe(false);
+    expect(blockquote_empty_line_outdent(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+});
