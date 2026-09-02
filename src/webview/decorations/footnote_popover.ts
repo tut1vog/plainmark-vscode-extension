@@ -10,12 +10,7 @@ import {
   type TooltipView,
 } from '@codemirror/view';
 import { FOOTNOTE_REF_ATTR } from './footnote.js';
-import {
-  DEFINITION_HEAD_RE,
-  DEFINITION_HEAD_STRIP_RE,
-  FOOTNOTE_HEAD_SLICE,
-  REFERENCE_EXACT_RE,
-} from './footnote_parser.js';
+import { DEFINITION_HEAD_STRIP_RE, footnote_node_label } from './footnote_parser.js';
 
 const HOVER_DELAY_MS = 300;
 const HOVER_CLOSE_DELAY_MS = 150;
@@ -58,12 +53,9 @@ function find_definition_range(
     enter(node) {
       if (found) return false;
       if (node.name !== 'FootnoteDefinition') return;
-      const head = state.doc.sliceString(
-        node.from,
-        Math.min(node.to, node.from + FOOTNOTE_HEAD_SLICE),
-      );
-      const m = DEFINITION_HEAD_RE.exec(head);
-      if (m && m[1] === label) found = { from: node.from, to: node.to };
+      if (footnote_node_label(state.doc, node.from, node.to) === label) {
+        found = { from: node.from, to: node.to };
+      }
       return;
     },
   });
@@ -197,9 +189,9 @@ function locate_reference_at(
     enter(node) {
       if (result) return false;
       if (node.name !== 'FootnoteReference') return;
-      const text = view.state.doc.sliceString(node.from, node.to);
-      const m = REFERENCE_EXACT_RE.exec(text);
-      if (m && m[1] === label) result = { label, from: node.from, to: node.to };
+      if (footnote_node_label(view.state.doc, node.from, node.to) === label) {
+        result = { label, from: node.from, to: node.to };
+      }
       return;
     },
   });

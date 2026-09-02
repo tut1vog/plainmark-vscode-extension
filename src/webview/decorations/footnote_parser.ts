@@ -4,26 +4,26 @@
 // changed to the CommonMark / mdast convention (FootnoteReference inline,
 // FootnoteDefinition block). Re-targeted from `@lezer/markdown@^0.15` to
 // `@lezer/markdown@1.6.3`.
+import type { Text } from '@codemirror/state';
 import type {
   BlockContext, BlockParser, InlineContext, InlineParser,
   LeafBlock, LeafBlockParser, Line, MarkdownConfig,
 } from '@lezer/markdown';
 
 // `[^label]:` definition head; label is 1+ chars, no whitespace, no brackets.
-export const DEFINITION_HEAD_RE = /^\[\^([^\s[\]]+)\]:/;
+const DEFINITION_HEAD_RE = /^\[\^([^\s[\]]+)\]:/;
 // `[^label]` reference prefix (no colon); captures the label.
 const REFERENCE_RE = /^\[\^([^\s[\]]+)\]/;
-// `[^label]` reference, whole-string anchored (the slice is exactly the token).
-export const REFERENCE_EXACT_RE = /^\[\^([^\s[\]]+)\]$/;
 // Strips the `[^label]: ` definition prefix, including the optional space.
 export const DEFINITION_HEAD_STRIP_RE = /^\[\^[^\s[\]]+\]:\s?/;
 
 // Upper bound for the head slice when extracting a label from a `[^label]`
 // prefix — far longer than any realistic label, so the regex always resolves.
-export const FOOTNOTE_HEAD_SLICE = 256;
+const FOOTNOTE_HEAD_SLICE = 256;
 
-export function parse_footnote_label(text: string): string | null {
-  const m = REFERENCE_RE.exec(text);
+// Label of a FootnoteReference or FootnoteDefinition node — both open with `[^label]`.
+export function footnote_node_label(doc: Text, from: number, to: number): string | null {
+  const m = REFERENCE_RE.exec(doc.sliceString(from, Math.min(to, from + FOOTNOTE_HEAD_SLICE)));
   return m ? m[1] : null;
 }
 

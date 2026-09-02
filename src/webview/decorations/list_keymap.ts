@@ -2,6 +2,7 @@ import { indentUnit, syntaxTree } from '@codemirror/language';
 import type { EditorState } from '@codemirror/state';
 import { type ChangeSpec, Transaction } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
+import { selected_lines } from '../selected_lines.js';
 import { enclosing } from '../tree_ancestors.js';
 
 // Checkbox form kept in lockstep with marker_aware_backspace's
@@ -18,16 +19,6 @@ const QUOTED_LIST_LINE_RE = /^((?:[ \t]*>)+[ \t]?)([ \t]*)(?:[-*+]|\d+[.)])[ \t]
 
 function in_list_item(state: EditorState, pos: number): boolean {
   return enclosing(syntaxTree(state).resolveInner(pos, 1), 'ListItem') !== null;
-}
-
-// Line span the main selection covers; a selection ending exactly at a line
-// start excludes that line (mirrors CM6 / codeblock_tab.ts).
-function selected_lines(state: EditorState): { first: number; last: number } {
-  const { main } = state.selection;
-  const first = state.doc.lineAt(main.from).number;
-  let last = state.doc.lineAt(main.to).number;
-  if (!main.empty && main.to === state.doc.line(last).from && last > first) last--;
-  return { first, last };
 }
 
 // The quoted list lines in the main selection, with the offset where nesting

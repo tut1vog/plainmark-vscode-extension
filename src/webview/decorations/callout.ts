@@ -17,6 +17,7 @@ import {
   synthesize_title,
 } from './callout_detect.js';
 import { ICON_SVG_BY_TYPE } from './callout_icons.js';
+import { marker_end_with_space } from './marker_end.js';
 import { line_revealed } from './quote_reveal.js';
 
 class CalloutTitleWidget extends WidgetType {
@@ -155,7 +156,6 @@ export function build_callout_decorations(
 
   // Per-line `>` hide: skip the active line so its marker shows as editable
   // text (inherited BQ-R-2).
-  const quote_marks: { from: number; to: number }[] = [];
   syntaxTree(state).iterate({
     from: node.from,
     to: node.to,
@@ -163,20 +163,13 @@ export function build_callout_decorations(
       if (child.name === 'QuoteMark') {
         const line = state.doc.lineAt(child.from);
         if (line_revealed(state, line.from, line.to)) return;
-        const after = child.to;
-        const has_trailing_space =
-          after < state.doc.length && state.doc.sliceString(after, after + 1) === ' ';
-        const hide_to = has_trailing_space ? after + 1 : after;
-        quote_marks.push({ from: child.from, to: hide_to });
+        decorations.push(
+          hide_marker.range(child.from, marker_end_with_space(state.doc, child.to)),
+        );
       }
     },
   });
-  quote_marks.sort((a, b) => a.from - b.from || a.to - b.to);
-  for (const qm of quote_marks) {
-    decorations.push(hide_marker.range(qm.from, qm.to));
-  }
 
-  decorations.sort((a, b) => a.from - b.from || a.value.startSide - b.value.startSide);
   return decorations;
 }
 

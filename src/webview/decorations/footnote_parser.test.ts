@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
-import { Footnote } from './footnote_parser.js';
+import { Footnote, footnote_node_label } from './footnote_parser.js';
 
 function dump(doc: string): string[] {
   const state = EditorState.create({
@@ -114,5 +114,20 @@ describe('footnote parser FN-R-1 FN-R-6', () => {
   it('definition body inline-parses (emphasis is recognized)', () => {
     const tree = dump('[^1]: *italic* body');
     expect(tree.some((s) => s.startsWith('Emphasis['))).toBe(true);
+  });
+});
+
+describe('footnote_node_label FN-R-5 FN-R-6', () => {
+  it('reads the label of a reference and of a definition head alike', () => {
+    const doc = 'a[^x] b\n\n[^long-1]: body text';
+    const state = EditorState.create({
+      doc,
+      extensions: [markdown({ extensions: [GFM, Footnote] })],
+    });
+    const ref_from = doc.indexOf('[^x]');
+    expect(footnote_node_label(state.doc, ref_from, ref_from + 4)).toBe('x');
+    const def_from = doc.indexOf('[^long-1]');
+    expect(footnote_node_label(state.doc, def_from, doc.length)).toBe('long-1');
+    expect(footnote_node_label(state.doc, 0, 1)).toBeNull();
   });
 });

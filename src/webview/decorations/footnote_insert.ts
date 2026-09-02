@@ -1,7 +1,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { EditorSelection, Transaction } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import { FOOTNOTE_HEAD_SLICE, parse_footnote_label } from './footnote_parser.js';
+import { footnote_node_label } from './footnote_parser.js';
 
 function collect_used_numeric_labels(view: EditorView): Set<number> {
   const used = new Set<number>();
@@ -9,11 +9,7 @@ function collect_used_numeric_labels(view: EditorView): Set<number> {
   syntaxTree(state).iterate({
     enter(node) {
       if (node.name !== 'FootnoteReference' && node.name !== 'FootnoteDefinition') return;
-      const head = state.doc.sliceString(
-        node.from,
-        Math.min(node.to, node.from + FOOTNOTE_HEAD_SLICE),
-      );
-      const label = parse_footnote_label(head);
+      const label = footnote_node_label(state.doc, node.from, node.to);
       if (!label) return;
       const n = Number(label);
       if (Number.isInteger(n) && n > 0 && String(n) === label) used.add(n);

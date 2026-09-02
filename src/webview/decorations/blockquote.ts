@@ -12,6 +12,7 @@ import { ancestor, count_ancestors } from '../tree_ancestors.js';
 import { build_callout_decorations } from './callout.js';
 import { detect_callout } from './callout_detect.js';
 import type { NodeHandler } from './inline_decorations.js';
+import { marker_end_with_space } from './marker_end.js';
 import { line_revealed } from './quote_reveal.js';
 
 const MAX_DEPTH = 6;
@@ -295,10 +296,7 @@ const blockquote_handler: NodeHandler = {
       enter(child) {
         if (child.name === 'QuoteMark') {
           const line = state.doc.lineAt(child.from);
-          const after = child.to;
-          const has_trailing_space =
-            after < state.doc.length && state.doc.sliceString(after, after + 1) === ' ';
-          const hide_to = has_trailing_space ? after + 1 : after;
+          const hide_to = marker_end_with_space(state.doc, child.to);
           // Per-line reveal: the active line shows the `>` as editable text, but
           // still in the indent-pinned slot so the content keeps its column.
           const revealed = line_revealed(state, line.from, line.to);

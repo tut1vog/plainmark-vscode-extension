@@ -11,11 +11,7 @@ import {
   type ViewUpdate,
   WidgetType,
 } from '@codemirror/view';
-import {
-  DEFINITION_HEAD_RE,
-  FOOTNOTE_HEAD_SLICE,
-  REFERENCE_EXACT_RE,
-} from './footnote_parser.js';
+import { footnote_node_label } from './footnote_parser.js';
 import type { OffsetRange } from '../ranges.js';
 import {
   doc_change_regions,
@@ -68,7 +64,7 @@ function collect_definition_labels(state: EditorState): Set<string> {
   syntaxTree(state).iterate({
     enter(node) {
       if (node.name !== 'FootnoteDefinition') return;
-      const label = read_definition_label(state, node.from, node.to);
+      const label = footnote_node_label(state.doc, node.from, node.to);
       if (label) labels.add(label);
     },
   });
@@ -84,37 +80,11 @@ function region_definition_labels(state: EditorState, region: OffsetRange): stri
     to: region.to,
     enter(node) {
       if (node.name !== 'FootnoteDefinition') return;
-      const label = read_definition_label(state, node.from, node.to);
+      const label = footnote_node_label(state.doc, node.from, node.to);
       if (label) labels.push(label);
     },
   });
   return labels;
-}
-
-function read_definition_label(
-  state: EditorState,
-  def_from: number,
-  def_to: number,
-): string | null {
-  // `[^label]:` head is on the first line; FootnoteLabel child covers
-  // `[^label]` (5+ bytes). We slice the text directly: skip `[^`, take up
-  // to the next `]`.
-  const head = state.doc.sliceString(
-    def_from,
-    Math.min(def_to, def_from + FOOTNOTE_HEAD_SLICE),
-  );
-  const m = DEFINITION_HEAD_RE.exec(head);
-  return m ? m[1] : null;
-}
-
-function read_reference_label(
-  state: EditorState,
-  ref_from: number,
-  ref_to: number,
-): string | null {
-  const text = state.doc.sliceString(ref_from, ref_to);
-  const m = REFERENCE_EXACT_RE.exec(text);
-  return m ? m[1] : null;
 }
 
 function build_footnote_decorations(
@@ -131,7 +101,7 @@ function build_footnote_decorations(
       to,
       enter(node) {
         if (node.name === 'FootnoteReference') {
-          const label = read_reference_label(state, node.from, node.to);
+          const label = footnote_node_label(state.doc, node.from, node.to);
           if (!label) return;
           // Node-level reveal (matches math widget) — line-level would hide
           // every ref on the first line on initial mount (default sel at 0).

@@ -4,18 +4,11 @@ import { Decoration, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
 import { count_ancestors } from '../tree_ancestors.js';
 import type { NodeHandler } from './inline_decorations.js';
+import { marker_end_with_space } from './marker_end.js';
 
 function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
   for (let c = node.firstChild; c; c = c.nextSibling) if (c.name === name) return c;
   return null;
-}
-
-// The marker widget replaces the ListMark plus its trailing space, so the
-// fixed-width widget box alone spans the marker column (see lists_theme).
-function marker_replace_end(state: EditorState, mark_to: number): number {
-  return mark_to < state.doc.length && state.doc.sliceString(mark_to, mark_to + 1) === ' '
-    ? mark_to + 1
-    : mark_to;
 }
 
 const list_marker_mark = Decoration.mark({ class: 'plainmark-list-marker' });
@@ -44,7 +37,7 @@ function marker_hide_from(state: EditorState, line_from: number, mark_from: numb
     },
   });
   if (end === line_from) return line_from;
-  return end < mark_from && state.doc.sliceString(end, end + 1) === ' ' ? end + 1 : end;
+  return marker_end_with_space(state.doc, end);
 }
 
 // Per-depth line decorations are cached so equal depths share one instance.
@@ -112,10 +105,10 @@ const list_item_handler: NodeHandler = {
     } else if (is_task) {
       // Hide the raw "- " with a zero-font-size mark, not Decoration.replace — a line-leading replace widget flickers drawSelection.
       decorations.push(
-        task_marker_hidden.range(hide_from, marker_replace_end(state, mark.to)),
+        task_marker_hidden.range(hide_from, marker_end_with_space(state.doc, mark.to)),
       );
     } else {
-      decorations.push(bullet_replace.range(hide_from, marker_replace_end(state, mark.to)));
+      decorations.push(bullet_replace.range(hide_from, marker_end_with_space(state.doc, mark.to)));
     }
     return decorations;
   },

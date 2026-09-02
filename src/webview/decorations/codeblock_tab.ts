@@ -2,6 +2,7 @@ import { deleteCharBackwardStrict } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
 import { Transaction, type ChangeSpec, type EditorState, type Line } from '@codemirror/state';
 import type { Command } from '@codemirror/view';
+import { selected_lines } from '../selected_lines.js';
 import { enclosing } from '../tree_ancestors.js';
 
 // Fenced code uses a 4-space Tab/Shift-Tab indent, independent of the editor's 2-space prose indent unit. CBLK-I-13.
@@ -42,15 +43,6 @@ function is_fence_delimiter_line(state: EditorState, line: { from: number; to: n
     },
   });
   return found;
-}
-
-// Line span a selection covers; a selection ending exactly at a line start excludes that line (mirrors CM6).
-function selected_lines(state: EditorState): { first: number; last: number } {
-  const { main } = state.selection;
-  const first = state.doc.lineAt(main.from).number;
-  let last = state.doc.lineAt(main.to).number;
-  if (!main.empty && main.to === state.doc.line(last).from && last > first) last--;
-  return { first, last };
 }
 
 export const codeblock_tab_indent: Command = (view) => {

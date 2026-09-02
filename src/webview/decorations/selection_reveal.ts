@@ -1,4 +1,5 @@
 import type { EditorState } from '@codemirror/state';
+import { ranges_overlap } from '../ranges.js';
 import { frozen_reveal_selection_field, pointer_down_field } from './pointer_state.js';
 
 // Typora-style reveal predicate. Markers reveal for any selection
@@ -32,8 +33,7 @@ export function should_reveal_for_selection(
     if (r.empty) {
       return node_from <= r.from && r.from <= node_to;
     }
-    const overlaps = r.from <= node_to && r.to >= node_from;
-    if (!overlaps) return false;
+    if (!ranges_overlap(r, { from: node_from, to: node_to })) return false;
     const strict_covers = r.from < node_from && r.to > node_to;
     return !strict_covers;
   });
