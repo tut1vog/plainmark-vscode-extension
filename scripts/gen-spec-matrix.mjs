@@ -1,34 +1,27 @@
 #!/usr/bin/env node
 // Generates docs/spec/_matrix.md by joining declared spec clauses with the test
 // IDs that reference them. Format contract: docs/spec/README.md §2, §4, §5.
+// Clause grammar shared with gen-smoke-list.mjs via spec-clauses.mjs.
 // Dependency-free (node:fs / node:path only). ESM.
 
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, relative, basename } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {
+  ID_RE,
+  ROOT,
+  SMOKE_PATH,
+  SPEC_DIR,
+  conformance as clause_conformance,
+  load_clauses,
+  render_smoke_list,
+  walk,
+} from './spec-clauses.mjs';
 
-const ROOT = join(fileURLToPath(import.meta.url), '..', '..');
-const SPEC_DIR = join(ROOT, 'docs', 'spec');
 const TEST_GLOBS = ['src', 'tests'];
 const MATRIX_PATH = join(SPEC_DIR, '_matrix.md');
 
-const ID_RE = /\b[A-Z][A-Z0-9]*-[A-Z]+-\d+\b/g;
-// - **ID** `[tag]` `[tag]` — statement
-const CLAUSE_RE = /^\s*-\s+\*\*([A-Z][A-Z0-9]*-[A-Z]+-\d+)\*\*((?:\s*`\[[^\]]+\]`)*)\s+—\s+(.+?)\s*$/;
-const TAG_RE = /`\[([^\]]+)\]`/g;
-
 const args = new Set(process.argv.slice(2));
 const checkMode = args.has('--check');
-
-function walk(dir, test, out) {
-  for (const name of readdirSync(dir)) {
-    if (name === 'node_modules' || name === 'dist' || name.startsWith('.')) continue;
-    const p = join(dir, name);
-    const s = statSync(p);
-    if (s.isDirectory()) walk(p, test, out);
-    else if (test(p)) out.push(p);
-  }
-}
 
 function tierForPath(rel) {
   if (rel.startsWith('tests/visual/') || rel.startsWith('tests/integration/')) return 'tier-b';
@@ -36,34 +29,7 @@ function tierForPath(rel) {
 }
 
 // --- 1. Declared clauses -----------------------------------------------------
-const clauses = new Map(); // id -> { id, file, statement, tags:Set, line }
-const duplicates = [];
-const malformed = []; // { file, line, text }
-
-const specFiles = [];
-walk(SPEC_DIR, (p) => p.endsWith('.md') && !basename(p).startsWith('_') && basename(p) !== 'README.md', specFiles);
-
-for (const file of specFiles.sort()) {
-  const rel = relative(ROOT, file);
-  const lines = readFileSync(file, 'utf8').split('\n');
-  lines.forEach((text, i) => {
-    // A line that starts a bold-ID clause but fails the strict shape is malformed.
-    if (/^\s*-\s+\*\*[A-Z][A-Z0-9]*-[A-Z]+-\d+\*\*/.test(text)) {
-      const m = CLAUSE_RE.exec(text);
-      if (!m) {
-        malformed.push({ file: rel, line: i + 1, text: text.trim() });
-        return;
-      }
-      const [, id, tagRegion, statement] = m;
-      const tags = new Set();
-      let tm;
-      TAG_RE.lastIndex = 0;
-      while ((tm = TAG_RE.exec(tagRegion))) tags.add(tm[1]);
-      if (clauses.has(id)) duplicates.push({ id, a: clauses.get(id).file, b: rel });
-      else clauses.set(id, { id, file: rel, statement, tags, line: i + 1 });
-    }
-  });
-}
+const { clauses, duplicates, malformed, specFiles } = load_clauses();
 
 // --- 1b. Self-containment (docs/spec/README.md §9) ---------------------------
 // Normative spec files MUST reference only sibling docs/spec/ files — never code
@@ -147,16 +113,7 @@ function resolveCoverage(id, seen = new Set()) {
 }
 
 function conformance(c) {
-  if (c.tags.has('divergent')) return 'divergent';
-  if (c.tags.has('unknown')) return 'unknown';
-  for (const t of c.tags) {
-    if (t.startsWith('inherits:')) {
-      const target = clauses.get(t.slice('inherits:'.length));
-      if (target) return conformance(target);
-    }
-  }
-  if (c.tags.has('accepted')) return 'accepted';
-  return 'conforming';
+  return clause_conformance(clauses, c);
 }
 
 const rows = [...clauses.values()].sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
@@ -222,9 +179,21 @@ function summary() {
   if (malformed.length) console.log(`  MALFORMED lines:  ${malformed.map((m) => m.file + ':' + m.line).join(', ')}`);
 }
 
+// The committed generated artifacts must match a fresh render, or a spec edit
+// that skipped `spec:matrix` / `spec:smoke` ships a stale matrix.
+function stale_artifacts() {
+  const stale = [];
+  const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : '');
+  if (read(MATRIX_PATH) !== renderMatrix()) stale.push(relative(ROOT, MATRIX_PATH) + ' (run `pnpm run spec:matrix`)');
+  if (read(SMOKE_PATH) !== render_smoke_list(clauses).text) stale.push(relative(ROOT, SMOKE_PATH) + ' (run `pnpm run spec:smoke`)');
+  return stale;
+}
+
 if (checkMode) {
   summary();
   const errs = [];
+  const stale = stale_artifacts();
+  if (stale.length) errs.push(`stale generated artifact(s): ${stale.join(', ')}`);
   if (duplicates.length) errs.push(`${duplicates.length} duplicate clause ID(s)`);
   if (malformed.length) errs.push(`${malformed.length} malformed clause line(s)`);
   if (orphans.length) errs.push(`${orphans.length} orphan test ID(s)`);

@@ -172,7 +172,8 @@ A construct's spec is "done" when all six held:
 - `pnpm run spec:matrix` — regenerate `_matrix.md` + print a summary.
 - `pnpm run spec:smoke` — regenerate `_manual-smoke.md` (the manual-smoke deliverable).
 - `pnpm run spec:check` — structural integrity check (exit non-zero on duplicate
-  IDs, malformed clauses, or orphan test IDs). Coverage-completeness becomes a
+  IDs, malformed clauses, orphan test IDs, or a committed `_matrix.md` /
+  `_manual-smoke.md` that no longer matches a fresh render). Coverage-completeness becomes a
   blocking CI gate at the Phase 11 close-out, not before.
 
 ---
