@@ -203,10 +203,13 @@ function render_block_preview(
       view.requestMeasure();
     })
     .catch((err: unknown) => {
+      if (state.destroyed || gen !== state.generation) return;
       log.warn('math block preview typeset failed', {
         src_len: src.length,
         err,
       });
+      const message = err instanceof Error ? err.message : String(err);
+      show_preview_error(dom, state.last_good, `TeX error: ${message}`, PREVIEW_BASE_CLASS, view);
     });
 }
 

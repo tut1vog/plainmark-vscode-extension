@@ -101,6 +101,13 @@ function make_preview_view(view: EditorView): TooltipView {
   let generation = 0;
   let destroyed = false;
 
+  const show_error = (message: string): void => {
+    const alert = document.createElement('div');
+    alert.className = 'plainmark-math-preview-error';
+    alert.textContent = `TeX error: ${message}`;
+    dom.replaceChildren(alert);
+  };
+
   const render = (ctx: MathContext): void => {
     const mathjax = window.MathJax;
     if (!mathjax?.tex2chtmlPromise) {
@@ -127,24 +134,21 @@ function make_preview_view(view: EditorView): TooltipView {
         ensure_chtml_stylesheet();
         const error_el = node.querySelector('mjx-merror');
         if (error_el) {
-          const message =
-            error_el.getAttribute('data-mjx-error') ??
-            error_el.textContent ??
-            'invalid TeX';
-          const alert = document.createElement('div');
-          alert.className = 'plainmark-math-preview-error';
-          alert.textContent = `TeX error: ${message}`;
-          dom.replaceChildren(alert);
+          show_error(
+            error_el.getAttribute('data-mjx-error') ?? error_el.textContent ?? 'invalid TeX',
+          );
           return;
         }
         dom.replaceChildren(node);
       })
       .catch((err: unknown) => {
+        if (destroyed || gen !== generation) return;
         log.warn('math preview typeset failed', {
           display: ctx.display,
           src_len: ctx.src.length,
           err,
         });
+        show_error(err instanceof Error ? err.message : String(err));
       });
   };
 
