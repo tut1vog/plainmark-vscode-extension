@@ -2,6 +2,7 @@ import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
 import type { NodeHandler } from './inline_decorations.js';
+import { symmetric_marks } from './inline_marks.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 
 function text_style_handler(
@@ -26,21 +27,9 @@ function text_style_handler(
   return {
     nodeNames: [node_name],
     handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
-      // firstChild / lastChild of an emphasis-family node are its syntax markers;
-      // editable content sits between them.
-      const tree_node = node.node;
-      const first = tree_node.firstChild;
-      const last = tree_node.lastChild;
-      if (
-        !first ||
-        !last ||
-        first === last ||
-        first.name !== mark_name ||
-        last.name !== mark_name ||
-        first.to >= last.from
-      ) {
-        return [];
-      }
+      const marks = symmetric_marks(node.node, mark_name);
+      if (!marks) return [];
+      const { first, last } = marks;
       const decorations: Range<Decoration>[] = [content_mark.range(first.to, last.from)];
       const revealed = should_reveal_for_selection(state, node.from, node.to);
       if (!revealed) {

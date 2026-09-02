@@ -3,6 +3,7 @@ import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef, Tree } from '@lezer/common';
 import type { NodeHandler } from './inline_decorations.js';
+import { inline_link_marks, link_marks } from './inline_marks.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 import { effective_destination } from '../link_destination.js';
 import { create_logger } from '../../log.js';
@@ -19,14 +20,6 @@ function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
 function find_last_child(node: SyntaxNode, name: string): SyntaxNode | null {
   for (let c = node.lastChild; c; c = c.prevSibling) if (c.name === name) return c;
   return null;
-}
-
-function link_marks(node: SyntaxNode): SyntaxNode[] {
-  const out: SyntaxNode[] = [];
-  for (let c = node.firstChild; c; c = c.nextSibling) {
-    if (c.name === 'LinkMark') out.push(c);
-  }
-  return out;
 }
 
 // Letter-spacing + transparent (same as text_styles.ts).
@@ -150,18 +143,12 @@ const link_handler: NodeHandler = {
   // selection-aware reveal via should_reveal_for_selection.
   handle(node: SyntaxNodeRef, state: EditorState): Range<Decoration>[] {
     const n = node.node;
-    const marks = link_marks(n);
+    const marks = inline_link_marks(n);
     // Reference link `[text][ref]` / `[text][]` — 2 LinkMarks, no `(url)`.
-    if (marks.length === 2) return reference_link_decorations(n, state);
-    if (marks.length < 4) return [];
-    const open = marks[0];
-    const close_bracket = marks[1];
-    const open_paren = marks[2];
-    const close_paren = marks[marks.length - 1];
-    if (open.from !== n.from || close_paren.to !== n.to) return [];
+    if (!marks) return link_marks(n).length === 2 ? reference_link_decorations(n, state) : [];
+    const { open, close_bracket, open_paren, close_paren } = marks;
     const text_from = open.to;
     const text_to = close_bracket.from;
-    if (text_from >= text_to) return [];
 
     const url_node = find_first_child(n, 'URL');
     // The URL slice includes the `<`/`>` delimiters when the destination is the
