@@ -7,6 +7,7 @@ import {
   insert_row_above,
   insert_row_below,
   model_is_empty,
+  mutator_for,
   set_column_alignment,
   structural_op_target,
   swap_column_left,
@@ -16,6 +17,7 @@ import {
   table_removal_range,
 } from './table_ops.js';
 import type { TableModel } from './table_serialize.js';
+import { TABLE_ACTION_IDS } from '../../common/table_keybindings.js';
 
 function make_model(
   rows: string[][],
@@ -428,5 +430,42 @@ describe('TBL-I-34: model_is_empty', () => {
   it('is false when any cell holds non-whitespace content', () => {
     expect(model_is_empty(make_model([['h', ''], ['', '']]))).toBe(false);
     expect(model_is_empty(make_model([['', ''], ['', 'x']]))).toBe(false);
+  });
+});
+
+describe('mutator_for — one action-id → op table for keymap and menu', () => {
+  const base = make_model([
+    ['h1', 'h2', 'h3'],
+    ['a', 'b', 'c'],
+    ['d', 'e', 'f'],
+  ]);
+  const direct: Record<string, (m: TableModel) => TableModel> = {
+    insert_row_above: (m) => insert_row_above(m, 1),
+    insert_row_below: (m) => insert_row_below(m, 1),
+    insert_column_left: (m) => insert_column_left(m, 1),
+    insert_column_right: (m) => insert_column_right(m, 1),
+    delete_row: (m) => delete_row(m, 1),
+    delete_column: (m) => delete_column(m, 1),
+    swap_row_up: (m) => swap_row_up(m, 1),
+    swap_row_down: (m) => swap_row_down(m, 1),
+    swap_column_left: (m) => swap_column_left(m, 1),
+    swap_column_right: (m) => swap_column_right(m, 1),
+    align_left: (m) => set_column_alignment(m, 1, 'left'),
+    align_center: (m) => set_column_alignment(m, 1, 'center'),
+    align_right: (m) => set_column_alignment(m, 1, 'right'),
+    align_none: (m) => set_column_alignment(m, 1, null),
+  };
+
+  it('covers every action except delete_table and matches the direct op at (1, 1)', () => {
+    const covered = TABLE_ACTION_IDS.filter((a) => a !== 'delete_table');
+    expect(Object.keys(direct).sort()).toEqual([...covered].sort());
+    for (const action of covered) {
+      expect(mutator_for(action, 1, 1)(base)).toEqual(direct[action](base));
+    }
+  });
+
+  it('a self-guarded op returns the same model instance through mutator_for', () => {
+    expect(mutator_for('swap_row_up', 1, 0)(base)).toBe(base);
+    expect(mutator_for('delete_row', 0, 0)(base)).toBe(base);
   });
 });

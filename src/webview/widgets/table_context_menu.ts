@@ -1,20 +1,7 @@
 import type { EditorView } from '@codemirror/view';
 import { dispatch_table_edit, dispatch_table_remove } from './table_keymap.js';
 import { request_cell_focus } from './table.js';
-import {
-  delete_column,
-  delete_row,
-  insert_column_left,
-  insert_column_right,
-  insert_row_above,
-  insert_row_below,
-  set_column_alignment,
-  structural_op_target,
-  swap_column_left,
-  swap_column_right,
-  swap_row_down,
-  swap_row_up,
-} from './table_ops.js';
+import { mutator_for, structural_op_target } from './table_ops.js';
 import type { TableModel } from './table_serialize.js';
 import { get_table_keybindings } from './table_keybindings_config.js';
 import type { TableActionId } from '../../common/table_keybindings.js';
@@ -45,116 +32,33 @@ export interface MenuContext {
 
 export function compute_menu_items(ctx: MenuContext): MenuEntry[] {
   const { row, col, row_count, col_count } = ctx;
+  const item = (id: MenuItemId, label: string, disabled: boolean): MenuItem => ({
+    kind: 'item',
+    id,
+    label,
+    disabled,
+    // delete_table removes the block in run_action; identity keeps the MenuItem shape uniform.
+    mutate: id === 'delete_table' ? (m) => m : mutator_for(id, row, col),
+  });
   return [
-    {
-      kind: 'item',
-      id: 'insert_row_above',
-      label: 'Insert row above',
-      disabled: row === 0,
-      mutate: (m) => insert_row_above(m, row),
-    },
-    {
-      kind: 'item',
-      id: 'insert_row_below',
-      label: 'Insert row below',
-      disabled: false,
-      mutate: (m) => insert_row_below(m, row),
-    },
-    {
-      kind: 'item',
-      id: 'insert_column_left',
-      label: 'Insert column left',
-      disabled: false,
-      mutate: (m) => insert_column_left(m, col),
-    },
-    {
-      kind: 'item',
-      id: 'insert_column_right',
-      label: 'Insert column right',
-      disabled: false,
-      mutate: (m) => insert_column_right(m, col),
-    },
+    item('insert_row_above', 'Insert row above', row === 0),
+    item('insert_row_below', 'Insert row below', false),
+    item('insert_column_left', 'Insert column left', false),
+    item('insert_column_right', 'Insert column right', false),
     { kind: 'separator' },
-    {
-      kind: 'item',
-      id: 'delete_row',
-      label: 'Delete row',
-      disabled: row === 0,
-      mutate: (m) => delete_row(m, row),
-    },
-    {
-      kind: 'item',
-      id: 'delete_column',
-      label: 'Delete column',
-      disabled: col_count <= 1,
-      mutate: (m) => delete_column(m, col),
-    },
-    {
-      kind: 'item',
-      id: 'delete_table',
-      label: 'Delete table',
-      disabled: false,
-      // delete_table removes the block in run_action; identity keeps the MenuItem shape uniform.
-      mutate: (m) => m,
-    },
+    item('delete_row', 'Delete row', row === 0),
+    item('delete_column', 'Delete column', col_count <= 1),
+    item('delete_table', 'Delete table', false),
     { kind: 'separator' },
-    {
-      kind: 'item',
-      id: 'swap_row_up',
-      label: 'Swap row up',
-      disabled: row <= 1,
-      mutate: (m) => swap_row_up(m, row),
-    },
-    {
-      kind: 'item',
-      id: 'swap_row_down',
-      label: 'Swap row down',
-      disabled: row === 0 || row >= row_count - 1,
-      mutate: (m) => swap_row_down(m, row),
-    },
-    {
-      kind: 'item',
-      id: 'swap_column_left',
-      label: 'Swap column left',
-      disabled: col === 0,
-      mutate: (m) => swap_column_left(m, col),
-    },
-    {
-      kind: 'item',
-      id: 'swap_column_right',
-      label: 'Swap column right',
-      disabled: col >= col_count - 1,
-      mutate: (m) => swap_column_right(m, col),
-    },
+    item('swap_row_up', 'Swap row up', row <= 1),
+    item('swap_row_down', 'Swap row down', row === 0 || row >= row_count - 1),
+    item('swap_column_left', 'Swap column left', col === 0),
+    item('swap_column_right', 'Swap column right', col >= col_count - 1),
     { kind: 'separator' },
-    {
-      kind: 'item',
-      id: 'align_left',
-      label: 'Align column left',
-      disabled: false,
-      mutate: (m) => set_column_alignment(m, col, 'left'),
-    },
-    {
-      kind: 'item',
-      id: 'align_center',
-      label: 'Align column center',
-      disabled: false,
-      mutate: (m) => set_column_alignment(m, col, 'center'),
-    },
-    {
-      kind: 'item',
-      id: 'align_right',
-      label: 'Align column right',
-      disabled: false,
-      mutate: (m) => set_column_alignment(m, col, 'right'),
-    },
-    {
-      kind: 'item',
-      id: 'align_none',
-      label: 'Align column none',
-      disabled: false,
-      mutate: (m) => set_column_alignment(m, col, null),
-    },
+    item('align_left', 'Align column left', false),
+    item('align_center', 'Align column center', false),
+    item('align_right', 'Align column right', false),
+    item('align_none', 'Align column none', false),
   ];
 }
 

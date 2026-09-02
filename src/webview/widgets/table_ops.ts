@@ -133,6 +133,47 @@ export function set_column_alignment(
   return next;
 }
 
+export type MutatingTableAction = Exclude<TableActionId, 'delete_table'>;
+
+// The model mutator behind a structural action at (row, col): the single
+// action-id → op table shared by the cell keymap and the context menu.
+export function mutator_for(
+  action: MutatingTableAction,
+  row: number,
+  col: number,
+): (model: TableModel) => TableModel {
+  switch (action) {
+    case 'insert_row_above':
+      return (m) => insert_row_above(m, row);
+    case 'insert_row_below':
+      return (m) => insert_row_below(m, row);
+    case 'insert_column_left':
+      return (m) => insert_column_left(m, col);
+    case 'insert_column_right':
+      return (m) => insert_column_right(m, col);
+    case 'delete_row':
+      return (m) => delete_row(m, row);
+    case 'delete_column':
+      return (m) => delete_column(m, col);
+    case 'swap_row_up':
+      return (m) => swap_row_up(m, row);
+    case 'swap_row_down':
+      return (m) => swap_row_down(m, row);
+    case 'swap_column_left':
+      return (m) => swap_column_left(m, col);
+    case 'swap_column_right':
+      return (m) => swap_column_right(m, col);
+    case 'align_left':
+      return (m) => set_column_alignment(m, col, 'left');
+    case 'align_center':
+      return (m) => set_column_alignment(m, col, 'center');
+    case 'align_right':
+      return (m) => set_column_alignment(m, col, 'right');
+    case 'align_none':
+      return (m) => set_column_alignment(m, col, null);
+  }
+}
+
 // The cell to re-activate after a content-changing structural op (RC2): lands
 // in the new/destination cell, same column where sensible, clamped to the
 // POST-op dims (`new_rows`/`new_cols`). Align ops return null — they change no

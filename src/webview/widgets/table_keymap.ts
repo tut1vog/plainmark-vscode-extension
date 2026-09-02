@@ -12,23 +12,14 @@ import {
 import { plan_table_edit } from './table_edit_plan.js';
 import type { TableModel } from './table_serialize.js';
 import {
-  delete_column,
-  delete_row,
-  insert_column_left,
-  insert_column_right,
-  insert_row_above,
   insert_row_below,
   model_is_empty,
-  set_column_alignment,
+  mutator_for,
   structural_op_target,
-  swap_column_left,
-  swap_column_right,
-  swap_row_down,
-  swap_row_up,
   table_removal_range,
 } from './table_ops.js';
 import { get_table_keybindings } from './table_keybindings_config.js';
-import { TABLE_ACTION_IDS, type TableActionId } from '../../common/table_keybindings.js';
+import { TABLE_ACTION_IDS } from '../../common/table_keybindings.js';
 import { create_logger } from '../../log.js';
 
 const log = create_logger('widget');
@@ -250,26 +241,6 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
   // Structural-op bindings are built from the resolved config (TBL-I-8 / TBL-I-28);
   // the nav and history keys below stay hardcoded (and are reserved, TBL-I-30).
   const resolved = get_table_keybindings();
-  // delete_table is excluded — it removes the whole block (handled in the loop), not a model mutator.
-  const op_for: Record<
-    Exclude<TableActionId, 'delete_table'>,
-    (m: TableModel, a: { row_index: number; col_index: number }) => TableModel
-  > = {
-    insert_row_above: (m, a) => insert_row_above(m, a.row_index),
-    insert_row_below: (m, a) => insert_row_below(m, a.row_index),
-    insert_column_left: (m, a) => insert_column_left(m, a.col_index),
-    insert_column_right: (m, a) => insert_column_right(m, a.col_index),
-    delete_row: (m, a) => delete_row(m, a.row_index),
-    delete_column: (m, a) => delete_column(m, a.col_index),
-    swap_row_up: (m, a) => swap_row_up(m, a.row_index),
-    swap_row_down: (m, a) => swap_row_down(m, a.row_index),
-    swap_column_left: (m, a) => swap_column_left(m, a.col_index),
-    swap_column_right: (m, a) => swap_column_right(m, a.col_index),
-    align_left: (m, a) => set_column_alignment(m, a.col_index, 'left'),
-    align_center: (m, a) => set_column_alignment(m, a.col_index, 'center'),
-    align_right: (m, a) => set_column_alignment(m, a.col_index, 'right'),
-    align_none: (m, a) => set_column_alignment(m, a.col_index, null),
-  };
   const structural_bindings: KeyBinding[] = [];
   for (const action of TABLE_ACTION_IDS) {
     const key = resolved[action];
@@ -286,13 +257,16 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
       });
       continue;
     }
-    const mutate = op_for[action];
     structural_bindings.push({
       key,
       run: () => {
         const active = ctx.get_active();
         if (!active) return true;
-        const out = dispatch_table_edit(ctx.main_view, ctx.table_from, (m) => mutate(m, active));
+        const out = dispatch_table_edit(
+          ctx.main_view,
+          ctx.table_from,
+          mutator_for(action, active.row_index, active.col_index),
+        );
         // RC2: a content-changing op re-activates the destination cell so the
         // caret follows the content; align ops + no-ops return null → no focus.
         if (out.changed && out.new_model) {
