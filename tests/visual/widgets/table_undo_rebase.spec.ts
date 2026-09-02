@@ -446,6 +446,30 @@ describe('SYNC-H-8 — a host sync rebases the active cell subview', () => {
     // Snapshot tracks the shifted table so a later sync/undo still resolves it.
     expect(get_active_cell_snapshot(view)?.table_from).toBe('intro\n'.length);
   });
+
+  it('a sync changing text above the table AND the active cell in one change still rebases', async () => {
+    // A replace-all hitting both sides arrives as one min-diff span that covers
+    // the old table start, so no mapped position lands on a table start.
+    const doc = 'mentioning alpha once.\n\n| Key | Cell |\n|-----|------|\n| alpha | x |\n';
+    view = mount_editor(container, doc);
+    await activate_cell(container, 1, 0);
+    expect(active_subview_view().state.doc.toString()).toBe('alpha');
+
+    const incoming = doc.replaceAll('alpha', 'alphabet');
+    dispatch_host_sync_to_view(view, incoming);
+    await settle();
+
+    const sub = active_subview_view();
+    expect(sub.state.doc.toString()).toBe('alphabet');
+    expect(get_active_cell_snapshot(view)?.table_from).toBe(incoming.indexOf('| Key'));
+    sub.dispatch({
+      changes: { from: sub.state.doc.length, insert: 'X' },
+      userEvent: 'input.type',
+    });
+    await settle();
+    expect(view.state.doc.toString()).toContain('| alphabetX |');
+    expect(view.state.doc.toString()).not.toContain('| alphaX');
+  });
 });
 
 describe('destroy after an eq()-true widget swap tears down the stranded active state', () => {

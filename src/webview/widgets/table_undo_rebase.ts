@@ -81,7 +81,13 @@ function locate_post_table(
   }
   const at_orig = locate_table_extraction(post, pre_table_from);
   if (at_orig) return at_orig;
-  return null;
+  // One change spanning the table start (a replace-all touching text above and
+  // inside the table) maps to neither a table start nor the old offset.
+  const probes = [mapped_after, mapped];
+  const containing = find_tables(post).find((t) =>
+    probes.some((p) => t.from <= p && p <= t.to),
+  );
+  return containing ? locate_table_extraction(post, containing.from) : null;
 }
 
 function rebase_subview_to_cell(
