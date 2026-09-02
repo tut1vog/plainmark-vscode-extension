@@ -4,6 +4,10 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ## [Unreleased]
 
+### Security
+
+- **A diagram can no longer restyle the editor** — a Mermaid `%%{init}%%` directive could carry CSS that applied to the whole editor, hiding text or drawing fake controls; that setting is now locked.
+
 ### Fixed
 
 - **Undoing a table inserted directly above another table no longer jumps into the other table** — the undo activated and rewrote a cell in the table below as if it were the removed one.

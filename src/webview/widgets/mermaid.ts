@@ -21,6 +21,7 @@ import {
   WidgetType,
 } from '@codemirror/view';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
+import { MERMAID_SECURE_KEYS } from './mermaid_secure.js';
 import type { OffsetRange } from '../ranges.js';
 import {
   doc_change_regions,
@@ -125,6 +126,7 @@ function configure_mermaid_theme(mermaid: MermaidApi, is_dark: boolean): void {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
+    secure: MERMAID_SECURE_KEYS,
     suppressErrorRendering: true,
     deterministicIds: true,
     theme: 'base',
