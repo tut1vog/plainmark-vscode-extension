@@ -196,18 +196,23 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
     return true;
   };
 
-  const next_cell = (): boolean => {
+  // Tab / ArrowRight share the advance; they differ only at the last cell.
+  const next_cell = (at_last_cell: (row: number) => void): boolean => {
     const active = ctx.get_active();
     const dims = row_col_count(ctx.main_view, ctx.table_from);
     if (!active || !dims) return false;
     const { row_index: r, col_index: c } = active;
     if (c + 1 < dims.cols) return move_to(r, c + 1);
     if (r + 1 < dims.rows) return move_to(r + 1, 0);
+    at_last_cell(r);
+    return true;
+  };
+
+  const append_row_below = (r: number): void => {
     const out = dispatch_table_edit(ctx.main_view, ctx.table_from, (m) =>
       insert_row_below(m, r),
     );
     if (out.changed) focus(r + 1, 0);
-    return true;
   };
 
   const prev_cell = (): boolean => {
@@ -299,7 +304,7 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
     },
     {
       key: 'Tab',
-      run: () => next_cell(),
+      run: () => next_cell(append_row_below),
     },
     {
       key: 'Shift-Tab',
@@ -349,45 +354,15 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
     },
     {
       key: 'ArrowDown',
-      run: (view) => {
-        if (!is_last_logical_line(view)) return false;
-        const active = ctx.get_active();
-        const dims = row_col_count(ctx.main_view, ctx.table_from);
-        if (!active || !dims) return false;
-        if (active.row_index === dims.rows - 1) {
-          exit_after_table_with_injection(ctx);
-          return true;
-        }
-        return move_to(active.row_index + 1, active.col_index);
-      },
+      run: (view) => is_last_logical_line(view) && enter_next_row_or_exit(),
     },
     {
       key: 'ArrowLeft',
-      run: (view) => {
-        if (!caret_at_start(view)) return false;
-        const active = ctx.get_active();
-        const dims = row_col_count(ctx.main_view, ctx.table_from);
-        if (!active || !dims) return false;
-        const { row_index: r, col_index: c } = active;
-        if (c > 0) return move_to(r, c - 1);
-        if (r > 0) return move_to(r - 1, dims.cols - 1);
-        exit_before_table_with_injection(ctx);
-        return true;
-      },
+      run: (view) => caret_at_start(view) && prev_cell(),
     },
     {
       key: 'ArrowRight',
-      run: (view) => {
-        if (!caret_at_end(view)) return false;
-        const active = ctx.get_active();
-        const dims = row_col_count(ctx.main_view, ctx.table_from);
-        if (!active || !dims) return false;
-        const { row_index: r, col_index: c } = active;
-        if (c + 1 < dims.cols) return move_to(r, c + 1);
-        if (r + 1 < dims.rows) return move_to(r + 1, 0);
-        exit_after_table_with_injection(ctx);
-        return true;
-      },
+      run: (view) => caret_at_end(view) && next_cell(() => exit_after_table_with_injection(ctx)),
     },
     ...structural_bindings,
   ];

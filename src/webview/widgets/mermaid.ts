@@ -360,18 +360,11 @@ export function find_mermaid_blocks(
   return blocks;
 }
 
-function build_mermaid_ranges(
-  state: EditorState,
-  bounds?: OffsetRange,
-): {
-  ranges: Range<Decoration>[];
-  pending: string[];
-} {
+function build_mermaid_ranges(state: EditorState, bounds?: OffsetRange): Range<Decoration>[] {
   const cache = state.field(mermaid_cache_field, false) ?? new Map<string, MermaidResult>();
   const theme = state.field(mermaid_theme_field, false) ?? current_theme_name();
   const sel = state.selection.main;
   const ranges: Range<Decoration>[] = [];
-  const pending: string[] = [];
 
   for (const block of find_mermaid_blocks(state, bounds)) {
     if (should_reveal_for_selection(state, block.from, block.to)) {
@@ -387,7 +380,6 @@ function build_mermaid_ranges(
       continue;
     }
     const result = cache.get(mermaid_cache_key(theme, block.src)) ?? null;
-    if (!result) pending.push(block.src);
     ranges.push(
       Decoration.replace({
         block: true,
@@ -395,11 +387,11 @@ function build_mermaid_ranges(
       }).range(block.from, block.to),
     );
   }
-  return { ranges, pending };
+  return ranges;
 }
 
 export const mermaid_widgets_field = StateField.define<DecorationSet>({
-  create: (state) => RangeSet.of(build_mermaid_ranges(state).ranges, true),
+  create: (state) => RangeSet.of(build_mermaid_ranges(state), true),
   update: (value, tr) => {
     const result_keys: string[] = [];
     let theme_changed = false;
@@ -424,7 +416,7 @@ export const mermaid_widgets_field = StateField.define<DecorationSet>({
     }
     // A theme switch re-keys every widget; an unbounded reparse has no region.
     if (theme_changed || tree_rebuilt_unbounded(tr.startState, tr.state, tr.docChanged)) {
-      return RangeSet.of(build_mermaid_ranges(tr.state).ranges, true);
+      return RangeSet.of(build_mermaid_ranges(tr.state), true);
     }
     let mapped = tr.docChanged ? value.map(tr.changes) : value;
     const regions: OffsetRange[] = [];
@@ -462,7 +454,7 @@ export const mermaid_widgets_field = StateField.define<DecorationSet>({
         filter: () => false,
         filterFrom: region.from,
         filterTo: region.to,
-        add: build_mermaid_ranges(tr.state, region).ranges,
+        add: build_mermaid_ranges(tr.state, region),
         sort: true,
       });
     }

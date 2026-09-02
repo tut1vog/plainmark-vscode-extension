@@ -1,13 +1,10 @@
-import type { TableModel } from './table_serialize.js';
+import type { Alignment, TableModel } from './table_serialize.js';
 import type { TableActionId } from '../../common/table_keybindings.js';
-
-type Alignment = TableModel['alignment'][number];
 
 function clone_model(model: TableModel): TableModel {
   return {
     rows: model.rows.map((row) => row.slice()),
     alignment: model.alignment.slice(),
-    header_row_count: model.header_row_count,
   };
 }
 

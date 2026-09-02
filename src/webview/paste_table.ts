@@ -28,7 +28,6 @@ export function table_markdown_from_tsv(text: string): string | null {
   return serialize_table({
     rows,
     alignment: rows[0].map(() => null),
-    header_row_count: 1,
   });
 }
 
@@ -107,7 +106,6 @@ export function table_markdown_from_html(html: string): string | null {
   return serialize_table({
     rows,
     alignment: rows[0].map(() => null),
-    header_row_count: 1,
   });
 }
 

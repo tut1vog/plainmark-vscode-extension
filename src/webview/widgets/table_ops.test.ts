@@ -29,7 +29,6 @@ function make_model(
   return {
     rows: rows.map((row) => row.slice()),
     alignment: align,
-    header_row_count: 1,
   };
 }
 

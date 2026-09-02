@@ -23,7 +23,9 @@ import {
   pointer_down_field,
   set_pointer_down,
 } from '../decorations/pointer_state.js';
-import { type TableModel, parse_cell_text } from './table_serialize.js';
+import { type Alignment, type TableModel, parse_cell_text } from './table_serialize.js';
+
+export type { Alignment } from './table_serialize.js';
 import { emit_table_cell } from './table_inline_emit.js';
 import { table_sync_annotation } from './table_sync_annotation.js';
 import type { OffsetRange } from '../ranges.js';
@@ -43,8 +45,6 @@ const log = create_logger('widget');
 export const cell_subview_extensions = Facet.define<Extension[], Extension[]>({
   combine: (values) => values[0] ?? [],
 });
-
-export type Alignment = 'left' | 'center' | 'right' | null;
 
 export interface TableCellInfo {
   cell_from: number;
@@ -387,7 +387,7 @@ export function build_model_from_extraction(extraction: TableExtraction, doc: Te
     );
   }
   if (rows.length === 0) rows.push(Array.from({ length: info.col_count }, () => ''));
-  return { rows, alignment: info.alignment, header_row_count: 1 };
+  return { rows, alignment: info.alignment };
 }
 
 function build_subview_extensions(state: EditorState, extra: Extension[] = []): Extension[] {

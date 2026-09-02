@@ -12,7 +12,6 @@ export function make_starter_table_markdown(): string {
       ['', '', ''],
     ],
     alignment: [null, null, null],
-    header_row_count: 1,
   };
   return serialize_table(model);
 }

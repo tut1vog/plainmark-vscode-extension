@@ -360,13 +360,7 @@ export function find_inline_math_source(
   return state.doc.sliceString(r.from, r.to);
 }
 
-function build_math_ranges(
-  state: EditorState,
-  bounds?: OffsetRange,
-): {
-  ranges: Range<Decoration>[];
-  pending: MathInfo[];
-} {
+function build_math_ranges(state: EditorState, bounds?: OffsetRange): Range<Decoration>[] {
   const cache = state.field(math_cache_field, false) ?? new Map<string, MathResult>();
   // While a pointer button is held, reveal freezes to the pre-press selection
   // (same gate as quote_reveal.ts). The block widget is height-changing, so
@@ -375,7 +369,6 @@ function build_math_ranges(
   // unaffected. Field absent in unit harnesses → falls back to the live selection.
   const sel = (state.field(frozen_reveal_selection_field, false) ?? state.selection).main;
   const ranges: Range<Decoration>[] = [];
-  const pending: MathInfo[] = [];
 
   syntaxTree(state).iterate({
     from: bounds?.from,
@@ -424,7 +417,6 @@ function build_math_ranges(
         if (!ws_margins && !quote_margins) return;
         const src = find_block_math_source_stripped(state, node.node);
         const result = cache.get(math_cache_key(true, src)) ?? null;
-        if (!result) pending.push({ display: true, src, from, to });
         ranges.push(
           Decoration.replace({
             block: ws_margins,
@@ -447,7 +439,6 @@ function build_math_ranges(
         if (should_reveal_for_selection(state, from, to)) return;
         const src = find_inline_math_source(state, from, to);
         const result = cache.get(math_cache_key(false, src)) ?? null;
-        if (!result) pending.push({ display: false, src, from, to });
         ranges.push(
           Decoration.replace({
             widget: new MathWidget(false, src, result),
@@ -457,11 +448,11 @@ function build_math_ranges(
     },
   });
 
-  return { ranges, pending };
+  return ranges;
 }
 
 export const math_widgets_field = StateField.define<DecorationSet>({
-  create: (state) => RangeSet.of(build_math_ranges(state).ranges, true),
+  create: (state) => RangeSet.of(build_math_ranges(state), true),
   update: (value, tr) => {
     const typeset_keys: string[] = [];
     for (const e of tr.effects) {
@@ -481,7 +472,7 @@ export const math_widgets_field = StateField.define<DecorationSet>({
       return value;
     }
     if (tree_rebuilt_unbounded(tr.startState, tr.state, tr.docChanged)) {
-      return RangeSet.of(build_math_ranges(tr.state).ranges, true);
+      return RangeSet.of(build_math_ranges(tr.state), true);
     }
     let mapped = tr.docChanged ? value.map(tr.changes) : value;
     const regions: OffsetRange[] = [];
@@ -519,7 +510,7 @@ export const math_widgets_field = StateField.define<DecorationSet>({
         filter: () => false,
         filterFrom: region.from,
         filterTo: region.to,
-        add: build_math_ranges(tr.state, region).ranges,
+        add: build_math_ranges(tr.state, region),
         sort: true,
       });
     }

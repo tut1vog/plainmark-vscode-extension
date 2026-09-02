@@ -1,9 +1,10 @@
 import type { Text } from '@codemirror/state';
 
+export type Alignment = 'left' | 'center' | 'right' | null;
+
 export interface TableModel {
   rows: string[][];
-  alignment: ('left' | 'center' | 'right' | null)[];
-  header_row_count: 1;
+  alignment: Alignment[];
 }
 
 // Trailing separation for a serialize_table insertion ending at `pos` (TA2 +
@@ -50,10 +51,7 @@ export function parse_cell_text(raw: string): string {
 }
 
 // width is already floored at 3, so every branch yields a valid GFM delimiter.
-function delimiter_marker(
-  align: 'left' | 'center' | 'right' | null,
-  width: number,
-): string {
+function delimiter_marker(align: Alignment, width: number): string {
   switch (align) {
     case 'left':
       return ':' + '-'.repeat(width - 1);
@@ -82,15 +80,10 @@ export function serialize_table(model: TableModel): string {
     widths[c] = w;
   }
 
-  const align = (c: number): 'left' | 'center' | 'right' | null =>
-    model.alignment[c] ?? null;
+  const align = (c: number): Alignment => model.alignment[c] ?? null;
 
   // P3 pads on the side the column alignment dictates.
-  const pad = (
-    text: string,
-    width: number,
-    side: 'left' | 'center' | 'right' | null,
-  ): string => {
+  const pad = (text: string, width: number, side: Alignment): string => {
     const gap = width - byte_length(text);
     if (side === 'right') return ' '.repeat(gap) + text;
     if (side === 'center') {

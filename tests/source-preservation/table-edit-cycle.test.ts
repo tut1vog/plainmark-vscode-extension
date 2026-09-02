@@ -290,7 +290,6 @@ describe('TBL-SP-3 TBL-SP-4 TBL-SP-5 TBL-SP-9 round trip through Lezer, model, a
         ['a \\| b', 'c\nd', 'e'],
       ],
       alignment: ['left', 'center', 'right'],
-      header_row_count: 1,
     });
   });
 

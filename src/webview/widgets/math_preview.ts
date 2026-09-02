@@ -18,7 +18,6 @@ const log = create_logger('widget');
 const DEBOUNCE_MS = 120;
 
 export interface MathContext {
-  display: boolean;
   from: number;
   to: number;
   src: string;
@@ -36,12 +35,7 @@ export function find_math_context_at(state: EditorState): MathContext | null {
         const { from, to } = node;
         // Gate the preview on the same reveal predicate as the widget so it shows only when the raw `$…$` is revealed (e.g. not on a strict-covering select-all).
         if (should_reveal_for_selection(state, from, to)) {
-          found = {
-            display: false,
-            from,
-            to,
-            src: find_inline_math_source(state, from, to),
-          };
+          found = { from, to, src: find_inline_math_source(state, from, to) };
         }
       }
       return;
@@ -122,13 +116,10 @@ function make_preview_view(view: EditorView): TooltipView {
       return;
     }
     const gen = ++generation;
-    log.debug('math preview typeset', {
-      display: ctx.display,
-      src_len: ctx.src.length,
-    });
+    log.debug('math preview typeset', { src_len: ctx.src.length });
     mathjax.texReset?.();
     mathjax
-      .tex2chtmlPromise(ctx.src, { display: ctx.display })
+      .tex2chtmlPromise(ctx.src, { display: false })
       .then((node) => {
         if (destroyed || gen !== generation) return;
         ensure_chtml_stylesheet();
@@ -143,11 +134,7 @@ function make_preview_view(view: EditorView): TooltipView {
       })
       .catch((err: unknown) => {
         if (destroyed || gen !== generation) return;
-        log.warn('math preview typeset failed', {
-          display: ctx.display,
-          src_len: ctx.src.length,
-          err,
-        });
+        log.warn('math preview typeset failed', { src_len: ctx.src.length, err });
         show_error(err instanceof Error ? err.message : String(err));
       });
   };

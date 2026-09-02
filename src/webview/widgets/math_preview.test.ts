@@ -23,7 +23,6 @@ describe('find_math_context_at MATH-I-7', () => {
     const from = doc.indexOf('$');
     const ctx = find_math_context_at(make_state(doc, from + 1));
     expect(ctx).not.toBeNull();
-    expect(ctx?.display).toBe(false);
     expect(ctx?.from).toBe(from);
     expect(ctx?.to).toBe(from + '$x = y$'.length);
     expect(ctx?.src).toBe('x = y');

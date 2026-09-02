@@ -18,14 +18,27 @@ function emit_text(parent: Node, text: string): void {
   parent.appendChild(document.createTextNode(text));
 }
 
-function emit_children(parent: Node, node: SyntaxNode, doc: Text, cache: Map<string, MathResult>, image_base: string | null): void {
-  let cursor = node.from;
-  for (let child = node.firstChild; child; child = child.nextSibling) {
+// Emit the inline children from `first` that start before `to`, with the prose gaps between them, covering [from, to).
+function emit_span(
+  parent: Node,
+  first: SyntaxNode | null,
+  from: number,
+  to: number,
+  doc: Text,
+  cache: Map<string, MathResult>,
+  image_base: string | null,
+): void {
+  let cursor = from;
+  for (let child = first; child && child.from < to; child = child.nextSibling) {
     emit_text(parent, doc.sliceString(cursor, child.from));
     emit_node(parent, child, doc, cache, image_base);
     cursor = child.to;
   }
-  emit_text(parent, doc.sliceString(cursor, node.to));
+  emit_text(parent, doc.sliceString(cursor, to));
+}
+
+function emit_children(parent: Node, node: SyntaxNode, doc: Text, cache: Map<string, MathResult>, image_base: string | null): void {
+  emit_span(parent, node.firstChild, node.from, node.to, doc, cache, image_base);
 }
 
 function emit_wrapped(tag: string, class_name: string, parent: Node, node: SyntaxNode, doc: Text, cache: Map<string, MathResult>, image_base: string | null): void {
@@ -37,17 +50,7 @@ function emit_wrapped(tag: string, class_name: string, parent: Node, node: Synta
   const last = node.lastChild;
   // SyntaxNode cursors return fresh wrappers each call — compare by position, not identity
   if (first && last && first.from < last.from) {
-    let cursor = first.to;
-    for (
-      let child = first.nextSibling;
-      child && child.from < last.from;
-      child = child.nextSibling
-    ) {
-      emit_text(el, doc.sliceString(cursor, child.from));
-      emit_node(el, child, doc, cache, image_base);
-      cursor = child.to;
-    }
-    emit_text(el, doc.sliceString(cursor, last.from));
+    emit_span(el, first.nextSibling, first.to, last.from, doc, cache, image_base);
   } else {
     emit_text(el, doc.sliceString(node.from, node.to));
   }
@@ -92,17 +95,7 @@ function emit_link(parent: Node, node: SyntaxNode, doc: Text, cache: Map<string,
   const label_from = first && first.name === 'LinkMark' ? first.to : node.from;
   if (url_node) a.setAttribute('href', doc.sliceString(url_node.from, url_node.to));
 
-  let cursor = label_from;
-  for (
-    let child = first?.nextSibling ?? null;
-    child && child.from < effective_label_to;
-    child = child.nextSibling
-  ) {
-    emit_text(a, doc.sliceString(cursor, child.from));
-    emit_node(a, child, doc, cache, image_base);
-    cursor = child.to;
-  }
-  emit_text(a, doc.sliceString(cursor, effective_label_to));
+  emit_span(a, first?.nextSibling ?? null, label_from, effective_label_to, doc, cache, image_base);
   parent.appendChild(a);
 }
 

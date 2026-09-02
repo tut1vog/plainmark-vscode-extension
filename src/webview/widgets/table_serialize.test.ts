@@ -15,7 +15,7 @@ function model(
   const col_count = rows[0].length;
   const align: TableModel['alignment'] = [];
   for (let c = 0; c < col_count; c++) align[c] = alignment[c] ?? null;
-  return { rows, alignment: align, header_row_count: 1 };
+  return { rows, alignment: align };
 }
 
 function lines(model: TableModel): string[] {
