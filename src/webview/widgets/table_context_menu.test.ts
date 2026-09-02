@@ -209,6 +209,8 @@ describe('TBL-I-27 format_shortcut — display text', () => {
     expect(format_shortcut('Alt-Shift-ArrowUp', { mac: false })).toBe('Alt+Shift+↑');
     expect(format_shortcut('Alt-ArrowRight', { mac: false })).toBe('Alt+→');
     expect(format_shortcut('Mod-Shift-Backspace', { mac: false })).toBe('Ctrl+Shift+Backspace');
+    expect(format_shortcut('Mod--', { mac: false })).toBe('Ctrl+-');
+    expect(aria_keyshortcut('Mod--')).toBe('Control+-');
   });
 
   it('mac: Option for Alt, Cmd for Mod; arrow glyphs unchanged', () => {

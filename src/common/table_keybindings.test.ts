@@ -77,6 +77,23 @@ describe('TBL-I-30: table keybinding resolution and validation', () => {
     expect(warnings.some((w) => w.includes('not a valid key combo'))).toBe(true);
   });
 
+  it('accepts a trailing "-" as the minus key (Mod--), like CM6', () => {
+    const { resolved, warnings } = resolve_table_keybindings({ delete_column: 'Mod--' });
+    expect(resolved.delete_column).toBe('Mod--');
+    expect(warnings).toEqual([]);
+    expect(resolve_table_keybindings({ delete_column: 'Alt-Shift--' }).resolved.delete_column).toBe(
+      'Alt-Shift--',
+    );
+  });
+
+  it('still rejects a dangling separator and an empty token', () => {
+    for (const value of ['Mod-', 'Mod--x', '--', '-']) {
+      const { resolved, warnings } = resolve_table_keybindings({ delete_column: value });
+      expect(resolved.delete_column, value).toBeNull();
+      expect(warnings.length, value).toBe(1);
+    }
+  });
+
   it('requires a modifier', () => {
     const { resolved, warnings } = resolve_table_keybindings({ delete_column: 'Backspace' });
     expect(resolved.delete_column).toBeNull();

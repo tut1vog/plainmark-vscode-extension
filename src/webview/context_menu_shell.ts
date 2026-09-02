@@ -43,7 +43,7 @@ const ARROW_GLYPH: Record<string, string> = {
 };
 
 function split_combo(combo: string): { mods: string[]; key: string } {
-  const parts = combo.split('-');
+  const parts = combo.split(/-(?!$)/); // a trailing `-` is the minus key (`Mod--`)
   return { mods: parts.slice(0, -1), key: parts[parts.length - 1] };
 }
 

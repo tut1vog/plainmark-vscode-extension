@@ -60,9 +60,11 @@ interface ParsedCombo {
 
 function parse_combo(value: string): ParsedCombo | null {
   if (value.length === 0) return null;
-  const parts = value.split('-');
-  if (parts.some((p) => p.length === 0)) return null; // empty token (e.g. trailing '-')
+  // CM6's own split: a trailing `-` is the minus key (`Mod--`), not a separator.
+  const parts = value.split(/-(?!$)/);
+  if (parts.some((p) => p.length === 0)) return null; // empty token (e.g. `Mod--x`)
   const key = parts[parts.length - 1];
+  if (key.length > 1 && key.endsWith('-')) return null; // dangling separator (`Mod-`)
   const mods = parts.slice(0, -1);
   for (const m of mods) {
     if (!MODIFIER_SET.has(m)) return null; // unknown modifier token
