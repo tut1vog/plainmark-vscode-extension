@@ -11,10 +11,12 @@ export default tseslint.config(
     },
   },
   {
-    // INV-HOST-1: host + webview code must not import Node built-ins (the Web
-    // target cannot resolve them). The browser-target esbuild bundle already
-    // fails on these; this lints them before a build runs.
-    files: ['src/host/**/*.ts', 'src/extension.ts', 'src/extension.web.ts', 'src/webview/**/*.ts'],
+    // INV-HOST-1: everything under src/ is bundled into a host or webview
+    // target, none of which can resolve Node built-ins on the Web. The
+    // browser-target esbuild bundle (`pnpm run build`) already fails on these;
+    // this lints them before a build runs. Tests run under vitest and may use them.
+    files: ['src/**/*.ts'],
+    ignores: ['src/**/*.test.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -23,7 +25,7 @@ export default tseslint.config(
             .flatMap((m) => [m, `node:${m}`])
             .map((name) => ({
               name,
-              message: 'INV-HOST-1: no Node built-ins in host/webview code.',
+              message: 'INV-HOST-1: no Node built-ins in bundled source (host, shared, or webview).',
             })),
         },
       ],
