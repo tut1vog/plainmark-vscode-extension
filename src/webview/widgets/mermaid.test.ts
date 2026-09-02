@@ -166,14 +166,22 @@ describe('mermaid_widgets_field — decoration emission MMD-R-1 MMD-I-1 MMD-SP-1
   });
 
   it('emits no decoration when a non-empty selection overlaps the block', () => {
+    // Starts inside the block and runs past it: an overlap, not a cover.
     const state = make_state(DIAGRAM).update({
-      selection: { anchor: 0, head: DIAGRAM.length },
+      selection: { anchor: DIAGRAM.indexOf('graph'), head: DIAGRAM.length },
     }).state;
     let count = 0;
     state.field(mermaid_widgets_field).between(0, state.doc.length, () => {
       count += 1;
     });
     expect(count).toBe(0);
+  });
+
+  it('keeps the block widget under select-all when the block spans the whole document', () => {
+    const state = make_state(DIAGRAM).update({
+      selection: { anchor: 0, head: DIAGRAM.length },
+    }).state;
+    expect(decorations(state)).toHaveLength(1);
   });
 
   it('emits no widget for a non-mermaid fenced block', () => {

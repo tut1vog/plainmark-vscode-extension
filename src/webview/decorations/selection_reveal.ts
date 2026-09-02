@@ -34,7 +34,9 @@ export function should_reveal_for_selection(
       return node_from <= r.from && r.from <= node_to;
     }
     if (!ranges_overlap(r, { from: node_from, to: node_to })) return false;
-    const strict_covers = r.from < node_from && r.to > node_to;
-    return !strict_covers;
+    // A document edge counts as "past": a construct that opens the document has no byte before it for select-all to reach.
+    const past_left = r.from === 0 || r.from < node_from;
+    const past_right = r.to === state.doc.length || r.to > node_to;
+    return !(past_left && past_right);
   });
 }

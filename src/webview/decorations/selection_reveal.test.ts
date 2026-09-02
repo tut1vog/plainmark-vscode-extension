@@ -129,6 +129,40 @@ describe('should_reveal_for_selection MRS-R-2 MRS-R-3 MRS-R-4 MRS-R-5 MRS-P-1 MR
     });
   });
 
+  // A construct at a document edge: the selection cannot extend past that edge,
+  // so reaching it counts as covering — select-all keeps the rendered form.
+  describe('document-edge cover', () => {
+    function edge_state(doc: string, anchor: number, head: number): EditorState {
+      return EditorState.create({
+        doc,
+        selection: { anchor, head },
+        extensions: [frozen_reveal_selection_field],
+      });
+    }
+
+    it('hides a construct at offset 0 under a selection from the doc start past its end', () => {
+      // `**bold**` = [0, 8) in '**bold** y'
+      expect(should_reveal_for_selection(edge_state('**bold** y', 0, 10), 0, 8)).toBe(false);
+    });
+
+    it('hides a construct ending at the doc end under a selection from before it to the doc end', () => {
+      // `**bold**` = [2, 10) in 'x **bold**'
+      expect(should_reveal_for_selection(edge_state('x **bold**', 0, 10), 2, 10)).toBe(false);
+    });
+
+    it('hides a construct spanning the whole document under select-all', () => {
+      expect(should_reveal_for_selection(edge_state('**bold**', 0, 8), 0, 8)).toBe(false);
+    });
+
+    it('still reveals a construct at offset 0 when the selection ends at its boundary', () => {
+      expect(should_reveal_for_selection(edge_state('**bold** y', 0, 8), 0, 8)).toBe(true);
+    });
+
+    it('still reveals a construct at the doc end when the selection starts at its boundary', () => {
+      expect(should_reveal_for_selection(edge_state('x **bold**', 2, 10), 2, 10)).toBe(true);
+    });
+  });
+
   describe('multi-cursor', () => {
     it('reveals if any single range would individually trigger reveal', () => {
       const state = EditorState.create({

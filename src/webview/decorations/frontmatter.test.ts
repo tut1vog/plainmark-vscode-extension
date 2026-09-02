@@ -141,7 +141,11 @@ describe('frontmatter — selection-driven fence reveal FM-I-4 FM-E-9', () => {
     expect(markers(make_state_sel(doc, 17, 20)).length).toBe(2);
   });
 
-  it('FM-E-9: select-all reveals the fences (doc-start block can never be strict-covered)', () => {
-    expect(markers(make_state_sel(doc, 0, doc.length)).length).toBe(0);
+  it('FM-E-9: select-all keeps the fences hidden (the document start covers a doc-start block)', () => {
+    expect(markers(make_state_sel(doc, 0, doc.length)).length).toBe(2);
+  });
+
+  it('FM-E-9: a selection from offset 0 ending exactly at the block end still reveals', () => {
+    expect(markers(make_state_sel(doc, 0, 16)).length).toBe(0);
   });
 });

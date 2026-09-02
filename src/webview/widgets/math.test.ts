@@ -228,8 +228,9 @@ describe('math_widgets_field — block decoration emission MATH-R-2 MATH-I-2 MAT
   it('emits the in-flow preview widget (not a MathWidget) when a non-empty selection overlaps the block', () => {
     const doc = '$$\na = b\n$$\n';
     const state = make_state(doc, doc.length);
+    // Starts inside the block and runs past it: an overlap, not a cover.
     const ranged = state.update({
-      selection: { anchor: 0, head: doc.length },
+      selection: { anchor: doc.indexOf('a'), head: doc.length },
     }).state;
     expect(decorations(ranged)).toHaveLength(0);
     let preview: MathBlockPreviewWidget | null = null;
