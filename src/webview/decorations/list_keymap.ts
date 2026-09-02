@@ -2,6 +2,7 @@ import { indentUnit, syntaxTree } from '@codemirror/language';
 import type { EditorState } from '@codemirror/state';
 import { type ChangeSpec, Transaction } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
+import { enclosing } from '../tree_ancestors.js';
 
 // Checkbox form kept in lockstep with marker_aware_backspace's
 // MARKER_PREFIX_RE — an empty `- [ ] ` must take the same two-stage exit as
@@ -16,11 +17,7 @@ const INDENT_ONLY_LINE_RE = /^[ \t]+$/;
 const QUOTED_LIST_LINE_RE = /^((?:[ \t]*>)+[ \t]?)([ \t]*)(?:[-*+]|\d+[.)])[ \t]/;
 
 function in_list_item(state: EditorState, pos: number): boolean {
-  const cursor = syntaxTree(state).cursorAt(pos, 1);
-  do {
-    if (cursor.name === 'ListItem') return true;
-  } while (cursor.parent());
-  return false;
+  return enclosing(syntaxTree(state).resolveInner(pos, 1), 'ListItem') !== null;
 }
 
 // Line span the main selection covers; a selection ending exactly at a line

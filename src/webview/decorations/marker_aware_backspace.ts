@@ -1,6 +1,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { Transaction, findClusterBreak } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
+import { enclosing } from '../tree_ancestors.js';
 
 // Plainmark override for `@codemirror/lang-markdown`'s `deleteMarkupBackward`
 // in the "marker has content after it" case. lang-markdown's default fires on
@@ -29,11 +30,7 @@ const MARKER_PREFIX_RE = /^(?:\s*(?:>|\d+[.)]|[-*+](?: {1,4}\[[ xX]\])?)\s)+/;
 // (editor_extensions.ts ordered dispatch) and consumes every in-blockquote
 // Backspace with the identical single-char delete.
 function in_list_item(view: EditorView, pos: number): boolean {
-  const cursor = syntaxTree(view.state).cursorAt(pos, 1);
-  do {
-    if (cursor.name === 'ListItem') return true;
-  } while (cursor.parent());
-  return false;
+  return enclosing(syntaxTree(view.state).resolveInner(pos, 1), 'ListItem') !== null;
 }
 
 export function marker_aware_backspace(view: EditorView): boolean {

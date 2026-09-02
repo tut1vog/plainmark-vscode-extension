@@ -4,6 +4,7 @@ import { ranges_overlap } from '../ranges.js';
 import { Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
 import { tags } from '@lezer/highlight';
+import { ancestor, count_ancestors } from '../tree_ancestors.js';
 import type { NodeHandler } from './inline_decorations.js';
 import { should_reveal_for_selection } from './selection_reveal.js';
 import { syntax_token_classes, syntax_token_color } from './syntax_palette.js';
@@ -31,12 +32,8 @@ const hide_indent = Decoration.replace({});
 // Quoted lines keep the status quo: the in-flow `> ` prefix and the quote's
 // net-to-zero indent own their geometry, so nesting stops at any Blockquote.
 function nest_context(node: SyntaxNode): { depth: number; quoted: boolean } {
-  let depth = 0;
-  for (let p = node.parent; p; p = p.parent) {
-    if (p.name === 'Blockquote') return { depth: 0, quoted: true };
-    if (p.name === 'ListItem') depth++;
-  }
-  return { depth, quoted: false };
+  const quoted = ancestor(node, 'Blockquote') !== null;
+  return { depth: quoted ? 0 : count_ancestors(node, 'ListItem', 'Blockquote'), quoted };
 }
 
 // Per-depth line decorations are cached so equal depths share one instance.

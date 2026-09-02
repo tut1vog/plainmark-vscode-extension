@@ -1,21 +1,14 @@
 import { deleteCharBackwardStrict } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
 import { Transaction, type ChangeSpec, type EditorState } from '@codemirror/state';
-import type { SyntaxNode } from '@lezer/common';
 import type { Command } from '@codemirror/view';
+import { enclosing } from '../tree_ancestors.js';
 
 // Fenced code uses a 4-space Tab/Shift-Tab indent, independent of the editor's 2-space prose indent unit. CBLK-I-13.
 const CODE_INDENT = '    ';
 
 function in_fenced_code(state: EditorState, pos: number): boolean {
-  for (
-    let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1);
-    node;
-    node = node.parent
-  ) {
-    if (node.name === 'FencedCode') return true;
-  }
-  return false;
+  return enclosing(syntaxTree(state).resolveInner(pos, -1), 'FencedCode') !== null;
 }
 
 // A fence delimiter shifted to 4+ indent stops being a fence — indent/dedent must never move those lines.

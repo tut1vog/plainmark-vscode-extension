@@ -1,10 +1,15 @@
 import { deleteCharBackward } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
-import { Transaction } from '@codemirror/state';
+import { Transaction, type EditorState, type Line } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
+import { enclosing } from '../tree_ancestors.js';
 
 const EMPTY_QUOTE_LINE_RE = /^[\s>]*>[\s>]*$/;
 const ONE_LEVEL_RE = /^[ \t]*>[ \t]?/;
+
+function line_in_blockquote(state: EditorState, line: Line): boolean {
+  return enclosing(syntaxTree(state).resolveInner(line.from, 1), 'Blockquote') !== null;
+}
 
 interface OutdentOp {
   from: number;
@@ -23,15 +28,7 @@ function empty_quote_line_outdent(view: EditorView): OutdentOp | null {
   if (!main.empty) return null;
   const line = state.doc.lineAt(main.head);
   if (!EMPTY_QUOTE_LINE_RE.test(line.text)) return null;
-  const cursor = syntaxTree(state).cursorAt(line.from, 1);
-  let in_blockquote = false;
-  do {
-    if (cursor.name === 'Blockquote') {
-      in_blockquote = true;
-      break;
-    }
-  } while (cursor.parent());
-  if (!in_blockquote) return null;
+  if (!line_in_blockquote(state, line)) return null;
   const strip = ONE_LEVEL_RE.exec(line.text)?.[0].length ?? 0;
   return {
     from: line.from,
@@ -67,14 +64,6 @@ export function blockquote_plain_backspace(view: EditorView): boolean {
   if (main.head === 0) return false;
   const line = state.doc.lineAt(main.head);
   if (main.head === line.from) return false;
-  const cursor = syntaxTree(state).cursorAt(line.from, 1);
-  let in_blockquote = false;
-  do {
-    if (cursor.name === 'Blockquote') {
-      in_blockquote = true;
-      break;
-    }
-  } while (cursor.parent());
-  if (!in_blockquote) return false;
+  if (!line_in_blockquote(state, line)) return false;
   return deleteCharBackward(view);
 }

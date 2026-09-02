@@ -1,20 +1,13 @@
 import { syntaxTree } from '@codemirror/language';
 import { Transaction, type EditorState } from '@codemirror/state';
-import type { SyntaxNode } from '@lezer/common';
 import type { EditorView } from '@codemirror/view';
+import { enclosing } from '../tree_ancestors.js';
 
 // 0–3 leading spaces (the CommonMark fence bound; at 4+ the line is an inert
 // indented-code region — plain text here, code elsewhere) + a uniform
 // run of 3+ backticks/tildes + an info string carrying no fence character.
 const OPEN_FENCE_RE = /^( {0,3})(`{3,}|~{3,})[^`~\n]*$/;
 const MATH_OPEN_RE = /^( {0,3})\$\$[ \t]*$/;
-
-function enclosing(node: SyntaxNode, name: string): SyntaxNode | null {
-  for (let n: SyntaxNode | null = node; n; n = n.parent) {
-    if (n.name === name) return n;
-  }
-  return null;
-}
 
 function fence_is_unclosed(state: EditorState, pos: number): boolean {
   // A closed block carries both an opening and a closing CodeMark; with no

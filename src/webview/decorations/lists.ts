@@ -2,6 +2,7 @@ import { syntaxTree } from '@codemirror/language';
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
+import { count_ancestors } from '../tree_ancestors.js';
 import type { NodeHandler } from './inline_decorations.js';
 
 function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
@@ -44,13 +45,6 @@ function marker_hide_from(state: EditorState, line_from: number, mark_from: numb
   });
   if (end === line_from) return line_from;
   return end < mark_from && state.doc.sliceString(end, end + 1) === ' ' ? end + 1 : end;
-}
-
-// Nesting depth = count of enclosing ListItem ancestors (0 at the top level).
-function list_depth(node: SyntaxNode): number {
-  let depth = 0;
-  for (let p = node.parent; p; p = p.parent) if (p.name === 'ListItem') depth++;
-  return depth;
 }
 
 // Per-depth line decorations are cached so equal depths share one instance.
@@ -103,7 +97,7 @@ const list_item_handler: NodeHandler = {
     // Space-gate (Typora): a lone bullet marker with nothing after it on its own line stays plain text — otherwise the just-typed `-` is instantly swallowed by the glyph (lezer parses it as an empty list item).
     if (mark && !is_ordered && mark.to === own_line.to) return [];
     // No list construct reveals (Typora B2): a source-true indent on the caret line shifts the line on enter/leave, since depth·indent-unit ≠ the source spaces' advance (LIST-I-3).
-    const depth = list_depth(n);
+    const depth = count_ancestors(n, 'ListItem');
     const decorations: Range<Decoration>[] = [list_item_line(depth).range(line_from)];
     if (!mark) return decorations;
 
