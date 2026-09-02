@@ -1,10 +1,12 @@
 // Malformed-document load fidelity. Loads the curated adversarial corpus plus
 // seeded mutants into the full production editor (`editor_extensions`) and
-// asserts the document reads back byte-identical — no extension may normalize
-// malformed input on load (the webview half of INV-SP-4) — while the console
-// sentinel fails the test on any unexpected render error.
+// asserts the document reads back byte-identical — the table transaction
+// filters are the one place a load could be rewritten (the webview half of
+// INV-SP-4) — and that Plainmark's grammar extensions parse the whole input,
+// while the console sentinel fails the test on any unexpected render error.
 
 import { afterAll, beforeAll, describe, it } from 'vitest';
+import { ensureSyntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { editor_extensions } from '../../../src/webview/editor_extensions.js';
@@ -44,6 +46,10 @@ describe('INV-SP-4: malformed-document load fidelity in the production editor', 
         `${name}: loaded doc diverges from input at offset ${first_diff(text, loaded)} ` +
           `(input ${text.length} chars, loaded ${loaded.length})`,
       );
+    }
+    const tree = ensureSyntaxTree(view.state, loaded.length, 2000);
+    if (!tree || tree.length !== loaded.length) {
+      throw new Error(`${name}: production grammar did not parse the full document`);
     }
   }
 

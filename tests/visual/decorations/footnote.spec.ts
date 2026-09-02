@@ -124,14 +124,15 @@ describe('footnote decorations — definition render', () => {
     expect((labels[0] as HTMLElement).textContent).toBe('[^1]:');
   });
 
-  it('decorates each line of a multi-line definition', async () => {
-    // The MVP leaf-observer parser only consumes the first line; verify the
-    // first-line decoration regardless.
-    const doc = '[^1]: paragraph one\nparagraph two continuation';
+  it('FN-E-3: decorates every line of a lazily continued definition', async () => {
+    const doc = '[^1]: paragraph one\nparagraph two continuation\n\nprose';
     view = mount_editor(container, doc);
     move_cursor(view, doc.length);
     await next_frame();
-    expect(def_lines_in(container).length).toBeGreaterThanOrEqual(1);
+    expect(def_lines_in(container).map((l) => l.textContent)).toEqual([
+      '[^1]: paragraph one',
+      'paragraph two continuation',
+    ]);
   });
 });
 
