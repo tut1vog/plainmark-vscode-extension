@@ -19,6 +19,11 @@ patches/**
 # Docs (project-internal; not user-facing)
 docs/**
 
+# README media — the Marketplace page loads these by raw GitHub URL, so the
+# package does not need to carry them
+media/demo.gif
+media/features.png
+
 # Lockfiles & build configs
 pnpm-lock.yaml
 pnpm-workspace.yaml
