@@ -131,14 +131,17 @@ function fenced_code_handler(): NodeHandler {
         }
       }
 
+      // The hide starts at the fence run, not the line start, so a quote's
+      // in-flow `> ` prefix keeps its glyph box (BQ-R-11) on fence rows too.
       if (!revealed) {
-        if (open_line.from < open_line.to) {
-          decorations.push(hide_fence.range(open_line.from, open_line.to));
+        const open_from = marks.length > 0 ? marks[0].from : open_line.from;
+        if (open_from < open_line.to) {
+          decorations.push(hide_fence.range(open_from, open_line.to));
         }
         if (close_mark) {
           const close_line = state.doc.lineAt(close_mark.from);
-          if (close_line.from < close_line.to) {
-            decorations.push(hide_fence.range(close_line.from, close_line.to));
+          if (close_mark.from < close_line.to) {
+            decorations.push(hide_fence.range(close_mark.from, close_line.to));
           }
         }
       }

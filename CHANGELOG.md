@@ -6,6 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **A code block inside a quote no longer collapses the quote marker on its fence lines** — the hidden fence swallowed the `> ` in front of it, so the quote bar's marker box shrank on those two rows while the caret was elsewhere.
 - **Enter on a fence-like line inside an open code block no longer inserts a stray closing fence** — pressing Enter after typing ` ~~~ ` or `$$` as code inside an unclosed ``` block appended a second closer into the code; only the block's own opening line auto-closes now.
 - **Tab and Shift-Tab with a selection that reaches outside a code block leave the surrounding text alone** — lines above or below the block were indented by four spaces along with the code, and whether it happened depended on the direction you dragged; only the code lines move now.
 - **Enter on an empty quote line inside a list item keeps you in the item** — the quote marker was removed together with the list indent, dropping the caret out of the list; the indent now stays, and Backspace on such a quote line deletes one character like it does in any other quote.

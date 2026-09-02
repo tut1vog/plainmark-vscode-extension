@@ -125,6 +125,15 @@ describe('fenced code block — whole-node fence reveal CBLK-I-1 CBLK-I-2', () =
     }
   });
 
+  it('CBLK-E-8: a quoted fence hides only the fence run, leaving the `> ` prefix in flow', () => {
+    // '> ```ts'=0..7 (fence run at 2), '> foo'=8..13, '> ```'=14..19 (fence run at 16)
+    const m = markers(make_state('> ```ts\n> foo\n> ```\n\nafter', 22));
+    expect(m.map((d) => [d.from, d.to])).toEqual([
+      [2, 7],
+      [16, 19],
+    ]);
+  });
+
   it('hides only the opening fence in an unclosed block when outside', () => {
     const m = markers(make_state('a\n```ts\nfoo\n', 0));
     expect(m.length).toBe(1);
