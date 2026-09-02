@@ -35,5 +35,5 @@ Section codes: `SP` source preservation · `UNDO` undo semantics · `HOST` host/
 
 ## HOST · Host / Web separation
 
-- **INV-HOST-1** `[build]` — The host entry points and every host-side module MUST NOT import Node built-ins (`fs`, `path`, `child_process`, `os`, `crypto`, `stream`, `http`, `https`, `net`, `dns`). Enforced by the browser-target esbuild bundle in `build:check`, and flagged earlier by a `no-restricted-imports` eslint rule scoped to host and webview source.
+- **INV-HOST-1** `[build]` — The host entry points and every host-side module MUST NOT import Node built-ins (`fs`, `path`, `child_process`, `os`, `crypto`, `stream`, `http`, `https`, `net`, `dns`). Enforced by the browser-target esbuild bundle (`pnpm run build`, which CI's static job runs ahead of `build:check`, and `build:dev` locally), and flagged earlier by a `no-restricted-imports` eslint rule scoped to host and webview source.
   _Example:_ adding `import { readFileSync } from 'node:fs'` to a host-side module fails the web build at bundle time.
