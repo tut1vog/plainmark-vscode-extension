@@ -74,8 +74,8 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CODE-E-1** — A multi-backtick fence MUST be supported: the opening and closing `CodeMark` children define the fence ranges (N backticks each), and both whole ranges MUST be hidden — the handler hides `[first.from, first.to)` and `[last.from, last.to)`, not a fixed single byte.
   _Example:_ ` ``a`b`` ` → both `` `` `` fences hidden, the literal `` a`b `` shown as code.
 
-- **CODE-E-2** `[unknown]` — An empty inline-code span (two adjacent fences with no content) MUST produce a zero-length content mark and still hide both fences; with no content between them the chip renders empty.
-  _Example:_ ` `` ` (two backticks, no content) → both fences hidden, an empty code span renders.
+- **CODE-E-2** `[unknown]` — An empty inline-code span cannot occur: CommonMark closes a code span only with a backtick string of the same length, and two adjacent backtick runs merge into one longer opening string, so ` `` ` is a literal run with no `InlineCode` node (CODE-E-3). Should the parser ever emit an `InlineCode` whose fences touch, the handler MUST emit no decoration for it — no content mark and no fence hiding — rather than a zero-length mark.
+  _Example:_ ` `` ` (two backticks, no content) → renders as two literal backticks; the shortest code span is `` ` ` `` (one space of content).
 
 - **CODE-E-3** `[unknown]` — An unmatched backtick run MUST NOT render as inline code: the parser emits an `InlineCode` node only when an opening fence has a matching closing fence of equal length, so a lone or mismatched run receives no inline-code decoration.
   _Example:_ a single stray `` ` `` in a paragraph renders as a literal backtick, not a code chip.

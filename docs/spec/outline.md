@@ -60,10 +60,10 @@ Where headings come from and when the tree recomputes. Section code `D`.
 
 How the user moves between the tree and the editor. Section code `I`.
 
-- **OUT-I-1** `[smoke]` — Activating a tree item MUST navigate the webview to that heading: the host posts a `scroll_to_heading` message carrying the heading's document offset (`document.offsetAt(symbol.range.start)`) to the active document's webview panel.
-  _Example:_ clicking the `My Heading` item posts `{ type: 'scroll_to_heading', offset }` to that document's panel.
-- **OUT-I-2** — On a `scroll_to_heading` message, the webview MUST clamp the offset to `[0, doc.length]`, set the caret there, scroll that position to the top of the viewport via `EditorView.scrollIntoView(pos, { y: 'start' })`, and focus the editor.
-  _Example:_ a `scroll_to_heading` for an offset past EOF clamps to `doc.length`; the heading line is scrolled to the viewport top and the editor is focused.
+- **OUT-I-1** `[smoke]` — Activating a tree item MUST navigate the webview to that heading: the host posts a `scroll_to_heading` message carrying the heading's start as a zero-based `{ line, character }` pair (the symbol range start) to the active document's webview panel. The wire format is line/character, never a byte offset, so it is independent of the host document's LF/CRLF line endings.
+  _Example:_ clicking the `My Heading` item posts `{ type: 'scroll_to_heading', line, character }` to that document's panel.
+- **OUT-I-2** — On a `scroll_to_heading` message, the webview MUST resolve the `{ line, character }` pair against its own LF-normalized document — line clamped to the last line, character clamped to that line's length — set the caret there, scroll that position to the top of the viewport via `EditorView.scrollIntoView(pos, { y: 'start' })`, and focus the editor.
+  _Example:_ a `scroll_to_heading` whose line is past EOF clamps to the last line; the heading line is scrolled to the viewport top and the editor is focused.
 - **OUT-I-3** `[smoke]` — As the editor caret moves, the tree MUST reveal and select the heading whose source encloses the caret, driven by the `cursor_changed` report (`NAV-S-1`).
   _Example:_ moving the caret into the body under `## C` selects and reveals the `C` item in the outline.
 - **OUT-I-4** — The heading enclosing the caret MUST be resolved as the last heading whose start line is `<=` the caret line; when the caret precedes the first heading, no item is selected.

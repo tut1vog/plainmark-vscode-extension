@@ -54,5 +54,6 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CTX-E-2** — Blank lines inside a mixed multi-line selection are skipped by Paragraph items (separator blanks are not decorated).
   _Example:_ `one\n\ntwo` (all selected) → Blockquote → `> one\n\n> two`.
 - **CTX-E-3** `[accepted]` — A right-click in the editor margin outside the text column shows the webview's default menu (the trigger is scoped to the text area).
-- **CTX-E-4** `[accepted]` — Format and Paragraph items apply literally inside fenced code blocks; there is no construct guard.
+- **CTX-E-4** `[accepted]` — Format items apply literally inside fenced code blocks; inline-style toggles have no construct guard. Paragraph items are the exception: they skip code-region lines per CTX-I-7.
+  _Example:_ a selection inside a fence → Bold → `**` wraps the code bytes; the same lines → Heading 1 → unchanged.
 - **CTX-E-5** `[accepted]` — Menus have no arrow-key navigation; keyboard interaction is Escape-to-dismiss only.
