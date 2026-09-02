@@ -3,6 +3,12 @@ name: CI
 # Day-one matrix is Linux × Desktop+Web, latest stable VS Code only.
 # macOS / Windows / VS Code version matrix are reactive adds, not day-one
 # investment.
+#
+# The static job and both integration jobs build with `pnpm run build` — the
+# production bundle (minified, console.* pure-stripped, no sourcemaps) that
+# release.yml packages — so what ships is compiled and loaded in a real
+# extension host before publish. The visual job keeps `build:dev`: its tests
+# import src/ through vite and only need dist/ for the lazy MathJax bundle.
 
 on:
   push:
@@ -38,6 +44,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
+      - run: pnpm run build
       - run: pnpm run build:check
       - run: pnpm run spec:check
       - run: pnpm run deadcode
@@ -106,7 +113,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run build:dev
+      - run: pnpm run build
       - run: pnpm run test:integration:desktop:build
       # VS Code Desktop is an Electron app — Linux needs a virtual display.
       - run: xvfb-run -a node tests/integration/electron/run-tests.mjs
@@ -125,6 +132,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm run build:dev
+      - run: pnpm run build
       - run: pnpm run test:integration:web:build
       - run: node tests/integration/web/run-tests.mjs

@@ -286,9 +286,9 @@
     "test:visual:update": "vitest run -c vitest.browser.config.ts -u",
     "test:visual:watch": "vitest -c vitest.browser.config.ts",
     "test:integration:desktop:build": "node scripts/build-integration-tests.mjs",
-    "test:integration:desktop": "pnpm run build:dev && pnpm run test:integration:desktop:build && node tests/integration/electron/run-tests.mjs",
+    "test:integration:desktop": "pnpm run build && pnpm run test:integration:desktop:build && node tests/integration/electron/run-tests.mjs",
     "test:integration:web:build": "node scripts/build-integration-tests-web.mjs",
-    "test:integration:web": "pnpm run build:dev && pnpm run test:integration:web:build && node tests/integration/web/run-tests.mjs",
+    "test:integration:web": "pnpm run build && pnpm run test:integration:web:build && node tests/integration/web/run-tests.mjs",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
