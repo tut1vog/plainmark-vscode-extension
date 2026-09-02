@@ -84,6 +84,8 @@ export function table_markdown_from_html(html: string): string | null {
   const tables = doc.querySelectorAll('table');
   if (tables.length !== 1) return null;
   const table = tables[0];
+  // Google Sheets ships a body-level <style>; non-rendered text is not content outside the table.
+  for (const el of Array.from(doc.body.querySelectorAll('style, script'))) el.remove();
   const outside = (doc.body.textContent ?? '').replace(/\s+/g, '');
   const inside = (table.textContent ?? '').replace(/\s+/g, '');
   if (outside !== inside) return null;

@@ -43,6 +43,21 @@ describe('TBL-I-36 table_markdown_from_html qualification gate', () => {
     expect((md as string).split('\n')[0]).toContain('方法');
   });
 
+  it('ignores a body-level <style> when gating (Google Sheets payload shape)', () => {
+    const md = table_markdown_from_html(
+      '<meta charset="utf-8"><google-sheets-html-origin>' +
+        '<style type="text/css"><!--td {border: 1px solid #cccccc;}br {mso-data-placement:same-cell;}--></style>' +
+        '<table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" data-sheets-root="1">' +
+        '<colgroup><col width="100"/><col width="100"/></colgroup>' +
+        '<tbody><tr style="height:21px;"><td><b>Name</b></td><td>Value</td></tr>' +
+        '<tr><td><a href="https://e.test/p">link</a></td><td>2</td></tr></tbody></table>' +
+        '</google-sheets-html-origin>',
+    );
+    expect(md).not.toBeNull();
+    expect(md).toContain('**Name**');
+    expect(md).toContain('[link](https://e.test/p)');
+  });
+
   it('declines non-whitespace content outside the table', () => {
     expect(
       table_markdown_from_html('<p>intro</p><table><tr><td>a</td><td>b</td></tr></table>'),
