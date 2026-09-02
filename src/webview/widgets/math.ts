@@ -250,7 +250,7 @@ export const math_cache_field = StateField.define<Map<string, MathResult>>({
   },
 });
 
-export interface MathInfo {
+interface MathInfo {
   display: boolean;
   src: string;
   from: number;
