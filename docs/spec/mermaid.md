@@ -71,6 +71,9 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **MMD-I-5** `[accepted]` — The widget MUST override `ignoreEvent()` to return `false` (CM6's default `true` swallows clicks), so a click on the rendered diagram places the caret inside the block and triggers the MMD-I-1 source reveal. There is no other mermaid-specific keymap, command, click callback, zoom/pan, or export affordance; in-diagram `click` directives MUST NOT execute (`securityLevel: 'strict'`).
   _Example:_ clicking the diagram reveals its source; a `click` interaction directive inside the diagram runs no script.
 
+- **MMD-I-6** — A press on the block widget's horizontal scrollbar (MMD-R-8) MUST NOT place the caret or reveal the raw source: `ignoreEvent()` MUST return `true` for a `MouseEvent` whose target is the `.plainmark-mermaid-block` container and whose `offsetY` exceeds the container's `clientHeight` (the scrollbar strip below the content box), so dragging the scrollbar of a wide diagram scrolls without flipping the widget to its source. Presses on the diagram itself still return `false` and reveal per MMD-I-5. Mirror of MATH-I-10.
+  _Example:_ grabbing the scrollbar under a wide flowchart and dragging → the diagram scrolls horizontally and stays rendered; clicking the diagram's nodes still reveals the raw fence.
+
 ## SP · Source preservation
 
 - **MMD-SP-1** `[inherits:INV-SP-1]` — Mermaid rendering MUST be decoration-only: a block `Decoration.replace` (off-caret) plus an in-flow `Decoration.widget` preview (bare caret), with no document edit. No mermaid widget re-serializes, normalizes, canonicalizes the info string, or rewrites any source byte (only the table widget may rewrite source). The fence and diagram source are preserved verbatim and re-exposed unchanged on reveal.

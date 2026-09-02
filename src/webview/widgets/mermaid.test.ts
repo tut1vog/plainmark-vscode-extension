@@ -58,9 +58,13 @@ describe('mermaid_cache_key MMD-R-6', () => {
   });
 });
 
-describe('MermaidWidget.ignoreEvent MMD-I-3', () => {
+describe('MermaidWidget.ignoreEvent MMD-I-5 MMD-I-6', () => {
   it('returns false so a click places the caret inside the block', () => {
     expect(new MermaidWidget('x', 'light', null).ignoreEvent()).toBe(false);
+  });
+
+  it('returns false for a non-mouse event (no scrollbar geometry to consult)', () => {
+    expect(new MermaidWidget('x', 'light', null).ignoreEvent(new Event('keydown'))).toBe(false);
   });
 });
 

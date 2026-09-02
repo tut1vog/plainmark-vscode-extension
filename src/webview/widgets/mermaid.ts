@@ -221,9 +221,18 @@ export class MermaidWidget extends WidgetType {
     return container;
   }
 
-  // WidgetType default swallows clicks; without this a click cannot place the caret inside to reveal source. Mirrors math.ts.
-  ignoreEvent(): boolean {
-    return false;
+  // WidgetType default swallows clicks; without this a click cannot place the
+  // caret inside to reveal source. A press on the block's horizontal scrollbar
+  // (offsetY past the content box) must be ignored, else dragging the scrollbar
+  // of a wide diagram reveals the raw source mid-drag. Mirrors math.ts.
+  ignoreEvent(event?: Event): boolean {
+    return (
+      typeof MouseEvent !== 'undefined' &&
+      event instanceof MouseEvent &&
+      event.target instanceof HTMLElement &&
+      event.target.classList.contains('plainmark-mermaid-block') &&
+      event.offsetY > event.target.clientHeight
+    );
   }
 }
 
