@@ -551,29 +551,53 @@ function marker_is_text(view: EditorView, from: number): boolean {
   return text.charAt(dom.offset) === '>' || text.charAt(Math.max(0, dom.offset - 1)) === '>';
 }
 
-// The first MEASURABLE `>` marker in the viewport: `from`/`gt_to` bound the
-// `>` glyph; markers hidden inside replaced ranges are skipped.
-function first_quote_mark(view: EditorView): { from: number; gt_to: number } | null {
+// The text-backed `>` markers in the viewport, in document order: `from`/`gt_to`
+// bound the `>` glyph; markers hidden inside replaced ranges are skipped.
+function visible_quote_marks(view: EditorView): { from: number; gt_to: number }[] {
   const tree = syntaxTree(view.state);
+  const found: { from: number; gt_to: number }[] = [];
   for (const { from: vf, to: vt } of view.visibleRanges) {
-    let found: { from: number; gt_to: number } | null = null;
     tree.iterate({
       from: vf,
       to: vt,
       enter(node) {
-        if (found) return false;
         if (node.name === 'QuoteMark') {
-          if (marker_is_text(view, node.from)) {
-            found = { from: node.from, gt_to: node.to };
-          }
+          if (marker_is_text(view, node.from)) found.push({ from: node.from, gt_to: node.to });
           return false;
         }
         return undefined;
       },
     });
-    if (found) return found;
   }
-  return null;
+  return found;
+}
+
+// Null when the marker has no usable box: a zero advance (not yet painted, or a
+// glyph another construct's chrome collapsed) or one wide enough to have
+// straddled a widget or wrapped-row boundary — poisoned, so the caller moves on
+// to the next marker (BQ-R-15) rather than letting it become every quote line's
+// padding-left. A `>` glyph or space advance is at most a few character widths.
+function measure_marker(
+  view: EditorView,
+  qm: { from: number; gt_to: number },
+): MarkerMetrics | null {
+  const x0 = view.coordsAtPos(qm.from);
+  const x1 = view.coordsAtPos(qm.gt_to);
+  if (!x0 || !x1) return null;
+  const max_advance = view.defaultCharacterWidth * 4;
+  const gt = x1.left - x0.left;
+  if (gt <= 0 || gt > max_advance) return null;
+  const line = view.state.doc.lineAt(qm.from);
+  const space_idx = line.text.indexOf(' ', qm.gt_to - line.from);
+  let space = 0;
+  if (space_idx >= 0) {
+    const sp = line.from + space_idx;
+    const a = view.coordsAtPos(sp);
+    const b = view.coordsAtPos(sp + 1);
+    if (a && b) space = b.left - a.left;
+    if (space < 0 || space > max_advance) space = 0;
+  }
+  return { gt, space };
 }
 
 // Frames the probe keeps retrying a zero measurement before giving up — covers a
@@ -599,29 +623,11 @@ const blockquote_marker_width_probe = ViewPlugin.fromClass(
     private measure(view: EditorView, attempts = MAX_MARKER_MEASURE_RETRIES): void {
       view.requestMeasure({
         read: (): MarkerMetrics => {
-          const qm = first_quote_mark(view);
-          if (!qm) return { gt: 0, space: 0 };
-          const x0 = view.coordsAtPos(qm.from);
-          const x1 = view.coordsAtPos(qm.gt_to);
-          if (!x0 || !x1) return { gt: 0, space: 0 };
-          // Sanity bound: a `>` glyph or space advance is at most a few
-          // character widths. Anything larger means the coords straddled a
-          // widget or wrapped-row boundary — poisoned, treat as unmeasured
-          // rather than letting it become every quote line's padding-left.
-          const max_advance = view.defaultCharacterWidth * 4;
-          const gt = x1.left - x0.left;
-          if (gt <= 0 || gt > max_advance) return { gt: 0, space: 0 };
-          const line = view.state.doc.lineAt(qm.from);
-          const space_idx = line.text.indexOf(' ', qm.gt_to - line.from);
-          let space = 0;
-          if (space_idx >= 0) {
-            const sp = line.from + space_idx;
-            const a = view.coordsAtPos(sp);
-            const b = view.coordsAtPos(sp + 1);
-            if (a && b) space = b.left - a.left;
-            if (space < 0 || space > max_advance) space = 0;
+          for (const qm of visible_quote_marks(view)) {
+            const m = measure_marker(view, qm);
+            if (m) return m;
           }
-          return { gt, space };
+          return { gt: 0, space: 0 };
         },
         write: (m: MarkerMetrics) => {
           if (m.gt <= 0) {
