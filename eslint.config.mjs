@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/', 'scripts/', 'node_modules/'] },
+  { ignores: ['dist/', 'node_modules/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -25,6 +25,27 @@ export default tseslint.config(
               name,
               message: 'INV-HOST-1: no Node built-ins in host/webview code.',
             })),
+        },
+      ],
+    },
+  },
+  {
+    // Build and generator scripts run under Node; declare the globals they use.
+    files: ['scripts/**/*.mjs', 'tests/**/*.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', process: 'readonly', URL: 'readonly' },
+    },
+  },
+  {
+    // A focused test would turn every other test in its tier green-by-omission.
+    files: ['src/**/*.test.ts', 'tests/**/*.{test,spec}.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.property.name='only'][callee.object.name=/^(describe|it|test)$/]",
+          message: 'Focused tests (.only) must not reach main.',
         },
       ],
     },

@@ -46,6 +46,6 @@ export async function normalize_for_snapshot(root: HTMLElement): Promise<string>
     c.replaceWith(placeholder);
   });
 
-  const html = clone.outerHTML.replace(/​/g, '');
+  const html = clone.outerHTML.replace(/\u200B/g, '');
   return await prettier.format(html, { parser: 'html', plugins: [html_plugin] });
 }

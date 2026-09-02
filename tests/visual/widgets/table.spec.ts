@@ -260,7 +260,7 @@ function inline_fingerprint(el: HTMLElement): { text: string; tags: Set<string> 
     if (inline_tags.has(n.tagName)) tags.add(n.tagName);
   });
   const text = (el.textContent ?? '')
-    .replace(/​/g, '')
+    .replace(/\u200B/g, '')
     .replace(/\s+/g, ' ')
     .trim();
   return { text, tags };
@@ -340,7 +340,7 @@ describe('table — AC2 marker-reveal inside the cell subview', () => {
 
     const header_bold_td = get_cell(container, 0, 0);
     expect(header_bold_td.querySelector('strong')).not.toBeNull();
-    expect((header_bold_td.textContent ?? '').replace(/​/g, '')).not.toContain('**');
+    expect((header_bold_td.textContent ?? '').replace(/\u200B/g, '')).not.toContain('**');
 
     await activate(container, 0, 0);
     await settle();
@@ -349,14 +349,14 @@ describe('table — AC2 marker-reveal inside the cell subview', () => {
     sub.dispatch({ selection: { anchor: 4 } });
     await settle();
 
-    const subview_text = (sub.contentDOM.textContent ?? '').replace(/​/g, '');
+    const subview_text = (sub.contentDOM.textContent ?? '').replace(/\u200B/g, '');
     expect(subview_text).toContain('**');
 
     // Activate a different cell — original cell re-renders via emitter, markers gone.
     await activate(container, 0, 1);
     await settle();
 
-    const post_blur_text = (header_bold_td.textContent ?? '').replace(/​/g, '');
+    const post_blur_text = (header_bold_td.textContent ?? '').replace(/\u200B/g, '');
     expect(post_blur_text).not.toContain('**');
     expect(header_bold_td.querySelector('strong')).not.toBeNull();
   }, 15000);

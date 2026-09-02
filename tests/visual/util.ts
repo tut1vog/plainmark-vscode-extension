@@ -28,5 +28,5 @@ export function move_cursor(view: EditorView, anchor: number): void {
 
 export function get_line_text(view: EditorView, line_index: number): string {
   const dom = view.contentDOM.querySelectorAll('.cm-line')[line_index];
-  return (dom?.textContent ?? '').replace(/​/g, '');
+  return (dom?.textContent ?? '').replace(/\u200B/g, '');
 }

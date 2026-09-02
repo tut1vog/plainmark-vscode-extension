@@ -19,7 +19,7 @@ import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import { editor_extensions } from '../../../src/webview/editor_extensions.js';
 import { gen_markdown } from '../../fuzz/gen-markdown.js';
-import { mulberry32, range, type Rng } from '../../fuzz/rng.js';
+import { mulberry32, type Rng } from '../../fuzz/rng.js';
 import { ensure_mathjax } from '../mathjax-ready.js';
 import { allow_console } from '../console-sentinel.js';
 

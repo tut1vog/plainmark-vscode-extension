@@ -31,10 +31,6 @@ const commonmark = load_commonmark();
 const gfm_extensions = load_gfm_extensions();
 const all = [...commonmark, ...gfm_extensions];
 
-function describe_entry(e: SpecEntry): string {
-  return `${e.source}#${e.example} (${e.section})`;
-}
-
 function parse(src: string): Tree {
   return gfm_parser.parse(src);
 }

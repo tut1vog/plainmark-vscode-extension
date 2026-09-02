@@ -82,7 +82,7 @@ function cell_text_in_main_doc(view: EditorView, row: number, col: number): stri
     `[data-row-index="${row}"][data-col-index="${col}"]`,
   ) as HTMLElement | null;
   if (!td) throw new Error(`no rendered TD at (${row}, ${col})`);
-  return (td.textContent ?? '').replace(/​/g, '');
+  return (td.textContent ?? '').replace(/\u200B/g, '');
 }
 
 const SAMPLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n';

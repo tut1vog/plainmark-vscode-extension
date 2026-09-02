@@ -273,7 +273,7 @@
     "build:watch": "node scripts/build.mjs --dev --watch",
     "build:check": "tsc --noEmit && node scripts/check-sizes.mjs",
     "package": "vsce package --no-dependencies",
-    "lint": "eslint src",
+    "lint": "eslint src tests scripts",
     "format": "prettier --write src",
     "spec:matrix": "node scripts/gen-spec-matrix.mjs",
     "spec:check": "node scripts/gen-spec-matrix.mjs --check",
