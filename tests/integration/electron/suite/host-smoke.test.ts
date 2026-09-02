@@ -19,6 +19,7 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { plainmark_tab_open, wait_for } from '../../helpers.js';
 
 const SEED_MD = '# Heading\n\nFirst paragraph.\n\nSecond paragraph.\n';
 const INSERT = 'X';
@@ -41,9 +42,8 @@ async function with_temp_file<T>(fn: (uri: vscode.Uri) => Promise<T>): Promise<T
 
 async function open_in_plainmark(uri: vscode.Uri): Promise<vscode.TextDocument> {
   await vscode.commands.executeCommand('vscode.openWith', uri, 'tutivog.plainmark');
-  // The webview boots asynchronously; allow a short settle so the custom
-  // editor's resolveCustomTextEditor has time to run before assertions.
-  await new Promise((r) => setTimeout(r, 500));
+  // The custom editor resolves asynchronously; its tab is the observable signal.
+  await wait_for(() => plainmark_tab_open(uri), { message: 'Plainmark tab for the seed file' });
   return vscode.workspace.openTextDocument(uri);
 }
 

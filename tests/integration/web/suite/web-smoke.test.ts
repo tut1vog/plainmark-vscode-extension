@@ -13,6 +13,7 @@
 // inline assert that throws on failure (Mocha catches the throw and reports
 // the test as failed).
 import * as vscode from 'vscode';
+import { wait_for } from '../../helpers.js';
 
 function ok(value: unknown, msg: string): asserts value {
   if (!value) throw new Error(msg);
@@ -64,12 +65,9 @@ suite('Plainmark web smoke SHELL-A-5', () => {
       uri = vscode.Uri.parse('untitled:smoke.md');
     }
     await vscode.commands.executeCommand('vscode.openWith', uri, 'tutivog.plainmark');
-    // Give the webview a brief moment to settle before we ask about the doc.
-    await new Promise((r) => setTimeout(r, 500));
-    const docs = vscode.workspace.textDocuments;
-    ok(
-      docs.some((d) => d.uri.toString() === uri.toString()),
-      `expected ${uri.toString()} to be in workspace.textDocuments`,
+    await wait_for(
+      () => vscode.workspace.textDocuments.some((d) => d.uri.toString() === uri.toString()),
+      { message: `${uri.toString()} in workspace.textDocuments` },
     );
   });
 });

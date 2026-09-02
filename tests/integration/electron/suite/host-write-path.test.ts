@@ -22,12 +22,9 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { plainmark_tab_open, wait_for } from '../../helpers.js';
 
 const INJECT_CMD = 'tutivog.plainmark.__test__inject_message';
-
-function settle(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 async function with_seed<T>(contents: string, fn: (uri: vscode.Uri) => Promise<T>): Promise<T> {
   const tmpdir = await fs.mkdtemp(path.join(os.tmpdir(), 'plainmark-write-'));
@@ -48,27 +45,29 @@ async function with_seed<T>(contents: string, fn: (uri: vscode.Uri) => Promise<T
 
 async function open_in_plainmark(uri: vscode.Uri): Promise<vscode.TextDocument> {
   await vscode.commands.executeCommand('vscode.openWith', uri, 'tutivog.plainmark');
-  // Let resolveCustomTextEditor run and the real webview post `ready`, whose
-  // seed `sync` grounds the loop's last_synced_version, before we inject.
-  await settle(800);
+  // resolveCustomTextEditor registers the injector; the tab is its observable
+  // signal. The webview's `ready` handshake has none — inject_update absorbs it.
+  await wait_for(() => plainmark_tab_open(uri), { message: 'Plainmark tab for the seed file' });
   return vscode.workspace.openTextDocument(uri);
 }
 
 // Inject a synthetic webview `update` and wait for the resulting apply. On a
 // freshly-opened, unedited doc, base_version must equal the current doc.version
 // — exactly what a real webview posts for the first user edit (the version of
-// the seed sync it applied). Retries absorb ready-handshake timing: until the
-// seed sync lands, the loop rejects the update as stale and the doc stays clean.
+// the seed sync it applied). Re-injecting absorbs ready-handshake timing: until
+// the seed sync lands, the loop rejects the update as stale and the doc stays clean.
 async function inject_update(doc: vscode.TextDocument, uri: vscode.Uri, lf_text: string): Promise<void> {
-  for (let attempt = 0; attempt < 15; attempt++) {
-    await vscode.commands.executeCommand(INJECT_CMD, uri.toString(), {
-      type: 'update',
-      text: lf_text,
-      base_version: doc.version,
-    });
-    if (doc.isDirty) return;
-    await settle(150);
-  }
+  await wait_for(
+    async () => {
+      await vscode.commands.executeCommand(INJECT_CMD, uri.toString(), {
+        type: 'update',
+        text: lf_text,
+        base_version: doc.version,
+      });
+      return doc.isDirty;
+    },
+    { timeout: 10000, interval: 150, message: 'injected update to dirty the document' },
+  );
 }
 
 suite('Plainmark webview→host write path SYNC-W-3 SYNC-P-2 INV-SP-3 SYNC-P-6', () => {

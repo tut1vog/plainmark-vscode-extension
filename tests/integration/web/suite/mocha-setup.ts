@@ -14,4 +14,5 @@ declare const mocha: {
   setup(opts: Record<string, unknown>): void;
 };
 
-mocha.setup({ ui: 'tdd', reporter: undefined });
+// Matches the desktop suite; mocha's browser default (2 s) is below a wait_for budget.
+mocha.setup({ ui: 'tdd', reporter: undefined, timeout: 20000 });
