@@ -158,14 +158,8 @@ describe('compute_marker_snap EMPH-I-7 EMPH-I-8 EMPH-I-9 EMPH-SP-4 MRS-S-1 MRS-S
       expect(snap!.main.to).toBe(11);
     });
 
-    it('does NOT snap when selecting just `b` strictly inside inner emphasis', () => {
-      // Strict-inside inner content area would only happen if `b` had >=2
-      // chars, but the single `b` IS the entire content (Rule C territory).
-      // This case asserts the no-snap behavior when the inner selection is
-      // not exactly content-cover and not boundary-extends.
-      // For inner Emphasis [4,7] with content [5,6], selecting [5,5] is
-      // empty (caret) → no snap by definition. The closest illustrative case
-      // is a partial within nested strong: `**ab cd**` content [2,7], selecting `b` at [3,4].
+    it('does NOT snap a partial selection strictly inside strong content (`b` in `**ab cd**`)', () => {
+      // `**ab cd**` content [2,7]; [3,4] is neither content-cover nor boundary-extending.
       const snap = compute_marker_snap(make_state('**ab cd**\nzz\n', 3, 4));
       expect(snap).toBeNull();
     });

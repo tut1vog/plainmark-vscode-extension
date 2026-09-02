@@ -41,8 +41,7 @@ describe('html decoration handler — block HTML-R-1 HTML-R-3 HTML-SP-1', () => 
     const doc = '<div>hello</div>\n\nfollow-up paragraph.\n';
     const out = snapshot(make_state(doc, doc.length));
     const block_lines = out.filter((d) => d.class === 'plainmark-html-block');
-    expect(block_lines.length).toBeGreaterThanOrEqual(1);
-    expect(block_lines[0].from).toBe(0);
+    expect(block_lines.map((d) => d.from)).toEqual([0]);
   });
 
   it('emits one line decoration per line of a multi-line HTMLBlock', () => {
@@ -56,21 +55,21 @@ describe('html decoration handler — block HTML-R-1 HTML-R-3 HTML-SP-1', () => 
     const doc = '<!-- a multi\nline comment -->\n\nfollow.\n';
     const out = snapshot(make_state(doc, doc.length));
     const block_lines = out.filter((d) => d.class === 'plainmark-html-block');
-    expect(block_lines.length).toBeGreaterThanOrEqual(2);
+    expect(block_lines.map((d) => d.from)).toEqual([0, doc.indexOf('line comment')]);
   });
 
   it('emits chrome on ProcessingInstructionBlock (`<? ... ?>`)', () => {
     const doc = '<?php echo "x"; ?>\n\nfollow.\n';
     const out = snapshot(make_state(doc, doc.length));
     const block_lines = out.filter((d) => d.class === 'plainmark-html-block');
-    expect(block_lines.length).toBeGreaterThanOrEqual(1);
+    expect(block_lines.map((d) => d.from)).toEqual([0]);
   });
 
   it('emits chrome on a <script> HTMLBlock (CommonMark §4.6 type 1)', () => {
     const doc = '<script>console.log(1);</script>\n\nfollow.\n';
     const out = snapshot(make_state(doc, doc.length));
     const block_lines = out.filter((d) => d.class === 'plainmark-html-block');
-    expect(block_lines.length).toBeGreaterThanOrEqual(1);
+    expect(block_lines.map((d) => d.from)).toEqual([0]);
   });
 });
 
@@ -122,7 +121,7 @@ describe('html decoration handler — block vs inline isolation HTML-E-2', () =>
     const out = snapshot(make_state(doc, doc.length));
     const block_lines = out.filter((d) => d.class === 'plainmark-html-block');
     const inline_marks = out.filter((d) => d.class === 'plainmark-html-inline');
-    expect(block_lines.length).toBeGreaterThanOrEqual(1);
+    expect(block_lines.map((d) => d.from)).toEqual([0]);
     expect(inline_marks.length).toBe(2);
   });
 });

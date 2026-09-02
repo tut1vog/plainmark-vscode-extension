@@ -120,8 +120,17 @@ describe('frontmatter grammar — edge cases', () => {
     expect(nodes_of(doc, 'FrontMatter')).toHaveLength(0);
   });
 
-  it('FM-E-5: tolerates CRLF line endings', () => {
-    const doc = '---\r\nfoo: bar\r\n---\r\n';
-    expect(nodes_of(doc, 'FrontMatter')).toHaveLength(1);
+  it('FM-E-5: tolerates CRLF line endings reaching the parser', () => {
+    // EditorState splits CRLF before parsing, so only the raw parser sees `\r`.
+    const parser = markdown({ extensions: [GFM, frontmatter_extension] }).language.parser;
+    const doc = '---\r\nfoo: bar\r\n---\r\n# H\r\n';
+    const tree = parser.parse(doc);
+    const fm: { from: number; to: number }[] = [];
+    tree.iterate({
+      enter(n) {
+        if (n.name === 'FrontMatter') fm.push({ from: n.from, to: n.to });
+      },
+    });
+    expect(fm).toEqual([{ from: 0, to: doc.indexOf('\n# H') }]);
   });
 });

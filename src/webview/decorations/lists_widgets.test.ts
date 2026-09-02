@@ -34,14 +34,21 @@ function list_widgets(doc: string): WidgetLike[] {
 }
 
 describe('ListBulletWidget.eq LIST-R-4', () => {
-  it('is a stateless singleton — eq is always true (no per-widget depth/glyph state)', () => {
+  it('treats bullets at different depths as equal — depth rides the line attribute, not the widget', () => {
     const [bullet] = list_widgets('- item\n');
-    expect(bullet.eq()).toBe(true);
-    // The impl ignores its comparand; equality holds regardless of what it is
-    // compared against, so depth-cycling rides the line attribute, not the widget.
-    expect(bullet.eq({})).toBe(true);
-    const [other] = list_widgets('  - nested\n');
-    expect(bullet.eq(other)).toBe(true);
+    const [nested] = list_widgets('  - nested\n');
+    expect(bullet.eq(nested)).toBe(true);
+  });
+});
+
+describe('TaskCheckboxWidget.eq — a toggled box must redraw', () => {
+  it('is equal only when the checked state matches', () => {
+    const [unchecked] = list_widgets('- [ ] todo\n');
+    const [unchecked_other] = list_widgets('- [ ] other\n');
+    const [checked] = list_widgets('- [x] done\n');
+    expect(unchecked.eq(unchecked_other)).toBe(true);
+    expect(unchecked.eq(checked)).toBe(false);
+    expect(checked.eq(unchecked)).toBe(false);
   });
 });
 

@@ -82,9 +82,7 @@ describe('footnote parser FN-R-1 FN-R-6', () => {
   });
 
   it('numeric and string labels both parse', () => {
-    const tree = dump('[^1] and [^foo] and [^bar-2]');
     expect(count_of('[^1] and [^foo] and [^bar-2]', 'FootnoteReference')).toBe(3);
-    void tree;
   });
 
   it('FN-E-5: reference inside a code span is suppressed', () => {
@@ -104,11 +102,16 @@ describe('footnote parser FN-R-1 FN-R-6', () => {
   });
 
   it('reference emits FootnoteMark + FootnoteLabel + FootnoteMark children', () => {
+    // x [^abc] y — `[^` [2,4], label `abc` [4,7], `]` [7,8]
     const tree = dump('x [^abc] y');
-    const ref = tree.find((s) => s.startsWith('FootnoteReference['));
-    expect(ref).toBeDefined();
-    expect(tree.some((s) => s.startsWith('FootnoteMark['))).toBe(true);
-    expect(tree.some((s) => s.startsWith('FootnoteLabel['))).toBe(true);
+    const ref_at = tree.indexOf('FootnoteReference[2,8]');
+    expect(ref_at).toBeGreaterThan(-1);
+    expect(tree.slice(ref_at, ref_at + 4)).toEqual([
+      'FootnoteReference[2,8]',
+      'FootnoteMark[2,4]',
+      'FootnoteLabel[4,7]',
+      'FootnoteMark[7,8]',
+    ]);
   });
 
   it('definition body inline-parses (emphasis is recognized)', () => {

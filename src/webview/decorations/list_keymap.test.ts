@@ -1,6 +1,6 @@
 import { markdown } from '@codemirror/lang-markdown';
 import { indentUnit } from '@codemirror/language';
-import { EditorState, type TransactionSpec } from '@codemirror/state';
+import { EditorState, type Transaction, type TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
@@ -14,6 +14,7 @@ import {
 interface FakeView {
   view: EditorView;
   applied: TransactionSpec[];
+  transactions: Transaction[];
   doc: () => string;
   head: () => number;
 }
@@ -25,18 +26,22 @@ function make_view(initial_doc: string, anchor: number, head?: number): FakeView
     selection: { anchor, head: head ?? anchor },
   });
   const applied: TransactionSpec[] = [];
+  const transactions: Transaction[] = [];
   const view = {
     get state() {
       return state;
     },
     dispatch(spec: TransactionSpec) {
       applied.push(spec);
-      state = state.update(spec).state;
+      const tr = state.update(spec);
+      transactions.push(tr);
+      state = tr.state;
     },
   } as unknown as EditorView;
   return {
     view,
     applied,
+    transactions,
     doc: () => state.doc.toString(),
     head: () => state.selection.main.head,
   };
@@ -176,11 +181,13 @@ describe('list_dangling_indent_backspace LIST-I-13 LIST-SP-2 LIST-SP-3', () => {
   });
 
   it('(d) emits a single transaction annotated as a delete', () => {
-    const { view, applied } = make_view('- a\n  ', 6);
+    const { view, applied, transactions } = make_view('- a\n  ', 6);
     expect(list_dangling_indent_backspace(view)).toBe(true);
     expect(applied).toHaveLength(1);
     const spec = applied[0] as { changes?: { from: number; to: number; insert: string } };
     expect(spec.changes).toEqual({ from: 3, to: 6, insert: '' });
+    expect(transactions[0].isUserEvent('delete')).toBe(true);
+    expect(transactions[0].isUserEvent('input')).toBe(false);
   });
 
   it('(e) returns false when the previous line is not a list item', () => {

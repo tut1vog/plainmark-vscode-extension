@@ -1,6 +1,6 @@
-import { HighlightStyle } from '@codemirror/language';
 import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
+import { type Tag, tags } from '@lezer/highlight';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import { build_inline_decorations, build_registry } from './inline_decorations.js';
@@ -195,9 +195,29 @@ describe('fenced code block — unknown language', () => {
   });
 });
 
-describe('plainmark_highlight_style', () => {
-  it('is a defined HighlightStyle', () => {
-    expect(plainmark_highlight_style).toBeInstanceOf(HighlightStyle);
+describe('plainmark_highlight_style THEME-V-5', () => {
+  it('maps each syntax tag family onto its --plainmark-syntax-<token> class', () => {
+    const families: Array<[Tag, string]> = [
+      [tags.keyword, 'keyword'],
+      [tags.comment, 'comment'],
+      [tags.string, 'string'],
+      [tags.number, 'number'],
+      [tags.function(tags.variableName), 'function'],
+      [tags.variableName, 'variable'],
+      [tags.typeName, 'type'],
+      [tags.propertyName, 'property'],
+      [tags.tagName, 'tag'],
+      [tags.meta, 'meta'],
+      [tags.punctuation, 'punctuation'],
+      [tags.invalid, 'invalid'],
+    ];
+    for (const [tag, token] of families) {
+      expect(plainmark_highlight_style.style([tag]), token).toBe(`plainmark-syntax-${token}`);
+    }
+  });
+
+  it('leaves tags outside the palette unstyled', () => {
+    expect(plainmark_highlight_style.style([tags.emphasis])).toBeNull();
   });
 });
 
@@ -360,7 +380,7 @@ describe('CBLK-E-8: quote-nested fenced code keeps quote geometry', () => {
   it('emits no nested class and no indent marks inside a blockquote', () => {
     const state = make_state('> ```js\n> const a = 1;\n> ```\nz', 30);
     const out = chrome_lines(state);
-    expect(out.length).toBeGreaterThanOrEqual(3);
+    expect(out.map((line) => line.from)).toEqual([0, 8, 23]);
     for (const line of out) {
       expect(line.cls).not.toContain('plainmark-fenced-code-nested');
       expect(line.style).toBeUndefined();
