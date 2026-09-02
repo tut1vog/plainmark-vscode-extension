@@ -1,7 +1,7 @@
 // Entrypoint for the @vscode/test-web activation smoke. Boots a
 // Playwright Chromium pointed at a vscode.dev-style workbench server with
 // this extension loaded, hands off to `dist/integration/web/suite/index.cjs`
-// (built by `scripts/build-integration-tests-web.mjs`). The Mocha suite
+// (built by `scripts/build-integration-tests.mjs web`). The Mocha suite
 // there runs three activation-side assertions.
 
 import { fileURLToPath } from 'node:url';
