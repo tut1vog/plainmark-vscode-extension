@@ -1,5 +1,5 @@
 import { syntaxTree } from '@codemirror/language';
-import { Transaction } from '@codemirror/state';
+import { Transaction, findClusterBreak } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 
 // Plainmark override for `@codemirror/lang-markdown`'s `deleteMarkupBackward`
@@ -93,9 +93,10 @@ export function lazy_continuation_backspace(view: EditorView): boolean {
   if (!/\S/.test(line.text.slice(0, col))) return false;
   if (!in_list_item(view, line.from)) return false;
 
+  const from = line.from + findClusterBreak(line.text, col, false);
   view.dispatch({
-    changes: { from: main.head - 1, to: main.head },
-    selection: { anchor: main.head - 1 },
+    changes: { from, to: main.head },
+    selection: { anchor: from },
     annotations: [Transaction.userEvent.of('delete')],
   });
   return true;

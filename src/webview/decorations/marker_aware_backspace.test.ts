@@ -219,6 +219,22 @@ describe('lazy_continuation_backspace MRS-B-10', () => {
       expect(lazy_continuation_backspace(view)).toBe(true);
       expect(doc()).toBe('1. q\n`x');
     });
+
+    it('deletes a whole emoji (surrogate pair), never a lone surrogate', () => {
+      const text = '- q\nab😀';
+      const { view, doc, head } = make_view(text, text.length);
+      expect(lazy_continuation_backspace(view)).toBe(true);
+      expect(doc()).toBe('- q\nab');
+      expect(head()).toBe(6);
+    });
+
+    it('deletes a base letter together with its combining mark', () => {
+      const text = '- q\nabe\u0301';
+      const { view, doc, head } = make_view(text, text.length);
+      expect(lazy_continuation_backspace(view)).toBe(true);
+      expect(doc()).toBe('- q\nab');
+      expect(head()).toBe(6);
+    });
   });
 
   describe('YIELDS', () => {
