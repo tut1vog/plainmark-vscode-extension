@@ -5,6 +5,10 @@ name: Release
 # version has no v<version> tag yet. Ordinary pushes no-op at the gate;
 # a release is triggered by the version-bump commit (see
 # .claude/commands/release.md in the workspace).
+#
+# Re-running a failed run is safe: publish is skipped when the Marketplace
+# already lists the version, and the release step attaches the .vsix to an
+# existing release instead of failing on it.
 
 on:
   workflow_run:
@@ -20,14 +24,11 @@ concurrency:
 permissions:
   contents: write
 
-env:
-  PNPM_VERSION: 11.0.9
-  NODE_VERSION: 22
-
 jobs:
   release:
     name: Publish + tag + GitHub release
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
@@ -62,16 +63,8 @@ jobs:
             exit 1
           fi
 
-      - uses: pnpm/action-setup@v6
+      - uses: ./.github/actions/setup
         if: steps.gate.outputs.new == 'true'
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v7
-        if: steps.gate.outputs.new == 'true'
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
 
       # vsce is a lockfile-pinned devDependency run through pnpm — never
       # `npx @vscode/vsce`, which would fetch whatever `latest` is at release
@@ -79,12 +72,28 @@ jobs:
       - name: Build and package
         if: steps.gate.outputs.new == 'true'
         run: |
-          pnpm install --frozen-lockfile
           pnpm run build
           pnpm run package
 
-      - name: Publish to the VS Code Marketplace
+      # The Marketplace rejects a version it already has, so a re-run after a
+      # failed tag/release step must not publish again. `vsce show` reads the
+      # public gallery — this step never sees VSCE_PAT.
+      - name: Check whether the Marketplace already has this version
+        id: marketplace
         if: steps.gate.outputs.new == 'true'
+        run: |
+          if pnpm exec vsce show tutivog.plainmark --json | node -e '
+            const ext = JSON.parse(require("fs").readFileSync(0, "utf8"));
+            process.exit(ext.versions.some((v) => v.version === process.argv[1]) ? 0 : 1);
+          ' "${{ steps.gate.outputs.version }}"; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "${{ steps.gate.outputs.version }} is already on the Marketplace — skipping publish."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to the VS Code Marketplace
+        if: steps.gate.outputs.new == 'true' && steps.marketplace.outputs.published == 'false'
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: >-
@@ -95,9 +104,15 @@ jobs:
         if: steps.gate.outputs.new == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "v${{ steps.gate.outputs.version }}"
-          "plainmark-${{ steps.gate.outputs.version }}.vsix"
-          --title "v${{ steps.gate.outputs.version }}"
-          --notes-file release-notes.md
-          --target "${{ github.event.workflow_run.head_sha }}"
+        run: |
+          TAG="v${{ steps.gate.outputs.version }}"
+          VSIX="plainmark-${{ steps.gate.outputs.version }}.vsix"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already has a release — refreshing its .vsix asset."
+            gh release upload "$TAG" "$VSIX" --clobber
+          else
+            gh release create "$TAG" "$VSIX" \
+              --title "$TAG" \
+              --notes-file release-notes.md \
+              --target "${{ github.event.workflow_run.head_sha }}"
+          fi
