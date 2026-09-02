@@ -47,7 +47,8 @@ export const frozen_reveal_selection_field = StateField.define<EditorSelection |
     for (const effect of tr.effects) {
       if (effect.is(set_frozen_reveal_selection)) return effect.value;
     }
-    return value;
+    // An edit landing mid-press would otherwise leave the frozen offsets on pre-edit bytes.
+    return value && tr.docChanged ? value.map(tr.changes) : value;
   },
 });
 
@@ -141,7 +142,10 @@ const document_mouseup_plugin = ViewPlugin.fromClass(
           this.view.dispatch({ effects: release_effects });
         }
       };
-      this.handle_up = release;
+      // Only the primary button latches (handle_down), so only its release ends the press.
+      this.handle_up = (event: MouseEvent): void => {
+        if (event.button === 0) release(event);
+      };
       // A release outside the webview iframe is delivered to the outer window, never here, so it is unobservable while the cursor stays out; a button-less move on return proves the press ended and recovers the otherwise-stuck latch.
       this.handle_move = (event: MouseEvent): void => {
         if (event.buttons === 0) release(event);

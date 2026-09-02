@@ -78,6 +78,11 @@ Anti-flicker behavior while the mouse button is held. Section code `P`.
 - **MRS-P-6** `[smoke]` `[accepted]` — A press whose release is never delivered to the editor's document — a `mouseup` outside the hosting webview iframe goes to the outer window — MUST NOT leave reveal frozen indefinitely. The next in-editor button-less `mousemove` (`buttons === 0`) MUST clear the latch and run the normal release path (including the snap), so markers recompute against the post-drag selection. The latch check makes the handler a no-op outside a press. The outside release itself is unobservable (pointer capture does not cross the iframe boundary either), so reveal recovers when the cursor heads back to the editor rather than at the instant of release; treating the cursor merely leaving the editor as a release is explicitly rejected because it reveals markers mid-drag.
   _Example:_ drag-select a construct, release the mouse outside the webview, then move back over the editor → the latch clears and reveal recomputes (the construct reveals if the selection now warrants it).
 
+- **MRS-P-7** — While a press is held, the frozen pre-press selection MUST be mapped through every document change, so a keystroke or paste landing mid-press keeps the freeze on the same bytes and reveal evaluated against it stays correct after the edit.
+  _Example:_ caret inside `**bold**` (revealed), mouse button held elsewhere, `x` inserted at the document start → the frozen selection shifts by one and `**bold**` stays revealed.
+- **MRS-P-8** — Only a primary-button (`button === 0`) `mouseup` releases the latch, matching the primary-button press that set it; releasing a secondary button mid-drag MUST leave the press state (latch and frozen selection) intact until the primary button is released.
+  _Example:_ left-drag across `**bold**`, press and release the right button mid-drag → markers stay frozen; they recompute when the left button is released.
+
 ## S — Selection snap
 
 On mouseup, snapping a selection that sits in a construct's content area outward

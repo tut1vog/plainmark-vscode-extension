@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import {
+  frozen_reveal_selection_field,
   pointer_down_field,
   pointer_state_extension,
 } from '../../src/webview/decorations/pointer_state.js';
@@ -122,6 +123,27 @@ describe('pointer_state DOM wiring', () => {
       state: EditorState.create({ doc: 'x' }),
       parent: container,
     });
+  });
+
+  it('maps the frozen pre-press selection through edits made while the button is held (MRS-P-7)', () => {
+    view.dispatch({ selection: { anchor: 6 } });
+    view.contentDOM.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, cancelable: true }),
+    );
+    expect(view.state.field(frozen_reveal_selection_field)?.main.head).toBe(6);
+    view.dispatch({ changes: { from: 0, insert: 'abc' } });
+    expect(view.state.field(frozen_reveal_selection_field)?.main.head).toBe(9);
+  });
+
+  it('keeps the latch when a secondary button is released mid-press (MRS-P-8)', () => {
+    view.contentDOM.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, cancelable: true }),
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 2 }));
+    expect(view.state.field(pointer_down_field)).toBe(true);
+    expect(view.state.field(frozen_reveal_selection_field)).not.toBeNull();
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 0 }));
+    expect(view.state.field(pointer_down_field)).toBe(false);
   });
 
   it('repeated mousedowns do not dispatch redundant transactions', () => {
