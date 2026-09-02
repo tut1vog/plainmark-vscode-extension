@@ -131,6 +131,13 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CBLK-I-16** — The suggestion list MUST be derived from the registries the CBLK-R-12/R-16 matcher resolves — every stock `@codemirror/language-data` name and alias plus every surviving CBLK-R-16 alias-layer tag, lower-cased and deduplicated, plus `mermaid` for the CBLK-E-3 diagram widget — never a separately curated list. Each option MUST be labeled with the fence tag and detailed with the canonical language name. Fuzzy filtering MUST stay enabled (no `filter: false`).
   _Example:_ ` ```asse| ` offers `assembly` detailed `Gas`; accepting yields ` ```assembly `.
 
+- **CBLK-I-17** — The CBLK-I-6 Enter auto-close MUST fire only when the caret line is the opening fence of a block that has no closing fence. A fence-looking line or a `$$` line inside the body of an unclosed block is code, and Enter there MUST take the default newline — appending a closer to the body would leave a stray delimiter inside the block.
+  _Example:_ ```` ```
+~~~| ```` → Enter → ```` ```
+~~~
+| ```` (no ` ~~~ ` closer appended); ```` intro
+```py| ```` → Enter → still auto-closes.
+
 ## SP · Source preservation
 
 - **CBLK-SP-1** `[inherits:INV-SP-1]` — Code-block rendering MUST be decoration-only. The handler emits only `Decoration.line` (chrome), `Decoration.mark` (fence hiding) and the widgetless `Decoration.replace({})` of CBLK-R-18 (fence-indent hiding); it performs NO widget replace, NO info-string canonicalization, and NO source-byte mutation. The `codeLanguages` overlay only sub-parses for coloring; it never rewrites or re-serializes source.

@@ -323,3 +323,29 @@ describe('block_delimiter_autoclose — non-triggers', () => {
     expect(applied).toHaveLength(0);
   });
 });
+
+describe('block_delimiter_autoclose — only the opener line closes a block CBLK-I-17', () => {
+  it('(a) Enter on a ~~~ line inside an unclosed ``` block yields (that line is code)', () => {
+    const { view, applied } = make_view('```\n~~~', 7);
+    expect(block_delimiter_autoclose(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(b) Enter on a ``` line inside an unclosed ~~~ block yields', () => {
+    const { view, applied } = make_view('~~~\n```js', 9);
+    expect(block_delimiter_autoclose(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(c) Enter on a $$ line inside an unclosed fence yields', () => {
+    const { view, applied } = make_view('```\n$$', 6);
+    expect(block_delimiter_autoclose(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(d) the opener line of an unclosed block still auto-closes', () => {
+    const { view, doc } = make_view('intro\n```py', 11);
+    expect(block_delimiter_autoclose(view)).toBe(true);
+    expect(doc()).toBe('intro\n```py\n\n```');
+  });
+});

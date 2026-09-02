@@ -6,6 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **Enter on a fence-like line inside an open code block no longer inserts a stray closing fence** — pressing Enter after typing ` ~~~ ` or `$$` as code inside an unclosed ``` block appended a second closer into the code; only the block's own opening line auto-closes now.
 - **Equations with `\label` no longer show a "multiply defined" error when you click into them** — MathJax remembered the label from the first render and rejected the live preview of the same equation; labels are now reset before each render.
 - **Links to another file with a heading anchor now open the file** — clicking `[API](docs/api.md#auth)` tried to open a file literally named `api.md#auth`; the anchor is now dropped and the file opens.
 - **Pasted images saved under a folder name with spaces now render** — the inserted path was not escaped, so a save location such as `assets/${documentBaseName}` with a space in the document name produced a link Markdown could not read; the path is now percent-encoded.

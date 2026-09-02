@@ -1,5 +1,5 @@
 import { syntaxTree } from '@codemirror/language';
-import { Transaction, type EditorState } from '@codemirror/state';
+import { Transaction, type EditorState, type Line } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { enclosing } from '../tree_ancestors.js';
 
@@ -16,18 +16,24 @@ function fence_is_unclosed(state: EditorState, pos: number): boolean {
   return fenced ? fenced.getChildren('CodeMark').length < 2 : true;
 }
 
+// True only when `line` is itself the opener of a block with no closing fence;
+// a fence-looking line inside another unclosed block's body is code, not an opener.
+function is_unclosed_opener(state: EditorState, line: Line): boolean {
+  const fenced = enclosing(syntaxTree(state).resolveInner(line.to, -1), 'FencedCode');
+  if (!fenced) return true;
+  return (
+    fenced.getChildren('CodeMark').length < 2 &&
+    state.doc.lineAt(fenced.from).number === line.number
+  );
+}
+
 function math_is_unclosed(state: EditorState, pos: number): boolean {
   // The math grammar emits a BlockMath node only for a complete `$$…$$` pair;
   // a node here means the caret sits on a delimiter of an already-closed block.
   return enclosing(syntaxTree(state).resolveInner(pos, -1), 'BlockMath') === null;
 }
 
-function close_block(
-  view: EditorView,
-  insert_at: number,
-  indent: string,
-  closer: string,
-): boolean {
+function close_block(view: EditorView, insert_at: number, indent: string, closer: string): boolean {
   view.dispatch({
     changes: { from: insert_at, insert: `\n\n${indent}${closer}` },
     selection: { anchor: insert_at + 1 },
@@ -48,12 +54,16 @@ export function block_delimiter_autoclose(view: EditorView): boolean {
   if (main.head !== line.to) return false;
 
   const fence = OPEN_FENCE_RE.exec(line.text);
-  if (fence && fence_is_unclosed(state, main.head)) {
-    return close_block(view, line.to, fence[1], fence[2]);
+  if (fence) {
+    return is_unclosed_opener(state, line) && close_block(view, line.to, fence[1], fence[2]);
   }
 
   const math = MATH_OPEN_RE.exec(line.text);
-  if (math && math_is_unclosed(state, main.head)) {
+  if (
+    math &&
+    math_is_unclosed(state, main.head) &&
+    !enclosing(syntaxTree(state).resolveInner(line.to, -1), 'FencedCode')
+  ) {
     return close_block(view, line.to, math[1], '$$');
   }
 
