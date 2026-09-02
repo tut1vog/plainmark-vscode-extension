@@ -6,6 +6,11 @@
 // drives the three host-side assertions: openWith → isDirty=false;
 // external applyEdit → isDirty=true + getText() matches; INV-UNDO-2
 // muzzle wiring intact (noop_undo inert, Ctrl+Z keybinding present).
+//
+// The host under test is the `dist/extension.cjs` that
+// scripts/build-integration-tests.mjs rebuilt with the PLAINMARK_TEST_HOOK
+// seam compiled in (host-write-path.test.ts drives it); a shipped bundle
+// has that seam compiled out.
 
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
@@ -35,12 +40,6 @@ try {
       '--user-data-dir',
       user_data_dir,
     ],
-    // Arms the provider's test seam (PlainmarkEditorProvider test_hook_enabled)
-    // for this run only, so host-write-path.test.ts can inject a synthetic
-    // webview `update` into the real onDidReceiveMessage dispatch. The env var
-    // is scoped to this spawned extension-host process; a shipped extension
-    // never sees it, so the seam stays inert in production.
-    extensionTestsEnv: { PLAINMARK_TEST_HOOK: '1' },
   });
 } catch (err) {
   console.error('Failed to run host smoke tests:', err);

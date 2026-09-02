@@ -8,10 +8,10 @@
 //     (URI guard + EOL translate + whole-doc range + WorkspaceEdit + applyEdit)
 // runs end to end and its effect on the TextDocument is asserted.
 //
-// The seam is inert without the env var (see PlainmarkEditorProvider); the
-// harness arms it via `extensionTestsEnv` in run-tests.mjs. The injector command
-// (`tutivog.plainmark.__test__inject_message`) is registered only under that env
-// var and is absent from package.json, so it never surfaces in a shipped build.
+// The seam is an esbuild define (see PlainmarkEditorProvider): the desktop
+// integration build compiles it in, `pnpm run build` compiles it out. The
+// injector command (`tutivog.plainmark.__test__inject_message`) is therefore
+// absent from a shipped bundle as well as from package.json.
 //
 // Clauses: SYNC-W-3 (LF→native whole-doc replace), SYNC-P-2 (a byte-changing
 // update marks the document dirty), INV-SP-3 / SYNC-P-6 (EOL follows the

@@ -3,6 +3,9 @@
 //   node scripts/build-integration-tests.mjs desktop
 //     @vscode/test-electron suite → dist/integration/electron/suite/*.cjs
 //     (tests/integration/electron/run-tests.mjs points extensionTestsPath at index.cjs)
+//     Also rebuilds dist/extension.cjs with PLAINMARK_TEST_HOOK on, so the
+//     message-injection seam the suite drives exists in the host under test
+//     (`pnpm run build` compiles it out — run this after, never before, a build).
 //   node scripts/build-integration-tests.mjs web
 //     @vscode/test-web suite → dist/integration/web/suite/index.cjs, loaded by the
 //     workbench from /static/devextensions/dist/integration/web/suite/index.cjs
@@ -31,6 +34,7 @@ const targets = {
     // every suite file is an entry: the electron runner globs the compiled suite
     all_files: true,
     external: ['vscode', 'mocha', 'glob'],
+    host_entry: { entryPoints: ['src/extension.ts'], outfile: 'dist/extension.cjs' },
   },
   web: {
     suite_dir: 'tests/integration/web/suite',
@@ -68,5 +72,19 @@ await esbuild.build({
   external: target.external,
   sourcemap: true,
 });
+
+if (target.host_entry) {
+  await esbuild.build({
+    ...target.host_entry,
+    absWorkingDir: repo_root,
+    bundle: true,
+    platform: target.platform,
+    format: 'cjs',
+    target: target.target,
+    external: ['vscode'],
+    define: { PLAINMARK_TEST_HOOK: 'true' },
+  });
+  console.log(`[build-integration-tests] ${name}: rebuilt ${target.host_entry.outfile} with the test seam`);
+}
 
 console.log(`[build-integration-tests] ${name}: built ${entries.length} file(s) → ${out_dir}`);

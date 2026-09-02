@@ -12,6 +12,10 @@ const common = {
   // logs a violation for every lazily injected bundle.
   sourcemap: isDev ? 'external' : false,
   pure: isDev ? [] : ['console.log', 'console.warn', 'console.info', 'console.debug', 'console.trace'],
+  // Disables the provider's integration-test seam: the minified release bundles
+  // drop the dead branches outright, dev bundles keep them as `if (false)`.
+  // scripts/build-integration-tests.mjs rebuilds the desktop host with it on.
+  define: { PLAINMARK_TEST_HOOK: 'false' },
 };
 
 const configs = [

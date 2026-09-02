@@ -42,6 +42,9 @@ const widget_log = create_logger('widget');
 
 const STATUS_BAR_DEBOUNCE_MS = 200;
 
+// esbuild define: `false` in `pnpm run build` / `build:dev`, so every test-seam branch below is dead code (the minified release bundles drop it entirely); `true` only in the desktop integration build.
+declare const PLAINMARK_TEST_HOOK: boolean;
+
 export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider {
   static readonly viewType = 'tutivog.plainmark';
 
@@ -68,9 +71,8 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
   }>();
   static readonly on_did_change_cursor = PlainmarkEditorProvider._on_did_change_cursor.event;
   // Test seam (see resolveCustomTextEditor): maps a bound document's URI string
-  // to its live webview-message dispatch. Populated ONLY under the desktop
-  // integration harness (PLAINMARK_TEST_HOOK); empty and unreferenced in a
-  // shipped extension.
+  // to its live webview-message dispatch. Written only in the desktop
+  // integration build (PLAINMARK_TEST_HOOK); a shipped bundle never populates it.
   private static readonly test_message_injectors = new Map<
     string,
     (raw: unknown) => Promise<void>
@@ -381,12 +383,10 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       status_bar,
       new vscode.Disposable(() => clearTimeout(PlainmarkEditorProvider.status_bar_timer)),
     ];
-    // Gated test command (inert in production): pushes a synthetic webview
-    // message into a panel's real dispatch, keyed by document URI. Not declared
-    // in package.json `contributes.commands`, so it never appears in the palette;
-    // registered only when PLAINMARK_TEST_HOOK is set, so it does not exist in a
-    // shipped build.
-    if (test_hook_enabled()) {
+    // Test command: pushes a synthetic webview message into a panel's real
+    // dispatch, keyed by document URI. Not declared in package.json
+    // `contributes.commands`, and compiled out of shipped bundles (PLAINMARK_TEST_HOOK).
+    if (PLAINMARK_TEST_HOOK) {
       disposables.push(
         vscode.commands.registerCommand(
           'tutivog.plainmark.__test__inject_message',
@@ -586,15 +586,13 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       (raw) => void dispatch_webview_message(raw),
     );
 
-    // Test seam — inert in production. Only when PLAINMARK_TEST_HOOK is set
-    // (which the desktop integration harness alone does) is this panel's real
-    // dispatch registered so `tutivog.plainmark.__test__inject_message` can push
-    // a synthetic webview `update` into it. The Mocha suite runs in the extension
-    // host and cannot type into the webview iframe, so this is the smallest seam
-    // that exercises onDidReceiveMessage → sync loop → apply_full_replace end to
-    // end. With the env var unset the map is never populated AND the command is
-    // never registered (see register()), so no seam exists in a shipped build.
-    if (test_hook_enabled()) {
+    // Test seam, compiled out of shipped bundles (PLAINMARK_TEST_HOOK): the
+    // desktop integration build registers this panel's real dispatch so
+    // `tutivog.plainmark.__test__inject_message` can push a synthetic webview
+    // `update` into it. The Mocha suite runs in the extension host and cannot
+    // type into the webview iframe, so this is the smallest seam that exercises
+    // onDidReceiveMessage → sync loop → apply_full_replace end to end.
+    if (PLAINMARK_TEST_HOOK) {
       PlainmarkEditorProvider.test_message_injectors.set(
         document.uri.toString(),
         dispatch_webview_message,
@@ -699,15 +697,6 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       pasteTableConversion,
     });
   }
-}
-
-// True only when the desktop integration harness sets PLAINMARK_TEST_HOOK=1.
-// Read via globalThis so the reference is safe in the Web host (which has no
-// `process`) and needs no Node import (INV-HOST-1).
-function test_hook_enabled(): boolean {
-  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
-    ?.env;
-  return env?.PLAINMARK_TEST_HOOK === '1';
 }
 
 // Every open panel re-resolves styles on the same change event, so an identical warning is shown once per event, not once per panel.
