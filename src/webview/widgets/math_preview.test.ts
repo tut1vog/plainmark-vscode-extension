@@ -17,7 +17,7 @@ function make_state(
   });
 }
 
-describe('find_math_context_at MATH-I-5 MATH-I-6', () => {
+describe('find_math_context_at MATH-I-7', () => {
   it('returns the context when the caret sits inside inline math', () => {
     const doc = 'see $x = y$ here\n';
     const from = doc.indexOf('$');

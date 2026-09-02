@@ -51,7 +51,7 @@ function decorations(state: EditorState): DecoSnapshot[] {
   return out;
 }
 
-describe('math_cache_key MATH-R-5', () => {
+describe('math_cache_key MATH-R-6', () => {
   it('encodes display flag into the key', () => {
     expect(math_cache_key(true, 'a')).toBe('block:a');
     expect(math_cache_key(false, 'a')).toBe('inline:a');
@@ -70,7 +70,7 @@ describe('MathWidget.ignoreEvent MATH-I-4', () => {
   });
 });
 
-describe('MathWidget.eq MATH-R-6', () => {
+describe('MathWidget.eq', () => {
   it('returns true when display, src, and html all match', () => {
     const a = new MathWidget(true, 'a = b', { ok: true, html: '<mjx>a</mjx>' });
     const b = new MathWidget(true, 'a = b', { ok: true, html: '<mjx>a</mjx>' });
@@ -476,7 +476,7 @@ describe('math_widgets_field — inline decoration emission MATH-R-3 MATH-I-1 MA
   });
 });
 
-describe('math_cache_field MATH-R-5', () => {
+describe('math_cache_field MATH-R-4', () => {
   it('starts empty', () => {
     const state = make_state('');
     expect(state.field(math_cache_field).size).toBe(0);

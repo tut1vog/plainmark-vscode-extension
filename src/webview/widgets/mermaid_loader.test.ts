@@ -100,7 +100,7 @@ describe('load_mermaid lazy-load contract MMD-E-8', () => {
   });
 });
 
-describe('MermaidBlockPreviewWidget.eq MMD-R-7', () => {
+describe('MermaidBlockPreviewWidget.eq', () => {
   it('true when src and theme match', () => {
     expect(
       new MermaidBlockPreviewWidget('graph TD', 'light').eq(

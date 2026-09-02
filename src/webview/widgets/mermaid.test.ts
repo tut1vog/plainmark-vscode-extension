@@ -48,7 +48,7 @@ function decorations(state: EditorState): DecoSnapshot[] {
 
 const DIAGRAM = '```mermaid\ngraph TD\nA-->B\n```\n';
 
-describe('mermaid_cache_key MMD-R-6', () => {
+describe('mermaid_cache_key MMD-E-6', () => {
   it('joins theme and src', () => {
     expect(mermaid_cache_key('light', 'graph TD')).toBe('light:graph TD');
   });
@@ -68,7 +68,7 @@ describe('MermaidWidget.ignoreEvent MMD-I-5 MMD-I-6', () => {
   });
 });
 
-describe('MermaidWidget.eq MMD-R-7', () => {
+describe('MermaidWidget.eq MMD-E-5', () => {
   const ok: MermaidResult = { ok: true, svg: '<svg>a</svg>' };
 
   it('true when src, theme and result match', () => {
