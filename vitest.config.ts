@@ -8,6 +8,5 @@ export default defineConfig({
     // not vitest's describe/it.
     exclude: ['**/node_modules/**', 'tests/integration/**'],
     environment: 'node',
-    passWithNoTests: true,
   },
 });
