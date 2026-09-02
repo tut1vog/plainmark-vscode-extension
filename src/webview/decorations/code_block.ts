@@ -36,6 +36,28 @@ function nest_context(node: SyntaxNode): { depth: number; quoted: boolean } {
   return { depth: quoted ? 0 : count_ancestors(node, 'ListItem', 'Blockquote'), quoted };
 }
 
+// Column width of `text`; a tab advances to the next multiple of 4 (CommonMark).
+function columns_of(text: string): number {
+  let col = 0;
+  for (const ch of text) col = ch === '\t' ? col + 4 - (col % 4) : col + 1;
+  return col;
+}
+
+// Leading whitespace of `text` that fits within `columns`, as a character count
+// — a tab is taken only when its full advance fits.
+function indent_chars_within(text: string, columns: number): number {
+  let chars = 0;
+  let col = 0;
+  while (chars < text.length) {
+    const ch = text[chars];
+    const next = ch === ' ' ? col + 1 : ch === '\t' ? col + 4 - (col % 4) : -1;
+    if (next < 0 || next > columns) break;
+    col = next;
+    chars++;
+  }
+  return chars;
+}
+
 // Per-depth line decorations are cached so equal depths share one instance.
 const nested_lines = new Map<string, Decoration>();
 function nested_line(base_class: string, depth: number): Decoration {
@@ -97,9 +119,11 @@ function fenced_code_handler(): NodeHandler {
       });
 
       // CommonMark strips the fence's indent from the block's content, so up
-      // to that many leading whitespace characters per line are display-hidden.
+      // to that many leading whitespace columns per line are display-hidden.
       const fence_indent =
-        !quoted && marks.length > 0 ? marks[0].from - open_line.from : 0;
+        !quoted && marks.length > 0
+          ? columns_of(open_line.text.slice(0, marks[0].from - open_line.from))
+          : 0;
 
       for (let i = open_line.number; i <= end_line_no; i++) {
         const line = state.doc.line(i);
@@ -120,13 +144,7 @@ function fenced_code_handler(): NodeHandler {
         }
         decorations.push(deco.range(line.from));
         if (fence_indent > 0) {
-          let ws = 0;
-          while (
-            ws < fence_indent &&
-            ws < line.text.length &&
-            (line.text[ws] === ' ' || line.text[ws] === '\t')
-          )
-            ws++;
+          const ws = indent_chars_within(line.text, fence_indent);
           if (ws > 0) decorations.push(hide_indent.range(line.from, line.from + ws));
         }
       }

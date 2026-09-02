@@ -321,6 +321,26 @@ describe('CBLK-R-18: leading whitespace up to the fence indent is display-hidden
     ]);
   });
 
+  it('counts the fence indent in columns: a tab hides only when its full advance fits', () => {
+    // 2-space fence: the tab on line 2 spans 4 columns, so it stays visible.
+    // '  ```js'=0..7, '\tx'=8..10, '  ```'=11..16, 'z'=17
+    const state = make_state('  ```js\n\tx\n  ```\nz', 18);
+    expect(indent_marks(state)).toEqual([
+      { from: 0, to: 2 },
+      { from: 11, to: 13 },
+    ]);
+  });
+
+  it('hides a tab that fits a 4-column fence indent', () => {
+    // '1. a'=0..4, '    ```js'=5..14, '\tx'=15..17, '    ```'=18..25, 'z'=26
+    const state = make_state('1. a\n    ```js\n\tx\n    ```\nz', 26);
+    expect(indent_marks(state)).toEqual([
+      { from: 5, to: 9 },
+      { from: 15, to: 16 },
+      { from: 18, to: 22 },
+    ]);
+  });
+
   it('emits no indent marks for a flush top-level fence', () => {
     const state = make_state('```js\nconst a = 1;\n```\nz', 24);
     expect(indent_marks(state)).toEqual([]);
