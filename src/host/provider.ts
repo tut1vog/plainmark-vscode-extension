@@ -723,10 +723,12 @@ async function handle_paste_image(
   document: vscode.TextDocument,
   webview: vscode.Webview,
 ): Promise<void> {
-  const reply = (m: HostPasteImageReplyMessage): void => void webview.postMessage(m);
+  const id = typeof msg.id === 'number' ? msg.id : -1;
+  const reply = (body: { relative_path: string } | { error: string }): void =>
+    void webview.postMessage({ type: 'paste_image_reply', id, ...body } as HostPasteImageReplyMessage);
 
   if (typeof msg.data !== 'string' || msg.data.length === 0 || typeof msg.mime !== 'string') {
-    reply({ type: 'paste_image_reply', error: 'invalid paste payload' });
+    reply({ error: 'invalid paste payload' });
     return;
   }
 
@@ -735,7 +737,7 @@ async function handle_paste_image(
     const warning = 'Plainmark: save this document to a folder before pasting images.';
     widget_log.warn('paste_image: no writable filesystem', { scheme: document.uri.scheme });
     void vscode.window.showWarningMessage(warning);
-    reply({ type: 'paste_image_reply', error: warning });
+    reply({ error: warning });
     return;
   }
 
@@ -759,12 +761,12 @@ async function handle_paste_image(
     await vscode.workspace.fs.writeFile(file_uri, bytes);
     const rel = relative_path(doc_dir.path, file_uri.path);
     widget_log.debug('paste_image: saved', { bytes: bytes.length, rel_len: rel.length });
-    reply({ type: 'paste_image_reply', relative_path: rel });
+    reply({ relative_path: rel });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     widget_log.error('paste_image: save failed', { detail });
     void vscode.window.showWarningMessage(`Plainmark: could not save the pasted image (${detail}).`);
-    reply({ type: 'paste_image_reply', error: detail });
+    reply({ error: detail });
   }
 }
 

@@ -10,6 +10,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
+- **A failed image paste no longer blocks every later image paste** — when saving one image never got an answer, later pastes silently did nothing; a reply is now waited for at most fifteen seconds. Pasting an image over selected text also replaces the selection, as pasting text does.
 - **Formulas and diagrams no longer stay dimmed forever when their renderer fails to load** — a persistently failing download was retried on every edit while the math kept its faded placeholder look; after three failed attempts the raw source is now shown with the error.
 - **Undoing a table inserted directly above another table no longer jumps into the other table** — the undo activated and rewrote a cell in the table below as if it were the removed one.
 - **An outside edit to the cell you are editing no longer pulls focus back into the table** — a find-and-replace from a split text editor that touched the active cell moved the keyboard focus into the Plainmark cell.

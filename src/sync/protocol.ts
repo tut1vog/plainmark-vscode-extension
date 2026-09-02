@@ -45,6 +45,8 @@ interface WebviewTableEditErrorMessage {
 
 export interface WebviewPasteImageMessage {
   type: 'paste_image';
+  // Correlates the reply; a late or duplicate reply for another request is dropped.
+  id: number;
   // base64, not ArrayBuffer/Blob — those don't reliably survive the webview↔host clone boundary (vscode#115807).
   data: string;
   mime: string;
@@ -121,11 +123,13 @@ interface HostScrollToHeadingMessage {
 
 interface HostPasteImageReplyOk {
   type: 'paste_image_reply';
+  id: number;
   relative_path: string;
 }
 
 interface HostPasteImageReplyError {
   type: 'paste_image_reply';
+  id: number;
   error: string;
 }
 

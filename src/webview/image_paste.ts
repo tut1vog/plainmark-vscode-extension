@@ -1,7 +1,14 @@
-import { type Extension } from '@codemirror/state';
+import { type Extension, Transaction } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import type { HostPasteImageReplyMessage } from '../sync/protocol.js';
 import type { PostMessage } from './sync.js';
+import { create_logger } from '../log.js';
+
+const log = create_logger('widget');
+
+// A reply the host never sends (a crashed save, a dropped message) would
+// otherwise wedge every later image paste behind the unresolved promise.
+export const IMAGE_PASTE_REPLY_TIMEOUT_MS = 15_000;
 
 export const PASTE_IMAGE_EVENT = 'plainmark-paste-image';
 
@@ -48,11 +55,11 @@ function blob_to_base64(blob: Blob): Promise<string> {
   });
 }
 
-function insert_at_caret(view: EditorView, text: string): void {
-  const pos = view.state.selection.main.head;
+// Replaces the selection like every other paste path, leaving the caret after the insert.
+function insert_pasted_link(view: EditorView, text: string): void {
   view.dispatch({
-    changes: { from: pos, insert: text },
-    selection: { anchor: pos + text.length },
+    ...view.state.replaceSelection(text),
+    annotations: [Transaction.userEvent.of('input.paste')],
     scrollIntoView: true,
   });
 }
@@ -68,8 +75,10 @@ export interface ImagePasteController {
 export function create_image_paste_controller(
   view: EditorView,
   post_message: PostMessage,
+  reply_timeout_ms: number = IMAGE_PASTE_REPLY_TIMEOUT_MS,
 ): ImagePasteController {
-  let pending: ((reply: HostPasteImageReplyMessage) => void) | null = null;
+  let pending: { id: number; resolve: (reply: HostPasteImageReplyMessage) => void } | null = null;
+  let next_id = 0;
   let chain: Promise<void> = Promise.resolve();
 
   async function run(files: File[]): Promise<void> {
@@ -77,12 +86,25 @@ export function create_image_paste_controller(
     for (const file of files) {
       const data = await blob_to_base64(file);
       if (data.length === 0) continue;
+      const id = ++next_id;
       const reply = await new Promise<HostPasteImageReplyMessage>((resolve) => {
-        pending = resolve;
-        post_message({ type: 'paste_image', data, mime: file.type });
+        const timer = setTimeout(() => {
+          if (pending?.id !== id) return;
+          pending = null;
+          log.warn('paste_image: no host reply', { id, timeout_ms: reply_timeout_ms });
+          resolve({ type: 'paste_image_reply', id, error: 'no host reply' });
+        }, reply_timeout_ms);
+        pending = {
+          id,
+          resolve: (r) => {
+            clearTimeout(timer);
+            resolve(r);
+          },
+        };
+        post_message({ type: 'paste_image', id, data, mime: file.type });
       });
       if (!('relative_path' in reply)) break;
-      insert_at_caret(view, (first ? '' : '\n') + `![](${reply.relative_path})`);
+      insert_pasted_link(view, (first ? '' : '\n') + `![](${reply.relative_path})`);
       first = false;
     }
   }
@@ -93,9 +115,10 @@ export function create_image_paste_controller(
       return chain;
     },
     deliver_reply(reply) {
-      const resolve = pending;
+      if (!pending || reply.id !== pending.id) return;
+      const { resolve } = pending;
       pending = null;
-      resolve?.(reply);
+      resolve(reply);
     },
   };
 }

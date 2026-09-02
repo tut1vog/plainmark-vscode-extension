@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { EditorState } from '@codemirror/state';
+import { EditorState, StateEffect, Transaction } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { allow_console } from '../console-sentinel.js';
 import { mount_editor, move_cursor } from '../util.js';
 import { editor_extensions } from '../../../src/webview/editor_extensions.js';
 import { set_image_base_effect } from '../../../src/webview/widgets/image.js';
@@ -17,13 +18,20 @@ function png_file(name = 'pasted.png'): File {
 
 // A controller wired to a host that replies synchronously — `pending` is already
 // armed when `post_message` runs, so `handle_files` resolves on the next tick.
-function wire(view: EditorView, reply_for: (index: number) => HostPasteImageReplyMessage) {
+type ReplyBody = { relative_path: string } | { error: string };
+
+function wire(view: EditorView, reply_for: (index: number) => ReplyBody, reply_timeout_ms?: number) {
   const posted: WebviewToHostMessage[] = [];
-  const controller = create_image_paste_controller(view, (m) => {
-    const index = posted.length;
-    posted.push(m);
-    controller.deliver_reply(reply_for(index));
-  });
+  const controller = create_image_paste_controller(
+    view,
+    (m) => {
+      const index = posted.length;
+      posted.push(m);
+      const id = (m as { id: number }).id;
+      controller.deliver_reply({ type: 'paste_image_reply', id, ...reply_for(index) } as HostPasteImageReplyMessage);
+    },
+    reply_timeout_ms,
+  );
   return { controller, posted };
 }
 
@@ -84,10 +92,7 @@ describe('image paste', () => {
 
   it('IMG-I-6: posts base64 bytes plus the blob MIME type to the host', async () => {
     view = mount_editor(container, '', 'https://example.test/');
-    const { controller, posted } = wire(view, () => ({
-      type: 'paste_image_reply',
-      relative_path: 'pasted.png',
-    }));
+    const { controller, posted } = wire(view, () => ({ relative_path: 'pasted.png' }));
     await controller.handle_files([png_file()]);
     expect(posted).toHaveLength(1);
     expect(posted[0]).toMatchObject({ type: 'paste_image', mime: 'image/png' });
@@ -114,7 +119,7 @@ describe('image paste', () => {
     const caret = 'intro\n\n'.length;
     move_cursor(view, caret);
 
-    const { controller } = wire(view, () => ({ type: 'paste_image_reply', relative_path: 'pasted.png' }));
+    const { controller } = wire(view, () => ({ relative_path: 'pasted.png' }));
     await controller.handle_files([png_file()]);
 
     const after = view.state.doc.toString();
@@ -128,10 +133,7 @@ describe('image paste', () => {
   it('IMG-I-10: multiple images insert one per line in clipboard order', async () => {
     view = mount_editor(container, '', 'https://example.test/');
     move_cursor(view, 0);
-    const { controller, posted } = wire(view, (i) => ({
-      type: 'paste_image_reply',
-      relative_path: `img-${i + 1}.png`,
-    }));
+    const { controller, posted } = wire(view, (i) => ({ relative_path: `img-${i + 1}.png` }));
     await controller.handle_files([png_file('a.png'), png_file('b.png')]);
     expect(posted).toHaveLength(2);
     expect(view.state.doc.toString()).toBe('![](img-1.png)\n![](img-2.png)');
@@ -140,10 +142,7 @@ describe('image paste', () => {
   it('IMG-I-8: an error reply inserts nothing', async () => {
     view = mount_editor(container, 'hello', 'https://example.test/');
     move_cursor(view, view.state.doc.length);
-    const { controller } = wire(view, () => ({
-      type: 'paste_image_reply',
-      error: 'no writable filesystem',
-    }));
+    const { controller } = wire(view, () => ({ error: 'no writable filesystem' }));
     await controller.handle_files([png_file()]);
     expect(view.state.doc.toString()).toBe('hello');
   });
@@ -151,7 +150,7 @@ describe('image paste', () => {
   it('IMG-I-6: a pasted image renders as a widget once the caret leaves it', async () => {
     view = mount_editor(container, 'para\n\n', 'https://example.test/');
     move_cursor(view, view.state.doc.length);
-    const { controller } = wire(view, () => ({ type: 'paste_image_reply', relative_path: 'pasted.png' }));
+    const { controller } = wire(view, () => ({ relative_path: 'pasted.png' }));
     await controller.handle_files([png_file()]);
     // caret sits in the freshly inserted image paragraph → raw source revealed
     expect(container.querySelectorAll('.plainmark-image-block img')).toHaveLength(0);
@@ -160,5 +159,58 @@ describe('image paste', () => {
     expect(imgs).toHaveLength(1);
     expect(imgs[0].getAttribute('src')).toBe('https://example.test/pasted.png');
     expect(imgs[0].getAttribute('alt')).toBe('');
+  });
+
+  it('IMG-I-12: the insert replaces a non-empty selection and is tagged as a paste', async () => {
+    view = mount_editor(container, 'keep DROP keep', 'https://example.test/');
+    let user_event: string | undefined;
+    const { controller } = wire(view, () => ({ relative_path: 'pasted.png' }));
+    const off = EditorView.updateListener.of((u) => {
+      for (const tr of u.transactions) if (tr.docChanged) user_event = tr.annotation(Transaction.userEvent);
+    });
+    view.dispatch({
+      selection: { anchor: 5, head: 9 },
+      effects: StateEffect.appendConfig.of(off),
+    });
+    await controller.handle_files([png_file()]);
+    expect(view.state.doc.toString()).toBe('keep ![](pasted.png) keep');
+    expect(user_event).toBe('input.paste');
+  });
+
+  it('IMG-I-12: a reply carrying another request id is ignored', async () => {
+    view = mount_editor(container, '', 'https://example.test/');
+    let posted_id = -1;
+    const controller = create_image_paste_controller(view, (m) => {
+      posted_id = (m as { id: number }).id;
+      controller.deliver_reply({ type: 'paste_image_reply', id: posted_id + 100, relative_path: 'stale.png' });
+      controller.deliver_reply({ type: 'paste_image_reply', id: posted_id, relative_path: 'right.png' });
+    });
+    await controller.handle_files([png_file()]);
+    expect(view.state.doc.toString()).toBe('![](right.png)');
+  });
+
+  it('IMG-I-12: a paste whose reply never arrives times out and the next paste still works', async () => {
+    allow_console('paste_image: no host reply');
+    view = mount_editor(container, '', 'https://example.test/');
+    let calls = 0;
+    const controller = create_image_paste_controller(
+      view,
+      (m) => {
+        calls++;
+        // first request: host stays silent; second: reply normally
+        if (calls === 2) {
+          controller.deliver_reply({
+            type: 'paste_image_reply',
+            id: (m as { id: number }).id,
+            relative_path: 'second.png',
+          });
+        }
+      },
+      20,
+    );
+    await controller.handle_files([png_file()]);
+    expect(view.state.doc.toString()).toBe('');
+    await controller.handle_files([png_file()]);
+    expect(view.state.doc.toString()).toBe('![](second.png)');
   });
 });

@@ -70,7 +70,7 @@ describe('wire protocol', () => {
       { type: 'link_click', href: './a.md' },
       { type: 'style_load_error', href: 'file:///x.css' },
       { type: 'table_edit_error', reason: 'boom' },
-      { type: 'paste_image', data: 'aGVsbG8=', mime: 'image/png' },
+      { type: 'paste_image', id: 1, data: 'aGVsbG8=', mime: 'image/png' },
       { type: 'read_clipboard' },
     ];
     for (const original of messages) {
@@ -93,8 +93,8 @@ describe('wire protocol', () => {
       { type: 'focus_editor' },
       { type: 'style_reload', href: 'file:///x.css' },
       { type: 'scroll_to_heading', line: 42, character: 3 },
-      { type: 'paste_image_reply', relative_path: 'assets/x.png' },
-      { type: 'paste_image_reply', error: 'no writable filesystem' },
+      { type: 'paste_image_reply', id: 1, relative_path: 'assets/x.png' },
+      { type: 'paste_image_reply', id: 1, error: 'no writable filesystem' },
       { type: 'clipboard_text', text: 'pasted' },
     ];
     for (const original of messages) {
