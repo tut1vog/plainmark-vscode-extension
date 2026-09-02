@@ -269,15 +269,17 @@ function extract_table_full(table_node: SyntaxNode, doc: Text): TableExtraction 
   };
 }
 
-const LIST_OR_BLOCKQUOTE_PREFIX = /^(?:\s*(?:[-*+]|\d+[.)])\s|>)/;
+// IL1: only a blockquote-nested table needs this line guard — the decoration
+// walk never descends into a list item, so a list-nested table never reaches it.
+const BLOCKQUOTE_PREFIX = /^>/;
 
-function is_in_list_or_blockquote(state: EditorState, from: number): boolean {
+function is_in_blockquote(state: EditorState, from: number): boolean {
   const line = state.doc.lineAt(from);
-  return LIST_OR_BLOCKQUOTE_PREFIX.test(line.text);
+  return BLOCKQUOTE_PREFIX.test(line.text);
 }
 
 // IL1 asymmetry: this returns list/blockquote-nested tables too — only
-// build_table_decorations applies the is_in_list_or_blockquote guard — so a
+// build_table_decorations applies the IL1 guards — so a
 // returned table may have no widget. Callers must defend (table_widget_rendered)
 // before assuming a rendered table. A unit test pins this contract deliberately.
 export function find_tables(state: EditorState): TableInfo[] {
@@ -1121,9 +1123,9 @@ function build_table_ranges(
       if (node.name === 'Document') return;
       if (node.name === 'Table') {
         try {
-          // IL1: the sole gate that suppresses widgets for nested tables; the
+          // IL1: the sole gate that suppresses widgets for quote-nested tables; the
           // find_tables/locate_table_extraction extract path does not mirror it.
-          if (is_in_list_or_blockquote(state, node.from)) {
+          if (is_in_blockquote(state, node.from)) {
             return false;
           }
           const info = extract_table_info(node.node, state.doc);

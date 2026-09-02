@@ -201,9 +201,9 @@ describe('table entry keymap — ArrowDown/ArrowUp from main view (Fix 2)', () =
 
   it('TBL-I-25: ArrowDown into an IL1-skipped table (nested in list) is a no-op', async () => {
     // List items each containing a single pipe-delimited line. Even if lezer
-    // parses Table syntax inside the list, `build_table_decorations`'
-    // is_in_list_or_blockquote guard suppresses the widget, so the entry
-    // keymap's `table_widget_rendered` DOM check returns false.
+    // parses Table syntax inside the list, the decoration walk never descends
+    // into a ListItem, so no widget renders and the entry keymap's
+    // `table_widget_rendered` DOM check returns false.
     const prefix = 'hello\n';
     const nested = '- | A | B |\n- |---|---|\n- | 1 | 2 |\n';
     view = mount_editor(container, prefix + nested);

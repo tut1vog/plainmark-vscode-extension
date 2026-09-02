@@ -62,7 +62,7 @@ called out in prose to avoid ambiguity with `|`.
 - **TBL-R-11** — `TableWidget.eq` MUST return equal only when `table.from`, `row_count`, `col_count`, the alignment signature, the math-cache fingerprint (cache keys present inside the table range), AND the trimmed-cell content signature all match; otherwise CM6 rebuilds via `toDOM`/`updateDOM`. A dimension change (`row_count`/`col_count` differ) MUST force a full `toDOM` (updateDOM returns false). `eq` MUST additionally return false when either widget's last render pass failed to locate its `Table` node (`draw_failed`), so a rebuild after the parse catches up repairs a widget that drew with empty cells instead of reusing its DOM.
   _Example:_ a swap that changes cell content but not dimensions → eq false → `updateDOM` reconciles in place; an insert-row → dimensions differ → `toDOM` full rebuild.
 
-- **TBL-R-12** — A `Table` whose first line matches a list-item (`/^\s*[-*+]\s/`, `/^\s*\d+[.)]\s/`) or blockquote (`/^>/`) prefix MUST be skipped (IL1): `build_table_decorations` emits no widget and the table renders as plain markdown source.
+- **TBL-R-12** — A `Table` nested in a list item or blockquote MUST be skipped (IL1): `build_table_decorations` emits no widget and the table renders as plain markdown source. A list-nested table is excluded structurally — the decoration walk descends only into `Document`-level blocks and never enters a `ListItem`; a blockquote-nested table is reached (a `Blockquote` is `Document`-level) and is excluded by a first-line guard for the `>` prefix (`/^>/`).
   _Example:_ `> | a | b |\n> | - | - |` → no widget; the source renders as a blockquote containing literal pipe text.
 
 - **TBL-R-13** — Any extraction or render failure MUST fall back to plain-source rendering for that one table and MUST NOT throw to CM6 (FAIL1): `extract_table_info` is wrapped in try/catch in `find_tables` / `build_table_decorations`; a failing table is logged via `console.warn('[widget]', …)` with structural metadata only and its `Decoration.replace` is omitted. `toDOM`, `updateDOM`, and the cell emitter are each independently try/catch-guarded.
@@ -240,7 +240,7 @@ called out in prose to avoid ambiguity with `|`.
 
 ## E · Edge cases
 
-- **TBL-E-1** — A table nested in a list item or blockquote MUST be skipped (IL1; cross-ref TBL-R-12): no widget, plain-source render. This is the at-render guard `is_in_list_or_blockquote` on the table's first line.
+- **TBL-E-1** — A table nested in a list item or blockquote MUST be skipped (IL1; cross-ref TBL-R-12): no widget, plain-source render. The list case falls out of the decoration walk's descent rule; the blockquote case is the at-render `>` guard on the table's first line.
   _Example:_ `- | a | b |\n  | - | - |` → renders as list source, not a table widget.
 
 - **TBL-E-2** — Mismatched columns are governed at TWO distinct layers: **at-rest DOM** pads missing cells as `underfill` placeholders (TBL-R-9) and drops excess cells (TBL-R-8); **on-edit serialize** normalizes the SOURCE to the header column count (TBL-SP-6, MC1/AC5). AC5 governs serialize output, not the at-rest DOM; the two layers MUST stay distinct (placeholders are not yet written to source).

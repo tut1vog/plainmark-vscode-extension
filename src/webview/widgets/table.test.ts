@@ -1,5 +1,5 @@
 import { markdown } from '@codemirror/lang-markdown';
-import { ensureSyntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorState, StateEffect } from '@codemirror/state';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
@@ -256,9 +256,18 @@ describe('TBL-R-12 TBL-E-1 IL1 — table nested inside list or blockquote', () =
     expect(find_tables(make_state('| A | B |\n|---|---|\n| 1 | 2 |\n'))).toHaveLength(1);
   });
 
-  it('produces zero decorations for a table inside a list item', () => {
-    const doc = '- intro\n  | A | B |\n  |---|---|\n  | 1 | 2 |\n';
+  it('produces zero decorations for a table inside a list item (the walk never descends into a ListItem)', () => {
+    // blank line after the intro: an indented row cannot interrupt the item's paragraph
+    const doc = '- intro\n\n  | A | B |\n  |---|---|\n  | 1 | 2 |\n';
     const state = make_state(doc);
+    // The table does parse; it is unreached structurally, not by a line-prefix guard.
+    let nested_table = false;
+    syntaxTree(state).iterate({
+      enter(node) {
+        if (node.name === 'Table' && node.node.parent?.name === 'ListItem') nested_table = true;
+      },
+    });
+    expect(nested_table).toBe(true);
     let count = 0;
     state.field(table_widgets_field).between(0, state.doc.length, () => {
       count += 1;
