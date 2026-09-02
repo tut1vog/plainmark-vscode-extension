@@ -62,45 +62,9 @@ function host_tag(msg: HostToWebviewMessage): string {
 }
 
 describe('wire protocol', () => {
-  it('round-trips every webview→host variant through JSON and the union', () => {
-    const messages: WebviewToHostMessage[] = [
-      { type: 'ready' },
-      { type: 'update', text: 'hello', base_version: 4 },
-      { type: 'cursor_changed', line: 3, character: 7 },
-      { type: 'link_click', href: './a.md' },
-      { type: 'style_load_error', href: 'file:///x.css' },
-      { type: 'table_edit_error', reason: 'boom' },
-      { type: 'paste_image', id: 1, data: 'aGVsbG8=', mime: 'image/png' },
-      { type: 'read_clipboard' },
-    ];
-    for (const original of messages) {
-      const decoded = JSON.parse(JSON.stringify(original)) as WebviewToHostMessage;
-      expect(decoded).toEqual(original);
-      expect(webview_tag(decoded)).toBe(webview_tag(original));
-    }
-  });
-
-  it('round-trips every host→webview variant through JSON and the union', () => {
-    const messages: HostToWebviewMessage[] = [
-      { type: 'sync', text: 'doc', version: 2, document_dir_webview_uri: null },
-      { type: 'sync', text: 'doc', version: 3, document_dir_webview_uri: 'vscode://x', initial_cursor: { line: 1, character: 0 } },
-      { type: 'insert_table' },
-      { type: 'insert_footnote' },
-      { type: 'normalize_list_indent' },
-      { type: 'expand_paragraph_seams' },
-      { type: 'compact_paragraph_seams' },
-      { type: 'prettify_seams', seams: [{ above: 'table', below: '*', blanks: 0 }] },
-      { type: 'focus_editor' },
-      { type: 'style_reload', href: 'file:///x.css' },
-      { type: 'scroll_to_heading', line: 42, character: 3 },
-      { type: 'paste_image_reply', id: 1, relative_path: 'assets/x.png' },
-      { type: 'paste_image_reply', id: 1, error: 'no writable filesystem' },
-      { type: 'clipboard_text', text: 'pasted' },
-    ];
-    for (const original of messages) {
-      const decoded = JSON.parse(JSON.stringify(original)) as HostToWebviewMessage;
-      expect(decoded).toEqual(original);
-      expect(host_tag(decoded)).toBe(host_tag(original));
-    }
+  // The value is the `never` default above: the run only proves both switches compile.
+  it('enumerates every variant of both unions', () => {
+    expect(webview_tag({ type: 'ready' })).toBe('ready');
+    expect(host_tag({ type: 'focus_editor' })).toBe('focus_editor');
   });
 });

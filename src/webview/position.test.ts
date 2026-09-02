@@ -29,7 +29,17 @@ describe('position_to_offset OUT-I-2', () => {
     expect(position_to_offset(Text.of(['']), 5, 5)).toBe(0);
   });
 
-  it('counts characters in UTF-16 code units, matching CM6 offsets', () => {
-    expect(position_to_offset(Text.of(['日本語', '']), 0, 2)).toBe(2);
+  it('counts astral characters as two UTF-16 units, matching the host column', () => {
+    // VS Code `character` and CM6 offsets both count UTF-16 code units, so a
+    // surrogate pair (😀, 𠮷) advances by 2 and a column may land mid-pair.
+    const text = '😀a𠮷\n𝒳b';
+    const astral = Text.of(text.split('\n'));
+    expect(position_to_offset(astral, 0, 1)).toBe(1);
+    expect(position_to_offset(astral, 0, 2)).toBe(2);
+    expect(position_to_offset(astral, 0, 3)).toBe(3);
+    expect(position_to_offset(astral, 0, 5)).toBe(5);
+    expect(position_to_offset(astral, 0, 99)).toBe(5);
+    expect(position_to_offset(astral, 1, 2)).toBe(8);
+    expect(text.slice(position_to_offset(astral, 1, 2))).toBe('b');
   });
 });
