@@ -49,6 +49,7 @@ export const ROOT_DEFAULTS_CSS = `:root {
   --plainmark-table-cell-overflow-wrap: break-word;
   --plainmark-table-header-weight: 600;
   --plainmark-table-row-alt-background: color-mix(in srgb, var(--vscode-foreground) 4%, transparent);
+  --plainmark-table-cell-selection-background: var(--plainmark-selection-background);
 
   /* Text styles */
   --plainmark-strong-color: inherit;

@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Select several table cells at once** — drag from one cell into another, or Shift+click a second cell, to select a block of cells that Backspace or Delete clears and that copy or cut puts on the clipboard as tab-separated text, ready for a spreadsheet or for pasting back into a document as a table.
+
 ## [1.12.0] - 2026-09-02
 
 ### Security

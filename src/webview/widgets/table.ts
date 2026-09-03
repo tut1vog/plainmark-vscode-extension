@@ -13,8 +13,20 @@ import {
   Transaction,
 } from '@codemirror/state';
 import { Decoration, type DecorationSet, EditorView, WidgetType, keymap } from '@codemirror/view';
-import { dispatch_table_edit, make_cell_keymap } from './table_keymap.js';
+import { clear_range_cells, dispatch_table_edit, make_cell_keymap } from './table_keymap.js';
 import { set_cell_text } from './table_ops.js';
+import {
+  type CellCoord,
+  type CellRange,
+  cell_range_annotation,
+  locate_band,
+  normalize_cell_range,
+  range_cells_text,
+  range_contains,
+  range_to_html,
+  range_to_tsv,
+  same_cell_range,
+} from './table_cell_range.js';
 import { show_table_context_menu } from './table_context_menu.js';
 import { image_base_field } from './image.js';
 import { cached_block_height, remember_block_height } from './widget_height_cache.js';
@@ -425,6 +437,8 @@ interface ActiveSubview {
   col_index: number;
   td: HTMLTableCellElement;
   subview_container: HTMLElement;
+  // Multi-cell selection anchored at this cell (TBL-I-41); lives with the subview so teardown drops it.
+  range: CellRange | null;
   detach: () => void;
 }
 
@@ -479,7 +493,16 @@ function widget_from_td(td: HTMLElement): TableWidget | null {
 // created a frame later (AC3 rAF), so the browser never armed its native
 // drag-select for this gesture — drive it manually until release. Without this,
 // click-drag-to-select fails until a second press lands on the live subview.
-function start_cell_drag_select(sub: EditorView, anchor: number): () => void {
+//
+// Leaving the pressed cell hands the gesture to the cell-range selection
+// (TBL-I-41): the rectangle between the anchor cell and the cell under the
+// pointer highlights, and returning into the anchor cell resumes text selection.
+function start_cell_drag_select(
+  sub: EditorView,
+  anchor: number,
+  td: HTMLTableCellElement,
+  anchor_cell: CellCoord,
+): () => void {
   const end_drag = (): void => {
     document.removeEventListener('mousemove', on_move);
     document.removeEventListener('mouseup', end_drag);
@@ -491,6 +514,7 @@ function start_cell_drag_select(sub: EditorView, anchor: number): () => void {
       end_drag();
       return;
     }
+    if (widget_from_td(td)?.extend_range_drag(sub, td, event, anchor_cell)) return;
     const head = sub.posAtCoords({ x: event.clientX, y: event.clientY }, false);
     if (head < 0) return;
     sub.dispatch({ selection: EditorSelection.range(anchor, head) });
@@ -780,11 +804,22 @@ export class TableWidget extends WidgetType {
     td.addEventListener('mousedown', (ev) => {
       // look the widget up at event time so updateDOM-driven swaps reach us
       const widget = widget_from_td(td) ?? this;
-      if (
-        widget.active &&
+      const on_active_cell =
+        widget.active !== null &&
         widget.active.row_index === cell.row_index &&
-        widget.active.col_index === cell.col_index
-      ) {
+        widget.active.col_index === cell.col_index;
+      // Shift+click extends a range from the active cell without moving the caret (TBL-I-41).
+      if (ev.shiftKey && ev.button === 0 && widget.active) {
+        ev.preventDefault();
+        const anchor = { row: widget.active.row_index, col: widget.active.col_index };
+        const head = { row: cell.row_index, col: cell.col_index };
+        widget.set_cell_range(
+          on_active_cell ? null : normalize_cell_range(anchor, head),
+        );
+        return;
+      }
+      if (on_active_cell) {
+        widget.set_cell_range(null);
         return;
       }
       ev.preventDefault();
@@ -874,8 +909,34 @@ export class TableWidget extends WidgetType {
         const main_pointer_down =
           main_view.state.field(pointer_down_field, false) ?? false;
         const anchor = this.seed_click_caret(sub, click_pos, main_pointer_down);
-        if (main_pointer_down) drag_cleanup = start_cell_drag_select(sub, anchor);
+        if (main_pointer_down) {
+          drag_cleanup = start_cell_drag_select(sub, anchor, td, {
+            row: row_index,
+            col: col_index,
+          });
+        }
       }
+
+      // Capture phase, ahead of CM6's own copy/cut on contentDOM: with a range
+      // selected the clipboard carries the cells, not the anchor's text (TBL-I-43).
+      const clipboard_handler = (ev: ClipboardEvent): void => {
+        const widget = widget_from_td(td) ?? this;
+        const range = widget.active?.view === sub ? widget.active.range : null;
+        if (!range || !ev.clipboardData) return;
+        const extraction = locate_table_extraction(main_view.state, widget.table.from);
+        if (!extraction) return;
+        const rows = range_cells_text(
+          build_model_from_extraction(extraction, main_view.state.doc),
+          range,
+        );
+        ev.clipboardData.setData('text/plain', range_to_tsv(rows));
+        ev.clipboardData.setData('text/html', range_to_html(rows));
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (ev.type === 'cut') clear_range_cells(main_view, widget.table.from, range, sub);
+      };
+      subview_container.addEventListener('copy', clipboard_handler, true);
+      subview_container.addEventListener('cut', clipboard_handler, true);
 
       const blur_handler = (): void => {
         setTimeout(() => {
@@ -895,8 +956,11 @@ export class TableWidget extends WidgetType {
         col_index,
         td,
         subview_container,
+        range: null,
         detach: () => {
           sub.contentDOM.removeEventListener('focusout', blur_handler);
+          subview_container.removeEventListener('copy', clipboard_handler, true);
+          subview_container.removeEventListener('cut', clipboard_handler, true);
           drag_cleanup?.();
           unpin_column_widths(td.closest('table'));
         },
@@ -935,6 +999,17 @@ export class TableWidget extends WidgetType {
       widget.handle_cell_edit(main_view, sub, row_index, col_index);
     });
 
+    // An edit or a deliberate caret move in the anchor cell dismisses the range;
+    // the range machinery's own transactions and the pointer-release effects do not.
+    const range_dismiss_listener = EditorView.updateListener.of((u) => {
+      const widget = widget_from_td(td) ?? this;
+      if (!widget.active?.range) return;
+      if (u.transactions.some((tr) => tr.annotation(cell_range_annotation))) return;
+      if (u.docChanged || u.transactions.some((tr) => tr.isUserEvent('select'))) {
+        widget.set_cell_range(null);
+      }
+    });
+
     // resolve table.from at keystroke time — edits above the table shift it without rebuilding the subview's closures
     const live_table_from = (): number => (widget_from_td(td) ?? this).table.from;
 
@@ -944,6 +1019,7 @@ export class TableWidget extends WidgetType {
         get table_from() {
           return live_table_from();
         },
+        get_range: () => (widget_from_td(td) ?? this).active?.range ?? null,
         get_active: () => {
           // look the widget up at event time so updateDOM-driven swaps reach us
           const widget = widget_from_td(td) ?? this;
@@ -974,6 +1050,7 @@ export class TableWidget extends WidgetType {
         extensions: build_subview_extensions(main_view.state, [
           Prec.high(cell_keymap),
           cell_edit_listener,
+          range_dismiss_listener,
         ]),
       }),
       parent: subview_container,
@@ -1022,8 +1099,78 @@ export class TableWidget extends WidgetType {
     );
   }
 
+  // Reflects the range as `plainmark-table-cell-selected` on each covered cell
+  // and `plainmark-table-range-active` on the block; the anchor caret collapses
+  // and hides so the highlighted cells read as the one selection (TBL-R-18).
+  set_cell_range(range: CellRange | null): void {
+    const active = this.active;
+    if (!active || same_cell_range(active.range, range)) return;
+    active.range = range;
+    const container = active.td.closest('.plainmark-table-block');
+    if (!container) return;
+    for (const cell of Array.from(container.querySelectorAll<HTMLElement>('th, td'))) {
+      const r = Number(cell.dataset.rowIndex ?? '-1');
+      const c = Number(cell.dataset.colIndex ?? '-1');
+      cell.classList.toggle(
+        'plainmark-table-cell-selected',
+        range !== null && range_contains(range, r, c),
+      );
+    }
+    container.classList.toggle('plainmark-table-range-active', range !== null);
+    if (range) {
+      const head = active.view.state.selection.main.head;
+      active.view.dispatch({
+        selection: { anchor: head },
+        annotations: [cell_range_annotation.of(true)],
+      });
+    }
+  }
+
+  // True when the held pointer sits in another cell of this table: the range
+  // follows it. Back in the anchor cell the range drops and text selection resumes.
+  extend_range_drag(
+    sub: EditorView,
+    td: HTMLTableCellElement,
+    point: { clientX: number; clientY: number },
+    anchor_cell: CellCoord,
+  ): boolean {
+    if (this.active?.view !== sub) return false;
+    const hit = this.cell_at_point(td, point);
+    if (hit && (hit.row !== anchor_cell.row || hit.col !== anchor_cell.col)) {
+      this.set_cell_range(normalize_cell_range(anchor_cell, hit));
+      return true;
+    }
+    if (this.active.range) this.set_cell_range(null);
+    return false;
+  }
+
+  // Row from the pointer's y against the rendered rows, column from its x
+  // against the header cells, each clamped to the table's edge; null when the
+  // table has no laid-out geometry.
+  cell_at_point(td: HTMLTableCellElement, point: { clientX: number; clientY: number }): CellCoord | null {
+    const table = td.closest('table');
+    const header = table?.tHead?.rows[0];
+    if (!table || !header || header.cells.length === 0 || table.rows.length === 0) return null;
+    const row_bands = Array.from(table.rows, (tr) => {
+      const rect = tr.getBoundingClientRect();
+      return { start: rect.top, end: rect.bottom };
+    });
+    const col_bands = Array.from(header.cells, (th) => {
+      const rect = th.getBoundingClientRect();
+      return { start: rect.left, end: rect.right };
+    });
+    if (row_bands.some((b) => b.end <= b.start) || col_bands.some((b) => b.end <= b.start)) {
+      return null;
+    }
+    return {
+      row: locate_band(row_bands, point.clientY),
+      col: locate_band(col_bands, point.clientX),
+    };
+  }
+
   private teardown_active(view: EditorView): void {
     if (!this.active) return;
+    this.set_cell_range(null);
     const { view: sub, td, row_index, col_index, detach } = this.active;
     detach();
     sub.destroy();
@@ -1288,6 +1435,14 @@ const table_theme = EditorView.theme({
   '.plainmark-table-block img': {
     maxWidth: '100%',
     height: 'auto',
+  },
+  '.plainmark-table-block th.plainmark-table-cell-selected, .plainmark-table-block td.plainmark-table-cell-selected':
+    {
+      background:
+        'var(--plainmark-table-cell-selection-background, var(--plainmark-selection-background, color-mix(in srgb, var(--vscode-editor-selectionBackground, rgb(0, 102, 204)) 40%, transparent)))',
+    },
+  '.plainmark-table-block.plainmark-table-range-active .plainmark-table-cell-edit .cm-cursor': {
+    display: 'none',
   },
 });
 

@@ -152,6 +152,7 @@ Names follow one rule: `--plainmark-<construct>[-<sub-construct>]-<property>[-<s
 | `--plainmark-table-cell-overflow-wrap` | `break-word` |
 | `--plainmark-table-header-weight` | `600` |
 | `--plainmark-table-row-alt-background` | `color-mix(in srgb, var(--vscode-foreground) 4%, transparent)` |
+| `--plainmark-table-cell-selection-background` | `var(--plainmark-selection-background)` |
 
 ### Inline text styles (bold, italic, strikethrough, inline code)
 

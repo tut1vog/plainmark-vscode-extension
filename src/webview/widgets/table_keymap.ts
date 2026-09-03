@@ -19,6 +19,8 @@ import {
   table_removal_range,
 } from './table_ops.js';
 import { get_table_keybindings } from './table_keybindings_config.js';
+import { type CellRange, cell_range_annotation, clear_cells } from './table_cell_range.js';
+import { table_sync_annotation } from './table_sync_annotation.js';
 import { TABLE_ACTION_IDS } from '../../common/table_keybindings.js';
 import { create_logger } from '../../log.js';
 
@@ -28,6 +30,7 @@ export interface CellKeymapContext {
   main_view: EditorView;
   table_from: number;
   get_active: () => { row_index: number; col_index: number } | null;
+  get_range: () => CellRange | null;
   request_focus: (row: number, col: number) => void;
   // Same-task activation for pure keyboard moves (no pending table rebuild) —
   // the deferred request_focus path costs 2+ frames per hop, felt as lag when
@@ -103,6 +106,24 @@ export function dispatch_table_remove(main_view: EditorView, table_from: number)
     annotations: [Transaction.userEvent.of('input')],
   });
   main_view.focus();
+  return true;
+}
+
+// Blanks every cell of the range in one serializer transaction (TBL-I-42); the
+// anchor subview is refreshed by a sync-tagged transaction so it neither
+// re-dispatches nor dismisses the range, which stays selected like a spreadsheet's.
+export function clear_range_cells(
+  main_view: EditorView,
+  table_from: number,
+  range: CellRange,
+  sub: EditorView,
+): boolean {
+  const out = dispatch_table_edit(main_view, table_from, (m) => clear_cells(m, range));
+  if (!out.changed) return false;
+  sub.dispatch({
+    changes: { from: 0, to: sub.state.doc.length, insert: '' },
+    annotations: [table_sync_annotation.of(true), cell_range_annotation.of(true)],
+  });
   return true;
 }
 
@@ -243,6 +264,14 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
     return command(ctx.main_view);
   };
 
+  // With a range selected, Backspace/Delete blank the cells instead of editing the anchor's text; an all-empty range is a no-op that still consumes the key.
+  const clear_selected_range = (view: EditorView): boolean => {
+    const range = ctx.get_range();
+    if (!range) return false;
+    clear_range_cells(ctx.main_view, ctx.table_from, range, view);
+    return true;
+  };
+
   // Structural-op bindings are built from the resolved config (TBL-I-8 / TBL-I-28);
   // the nav and history keys below stay hardcoded (and are reserved, TBL-I-30).
   const resolved = get_table_keybindings();
@@ -325,6 +354,14 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
         });
         return true;
       },
+    },
+    {
+      key: 'Backspace',
+      run: clear_selected_range,
+    },
+    {
+      key: 'Delete',
+      run: clear_selected_range,
     },
     {
       // Typora parity: bare Backspace at the start of an all-empty table's first cell removes the table; any cell content → normal in-cell delete (TBL-I-34).
