@@ -1,9 +1,5 @@
 import * as vscode from 'vscode';
-import {
-  create_sync_loop,
-  type CursorPosition,
-  type SyncEditApplier,
-} from '../sync/loop.js';
+import { create_sync_loop, type CursorPosition, type SyncEditApplier } from '../sync/loop.js';
 import type {
   HostToWebviewMessage,
   HostPasteImageReplyMessage,
@@ -95,9 +91,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
   static get_panel_for_uri(uri: vscode.Uri): vscode.WebviewPanel | null {
     const uri_string = uri.toString();
     for (const panel of PlainmarkEditorProvider.active_panels) {
-      if (
-        PlainmarkEditorProvider.panel_documents.get(panel)?.uri.toString() === uri_string
-      ) {
+      if (PlainmarkEditorProvider.panel_documents.get(panel)?.uri.toString() === uri_string) {
         return panel;
       }
     }
@@ -124,7 +118,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     const uri = document.uri.toString();
     let cache = PlainmarkEditorProvider.status_bar_cache;
     if (!cache || cache.uri !== uri || cache.version !== document.version) {
-      cache = { uri, version: document.version, text: word_count_label(count_words(document.getText())) };
+      cache = {
+        uri,
+        version: document.version,
+        text: word_count_label(count_words(document.getText())),
+      };
       PlainmarkEditorProvider.status_bar_cache = cache;
     }
     item.text = cache.text;
@@ -142,11 +140,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
   }
 
   private static set_editor_active_context(active: boolean): void {
-    void vscode.commands.executeCommand(
-      'setContext',
-      'tutivog.plainmark.editorIsActive',
-      active,
-    );
+    void vscode.commands.executeCommand('setContext', 'tutivog.plainmark.editorIsActive', active);
   }
 
   private static refresh_editor_active_context(): void {
@@ -183,13 +177,10 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     const noop_find = vscode.commands.registerCommand('tutivog.plainmark.noop_find', () => {
       sync_log.debug('noop_find fired');
     });
-    const insert_table = vscode.commands.registerCommand(
-      'tutivog.plainmark.insertTable',
-      () => {
-        const panel = PlainmarkEditorProvider.get_active_panel();
-        void panel?.webview.postMessage({ type: 'insert_table' } satisfies HostToWebviewMessage);
-      },
-    );
+    const insert_table = vscode.commands.registerCommand('tutivog.plainmark.insertTable', () => {
+      const panel = PlainmarkEditorProvider.get_active_panel();
+      void panel?.webview.postMessage({ type: 'insert_table' } satisfies HostToWebviewMessage);
+    });
     const insert_footnote = vscode.commands.registerCommand(
       'tutivog.plainmark.insertFootnote',
       () => {
@@ -251,22 +242,14 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       async (uri?: vscode.Uri) => {
         const panel = PlainmarkEditorProvider.get_active_panel();
         const target_uri =
-          uri ??
-          (panel
-            ? PlainmarkEditorProvider.panel_documents.get(panel)?.uri
-            : undefined);
+          uri ?? (panel ? PlainmarkEditorProvider.panel_documents.get(panel)?.uri : undefined);
         if (!target_uri) {
           init_log.warn('openInTextEditor: no target uri');
           return;
         }
-        const source_tab = find_tab_for(
-          target_uri,
-          PlainmarkEditorProvider.viewType,
-        );
+        const source_tab = find_tab_for(target_uri, PlainmarkEditorProvider.viewType);
         // Replay the webview's last reported caret on the text editor.
-        const cached_cursor = panel
-          ? PlainmarkEditorProvider.panel_cursors.get(panel)
-          : undefined;
+        const cached_cursor = panel ? PlainmarkEditorProvider.panel_cursors.get(panel) : undefined;
         const show_options: vscode.TextDocumentShowOptions = {
           viewColumn: source_tab?.group.viewColumn ?? panel?.viewColumn,
         };
@@ -457,6 +440,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         .getConfiguration('plainmark', document.uri)
         .get<boolean>('paste.convertTables', true);
 
+    const compute_paste_rich_text = (): boolean =>
+      vscode.workspace
+        .getConfiguration('plainmark', document.uri)
+        .get<boolean>('paste.convertRichText', true);
+
     let current_styles = install_styles();
     const initial_keybindings = compute_keybindings();
     webviewPanel.webview.html = this.getHtml(
@@ -464,6 +452,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       current_styles,
       initial_keybindings,
       compute_paste_table_conversion(),
+      compute_paste_rich_text(),
     );
 
     const document_dir_webview_uri = document_dir_uri
@@ -475,8 +464,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         : `${document_dir_webview_uri}/`
       : null;
 
-    const get_eol = (): '\r\n' | '\n' =>
-      document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n';
+    const get_eol = (): '\r\n' | '\n' => (document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n');
 
     const applier: SyncEditApplier = {
       async apply_full_replace(uri_string: string, lf_text: string): Promise<boolean> {
@@ -603,7 +591,9 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       const styles_changed = e.affectsConfiguration('plainmark.styles', document.uri);
       const keys_changed = e.affectsConfiguration('plainmark.tableKeybindings', document.uri);
       const theme_changed = e.affectsConfiguration('plainmark.theme');
-      const paste_changed = e.affectsConfiguration('plainmark.paste.convertTables', document.uri);
+      const paste_changed =
+        e.affectsConfiguration('plainmark.paste.convertTables', document.uri) ||
+        e.affectsConfiguration('plainmark.paste.convertRichText', document.uri);
       if (!styles_changed && !keys_changed && !theme_changed && !paste_changed) return;
       init_log.debug('plainmark configuration changed — reloading webview', {
         styles_changed,
@@ -620,6 +610,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         current_styles,
         next_keybindings,
         compute_paste_table_conversion(),
+        compute_paste_rich_text(),
       );
     });
 
@@ -674,6 +665,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
     styles: readonly ResolvedStyle[],
     keybindings: ResolvedTableKeybindings,
     pasteTableConversion: boolean,
+    pasteRichText: boolean,
   ): string {
     // Gather the vscode-dependent values (asWebviewUri, cspSource, theme config)
     // here; the pure string construction (CSP, nonce placement, escaping,
@@ -695,6 +687,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       styleHrefs: styles.map(({ href }) => href),
       keybindings,
       pasteTableConversion,
+      pasteRichText,
     });
   }
 }
@@ -763,7 +756,11 @@ async function handle_paste_image(
 ): Promise<void> {
   const id = typeof msg.id === 'number' ? msg.id : -1;
   const reply = (body: { relative_path: string } | { error: string }): void =>
-    void webview.postMessage({ type: 'paste_image_reply', id, ...body } as HostPasteImageReplyMessage);
+    void webview.postMessage({
+      type: 'paste_image_reply',
+      id,
+      ...body,
+    } as HostPasteImageReplyMessage);
 
   if (typeof msg.data !== 'string' || msg.data.length === 0 || typeof msg.mime !== 'string') {
     reply({ error: 'invalid paste payload' });
@@ -794,7 +791,10 @@ async function handle_paste_image(
 
     const bytes = decode_base64(msg.data);
     await vscode.workspace.fs.createDirectory(save_dir);
-    const name = dedupe_file_name(image_file_name(new Date(), msg.mime), await read_dir_names(save_dir));
+    const name = dedupe_file_name(
+      image_file_name(new Date(), msg.mime),
+      await read_dir_names(save_dir),
+    );
     const file_uri = vscode.Uri.joinPath(save_dir, name);
     await vscode.workspace.fs.writeFile(file_uri, bytes);
     const rel = relative_path(doc_dir.path, file_uri.path);
@@ -803,7 +803,9 @@ async function handle_paste_image(
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     widget_log.error('paste_image: save failed', { detail });
-    void vscode.window.showWarningMessage(`Plainmark: could not save the pasted image (${detail}).`);
+    void vscode.window.showWarningMessage(
+      `Plainmark: could not save the pasted image (${detail}).`,
+    );
     reply({ error: detail });
   }
 }
@@ -816,18 +818,13 @@ function find_tab_for(uri: vscode.Uri, viewType: string): vscode.Tab | null {
   const uri_string = uri.toString();
   const groups = [
     vscode.window.tabGroups.activeTabGroup,
-    ...vscode.window.tabGroups.all.filter(
-      (g) => g !== vscode.window.tabGroups.activeTabGroup,
-    ),
+    ...vscode.window.tabGroups.all.filter((g) => g !== vscode.window.tabGroups.activeTabGroup),
   ];
   for (const group of groups) {
     for (const tab of group.tabs) {
       const input = tab.input;
       if (viewType === 'default') {
-        if (
-          input instanceof vscode.TabInputText &&
-          input.uri.toString() === uri_string
-        ) {
+        if (input instanceof vscode.TabInputText && input.uri.toString() === uri_string) {
           return tab;
         }
       } else if (
@@ -896,5 +893,7 @@ function try_handle_link_click(msg: WebviewToHostMessage | null, doc_uri: vscode
 function attempt_open(open: () => Thenable<unknown>): void {
   Promise.resolve()
     .then(open)
-    .catch((err: unknown) => widget_log.warn('link_click ipc: open failed', { detail: String(err) }));
+    .catch((err: unknown) =>
+      widget_log.warn('link_click ipc: open failed', { detail: String(err) }),
+    );
 }

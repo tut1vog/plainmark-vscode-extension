@@ -67,6 +67,31 @@
     {
       "name": "tab-indented-code",
       "text_plain": "\tconst x = 1;\n\tconsole.log(x);"
+    },
+    {
+      "name": "chat-answer-heading-and-bold-bullets",
+      "text_plain": "Options\nOption A — fastest to ship.\nOption B — safest, slower.",
+      "text_html": "<h2>Options</h2><ul><li><p><strong>Option A</strong> — fastest to ship.</p></li><li><p><strong>Option B</strong> — safest, slower.</p></li></ul>"
+    },
+    {
+      "name": "chatgpt-code-block-with-toolbar",
+      "text_plain": "typescript\nCopy code\nconst x = 1;\nexport default x;",
+      "text_html": "<pre class=\"overflow-visible\"><div><div class=\"header\">typescript</div><button>Copy code</button><div class=\"overflow-y-auto\"><code class=\"whitespace-pre language-typescript\">const x = 1;\nexport default x;\n</code></div></div></pre>"
+    },
+    {
+      "name": "katex-inline-math",
+      "text_plain": "Energy: E=mc2E = mc^2E=mc2 holds.",
+      "text_html": "<p>Energy: <span class=\"katex\"><span class=\"katex-mathml\"><math><semantics><mrow><mi>E</mi></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\">E=mc2</span></span></span> holds.</p>"
+    },
+    {
+      "name": "google-docs-bold-wrapper-list",
+      "text_plain": "first\nsecond",
+      "text_html": "<meta charset=\"utf-8\"><b style=\"font-weight:normal;\" id=\"docs-internal-guid-1\"><ul><li dir=\"ltr\"><p dir=\"ltr\"><span style=\"font-size:11pt;\">first</span></p></li><li dir=\"ltr\"><p dir=\"ltr\"><span style=\"font-size:11pt;\">second</span></p></li></ul></b>"
+    },
+    {
+      "name": "prose-around-table",
+      "text_plain": "Compare:\nName\tCost\nA\t1",
+      "text_html": "<p>Compare:</p><table><tr><th>Name</th><th>Cost</th></tr><tr><td>A</td><td>1</td></tr></table>"
     }
   ]
 }

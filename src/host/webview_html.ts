@@ -45,6 +45,9 @@ export interface WebviewHtmlInput {
   // Resolved `plainmark.paste.convertTables` — injected as the
   // `window.__plainmark_paste_table_conversion` bootstrap global (TBL-I-37).
   pasteTableConversion: boolean;
+  // Resolved `plainmark.paste.convertRichText` — injected as the
+  // `window.__plainmark_paste_rich_text` bootstrap global (PASTE-H-6).
+  pasteRichText: boolean;
 }
 
 export function build_webview_html(input: WebviewHtmlInput): string {
@@ -60,6 +63,7 @@ export function build_webview_html(input: WebviewHtmlInput): string {
     styleHrefs,
     keybindings,
     pasteTableConversion,
+    pasteRichText,
   } = input;
 
   // `style-src` widens to include `${cspSource}` so user `<link>` tags load — THEME-R-7.
@@ -102,6 +106,7 @@ export function build_webview_html(input: WebviewHtmlInput): string {
     JSON.stringify(keybindings).replace(/</g, '\\u003c')
   };</script>
   <script nonce="${nonce}">window.__plainmark_paste_table_conversion = ${JSON.stringify(pasteTableConversion)};</script>
+  <script nonce="${nonce}">window.__plainmark_paste_rich_text = ${JSON.stringify(pasteRichText)};</script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

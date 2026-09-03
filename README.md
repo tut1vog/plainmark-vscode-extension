@@ -32,6 +32,7 @@ Plainmark runs as a custom editor in both the desktop app and the browser — op
 - **Footnotes, autolinks, images, frontmatter, HTML** — full Markdown coverage.
 - **Paste images** — paste a screenshot or an image file (PNG, JPEG, GIF, WebP, or SVG) from the clipboard and Plainmark saves it into your workspace and inserts the image link.
 - **Paste tables** — paste a range copied from Excel, Google Sheets, or a table rendered on a web page and it becomes a Markdown table, bold/links included; tab-separated plain text converts too.
+- **Paste formatted text** — select and copy from a chat answer (ChatGPT, Claude, Gemini), a web page, or Word, and headings, lists, bold, italic, links, code blocks, quotes, tables, and math land as Markdown instead of flattened text; the right-click menu's Paste always inserts plain text.
 - **Paste into quotes** — paste multi-line text inside a blockquote or callout and every line gets the `>` markers it needs, at the right nesting depth, so the whole paste stays quoted.
 - **Outline view** — jump around the document from the Explorer sidebar.
 - **Word count** — the status bar shows a live word count while a Plainmark tab is active.
@@ -84,6 +85,7 @@ In-table editing shortcuts (insert/move/delete rows and columns, alignment) are 
 | `plainmark.tableKeybindings` | Customize the in-table structural-editing shortcuts. |
 | `plainmark.imagePasteLocation` | Folder for pasted images (default `.`, next to the document); supports `${documentWorkspaceFolder}` and `${documentBaseName}`. |
 | `plainmark.paste.convertTables` | Convert a copied spreadsheet range, web table, or tab-separated text into a Markdown table on paste (default on); turn off to always paste literally. |
+| `plainmark.paste.convertRichText` | Convert formatted text copied from a chat answer, web page, or document into Markdown on paste (default on); turn off to always paste the plain text. |
 | `plainmark.prettify.seams` | Override how many blank lines **Prettify document** writes between two adjacent blocks, per ordered pair — `{ "table>heading": 0, "*>heading": 1 }`. |
 
 ## Known limitations

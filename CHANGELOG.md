@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Formatted text pastes as Markdown** — select and copy from a ChatGPT, Claude, or Gemini answer, a web page, or Word, and headings, lists, bold, italic, links, code blocks, quotes, tables, and math arrive as Markdown instead of flattened text; the right-click menu's Paste still inserts plain text, and the new `plainmark.paste.convertRichText` setting turns the conversion off.
+
 ## [1.12.1] - 2026-09-03
 
 ### Added

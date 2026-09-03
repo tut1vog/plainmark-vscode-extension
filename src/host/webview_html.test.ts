@@ -32,6 +32,7 @@ function html(
     themeCss: '',
     styleHrefs: [],
     pasteTableConversion: true,
+    pasteRichText: true,
     ...rest,
     keybindings: keybindings as ResolvedTableKeybindings,
   });
@@ -115,8 +116,8 @@ describe('getNonce + nonce placement SHELL-W-3 SHELL-W-4', () => {
   it('SHELL-W-3: the CSP script-src nonce equals the nonce on every <script> tag', () => {
     const out = html({ themeCss: 'body{color:red}' });
     const script_tags = tags(out, 'script');
-    // 6 inline bootstrap scripts + 1 external src script.
-    expect(script_tags).toHaveLength(7);
+    // 7 inline bootstrap scripts + 1 external src script.
+    expect(script_tags).toHaveLength(8);
     for (const tag of script_tags) {
       expect(tag).toContain(`nonce="${NONCE}"`);
     }
@@ -193,7 +194,7 @@ describe('user <link> href injection is neutralized SHELL-W-10', () => {
     // No attribute breakout, no injected script element.
     expect(out).not.toContain('"><script');
     expect(out).not.toContain('<script>alert(1)');
-    expect(tags(out, 'script')).toHaveLength(7); // still only the 7 legitimate scripts
+    expect(tags(out, 'script')).toHaveLength(8); // still only the 8 legitimate scripts
     // The dangerous characters survive as escaped entities inside the attribute.
     expect(out).toContain('&quot;');
     expect(out).toContain('&lt;script');
@@ -216,8 +217,8 @@ describe('inline keybindings JSON is </script>-neutralized SHELL-W-10', () => {
     // No breakout: no raw </script> from user input, no injected <script>.
     expect(out).not.toContain('</script><script>');
     expect(out).not.toContain('<script>alert(1)');
-    expect(tags(out, 'script')).toHaveLength(7);
-    expect(out.match(/<\/script>/g)).toHaveLength(7); // only the 7 legitimate closers
+    expect(tags(out, 'script')).toHaveLength(8);
+    expect(out.match(/<\/script>/g)).toHaveLength(8); // only the 8 legitimate closers
     // The value survives as <-escaped JSON, decoded to the real string at runtime.
     expect(out).toContain('\\u003c/script>\\u003cscript>alert(1)\\u003c/script>');
   });

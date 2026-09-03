@@ -19,6 +19,8 @@ import { afterAll, beforeAll, describe, it } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { editor_extensions } from '../../../src/webview/editor_extensions.js';
+import { markdown_from_html } from '../../../src/webview/html_to_markdown.js';
+import { pasted_markdown_transaction } from '../../../src/webview/paste_rich_text.js';
 import { convert_pasted_table } from '../../../src/webview/paste_table.js';
 import corpus from '../../fuzz/fixtures/paste-corpus/index.json';
 import { allow_console, unexpected_console_snapshot } from '../console-sentinel.js';
@@ -74,6 +76,7 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
       dt.setData('text/plain', fixture.text_plain);
       if (fixture.text_html) dt.setData('text/html', fixture.text_html);
 
+      const before_state = view.state;
       const before_text = view.state.doc.toString();
       const before_head = before_text.slice(0, CARET_OFFSET);
       const before_tail = before_text.slice(CARET_OFFSET);
@@ -93,7 +96,7 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
       if (threw) {
         throw new Error(
           `paste flow: dispatch threw for fixture "${fixture.name}": ` +
-            `${threw instanceof Error ? threw.stack ?? threw.message : String(threw)}`,
+            `${threw instanceof Error ? (threw.stack ?? threw.message) : String(threw)}`,
         );
       }
 
@@ -128,13 +131,28 @@ describe('paste flow: synthetic ClipboardEvent into the production editor', () =
       // table markdown instead: the seed caret is mid-line with `\n` as the
       // next byte, so the insert is `'\n' + table` (leading own-line break, no
       // trailing byte) and the caret lands past the existing `\n`, at the start
-      // of the line after the table.
+      // of the line after the table — or one whose HTML carries formatting
+      // (PASTE-H-1), which inserts the rich-text conversion placed per
+      // PASTE-H-5 (computed here from the same pure transaction builder).
       const converted = convert_pasted_table({
         html: fixture.text_html ?? '',
         text: fixture.text_plain,
       });
-      const expected = converted !== null ? '\n' + converted : fixture.text_plain;
-      const expected_caret = CARET_OFFSET + expected.length + (converted !== null ? 1 : 0);
+      const rich =
+        converted === null && fixture.text_html ? markdown_from_html(fixture.text_html) : null;
+      let expected = fixture.text_plain;
+      let expected_caret = CARET_OFFSET + expected.length;
+      if (converted !== null) {
+        expected = '\n' + converted;
+        expected_caret = CARET_OFFSET + expected.length + 1;
+      } else if (rich !== null) {
+        const placed = before_state.update(pasted_markdown_transaction(before_state, rich)).state;
+        expected = placed.doc.sliceString(
+          CARET_OFFSET,
+          CARET_OFFSET + placed.doc.length - before_text.length,
+        );
+        expected_caret = placed.selection.main.head;
+      }
       const inserted = after_text.slice(CARET_OFFSET, CARET_OFFSET + inserted_length);
       if (inserted_length !== expected.length) {
         throw new Error(

@@ -164,6 +164,13 @@ describe('create_clipboard_paste_controller — menu paste', () => {
     expect(h.doc()).toBe('a\tb\nc\td');
   });
 
+  it('PASTE-C-2: the menu paste carries only plain text, so rich-looking content inserts literally', () => {
+    const h = make_paste_harness('', 0);
+    h.controller.request();
+    h.controller.deliver('<p>Use <strong>pnpm</strong></p>');
+    expect(h.doc()).toBe('<p>Use <strong>pnpm</strong></p>');
+  });
+
   it('BQ-I-13: re-prefixes a multi-line paste inside a blockquote', () => {
     const doc = '> quote ';
     const h = make_paste_harness(doc, doc.length);

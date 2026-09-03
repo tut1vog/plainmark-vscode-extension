@@ -264,6 +264,12 @@
           "scope": "resource",
           "default": true,
           "markdownDescription": "Convert table-like clipboard content into a Markdown table on paste, the way Typora and Obsidian do. Applies when the clipboard carries a single HTML `<table>` (a range copied from Excel, Google Sheets, or a rendered web table) or strictly tab-separated text with a consistent column count. Anything that doesn't qualify — including paste inside a table cell — is inserted as plain text. Disable to always paste the clipboard text literally. Changing this setting reloads the editor view."
+        },
+        "plainmark.paste.convertRichText": {
+          "type": "boolean",
+          "scope": "resource",
+          "default": true,
+          "markdownDescription": "Convert formatted text into Markdown on paste, the way Typora does. Applies when the clipboard carries HTML with headings, lists, bold, italic, links, code, quotes, or math — text selected and copied from a chat answer (ChatGPT, Claude, Gemini), a web page, or Word — and inserts the equivalent Markdown instead of the flattened plain text. Copies that carry no such formatting (code from a text editor, a Google Docs paragraph) and paste inside a table cell are inserted as plain text. The right-click menu's Paste always inserts plain text. Disable to always paste the clipboard text literally. Changing this setting reloads the editor view."
         }
       }
     }

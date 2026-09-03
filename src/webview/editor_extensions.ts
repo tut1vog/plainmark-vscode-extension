@@ -11,6 +11,7 @@ import { vertical_arrow_collapse_keymap } from './vertical_arrow_collapse.js';
 import { match_code_language } from './language_aliases.js';
 import { image_paste_extension } from './image_paste.js';
 import { quote_paste_extension } from './paste_quote.js';
+import { rich_text_paste_extension } from './paste_rich_text.js';
 import { table_paste_extension } from './paste_table.js';
 import { editor_context_menu_extension } from './editor_context_menu.js';
 import {
@@ -27,19 +28,13 @@ import { callout_theme } from './decorations/callout.js';
 import { callout_completions } from './decorations/callout_autocomplete.js';
 import { clipped_selection_layer } from './decorations/clipped_selection.js';
 import { codeblock_completions } from './decorations/codeblock_autocomplete.js';
-import {
-  code_block_extension,
-  plainmark_highlight_style,
-} from './decorations/code_block.js';
+import { code_block_extension, plainmark_highlight_style } from './decorations/code_block.js';
 import {
   codeblock_backspace,
   codeblock_tab_dedent,
   codeblock_tab_indent,
 } from './decorations/codeblock_tab.js';
-import {
-  footnote_decorations_plugin,
-  footnote_theme,
-} from './decorations/footnote.js';
+import { footnote_decorations_plugin, footnote_theme } from './decorations/footnote.js';
 import { inline_decorations_bundle } from './decorations/inline_bundle.js';
 import { footnote_popover_extension } from './decorations/footnote_popover.js';
 import { frontmatter_extension } from './decorations/frontmatter.js';
@@ -181,10 +176,9 @@ const editor_extensions_core: Extension[] = [
     // when a cell subview is active. The `>` chain matches only the main
     // editor's own cursorLayer; subview carets sit deeper inside `.cm-content`
     // and are unaffected.
-    '&[data-plainmark-cell-active] > .cm-scroller > .cm-cursorLayer > .cm-cursor':
-      {
-        display: 'none',
-      },
+    '&[data-plainmark-cell-active] > .cm-scroller > .cm-cursorLayer > .cm-cursor': {
+      display: 'none',
+    },
   }),
   // Zero CM6's baseTheme .cm-line inset (0 2px 0 6px) via the baseTheme tier — construct themes (code / callout / list / blockquote / html / frontmatter) reliably override it, so only plain paragraphs / headings flush to x=0.
   EditorView.baseTheme({
@@ -359,8 +353,7 @@ const search_panel_theme: Extension = EditorView.theme({
   '.cm-panel.cm-search .cm-textfield': {
     backgroundColor: 'var(--vscode-input-background, #ffffff)',
     color: 'var(--vscode-input-foreground, inherit)',
-    border:
-      '1px solid var(--vscode-input-border, var(--vscode-editorWidget-border, transparent))',
+    border: '1px solid var(--vscode-input-border, var(--vscode-editorWidget-border, transparent))',
     borderRadius: '2px',
   },
   '.cm-panel.cm-search .cm-textfield:focus': {
@@ -371,8 +364,7 @@ const search_panel_theme: Extension = EditorView.theme({
     backgroundImage: 'none',
     backgroundColor:
       'var(--vscode-button-secondaryBackground, var(--vscode-button-background, #5f6a79))',
-    color:
-      'var(--vscode-button-secondaryForeground, var(--vscode-button-foreground, #ffffff))',
+    color: 'var(--vscode-button-secondaryForeground, var(--vscode-button-foreground, #ffffff))',
     border: '1px solid var(--vscode-button-border, transparent)',
     borderRadius: '2px',
   },
@@ -384,8 +376,7 @@ const search_panel_theme: Extension = EditorView.theme({
     color: 'var(--vscode-icon-foreground, var(--vscode-editorWidget-foreground, inherit))',
   },
   '.cm-searchMatch': {
-    backgroundColor:
-      'var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33))',
+    backgroundColor: 'var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33))',
     outline: '1px solid var(--vscode-editor-findMatchHighlightBorder, transparent)',
   },
   '.cm-searchMatch-selected': {
@@ -439,7 +430,9 @@ export const editor_extensions: Extension[] = [
   image_paste_extension,
   // After the image sniff (IMG-I-6), main view only — a cell paste stays literal (TBL-I-19).
   table_paste_extension,
-  // After the table sniff — a multi-line text paste in a quote re-prefixes (BQ-I-13).
+  // After the table sniff — any other HTML with formatting converts (PASTE-H-1).
+  rich_text_paste_extension,
+  // After the rich-text sniff — a multi-line text paste in a quote re-prefixes (BQ-I-13).
   quote_paste_extension,
   // Main view only — table cells own their contextmenu; prose right-clicks open the editor menu.
   editor_context_menu_extension,

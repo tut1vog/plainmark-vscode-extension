@@ -1,5 +1,6 @@
 import { type Extension, Transaction } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { parse_clipboard_html, table_markdown_from_element } from './html_to_markdown.js';
 import { serialize_table, table_insert_suffix } from './widgets/table_serialize.js';
 
 declare global {
@@ -31,82 +32,19 @@ export function table_markdown_from_tsv(text: string): string | null {
   });
 }
 
-const INLINE_MARKERS: Record<string, string> = {
-  strong: '**',
-  b: '**',
-  em: '*',
-  i: '*',
-  del: '~~',
-  s: '~~',
-  strike: '~~',
-  code: '`',
-};
-
-function wrap_inline(content: string, marker: string): string {
-  // Markers never land against whitespace (CTX-I-6 parity) — shift it outside.
-  const match = /^(\s*)([\s\S]*?)(\s*)$/.exec(content) as RegExpExecArray;
-  if (match[2].length === 0) return content;
-  return match[1] + marker + match[2] + marker + match[3];
-}
-
-function inline_markdown(node: Node): string {
-  if (node.nodeType === Node.TEXT_NODE) {
-    return (node.nodeValue ?? '').replace(/\s+/g, ' ');
-  }
-  if (node.nodeType !== Node.ELEMENT_NODE) return '';
-  const el = node as Element;
-  const tag = el.tagName.toLowerCase();
-  if (tag === 'br') return '\n';
-  const content = Array.from(el.childNodes).map(inline_markdown).join('');
-  const marker = INLINE_MARKERS[tag];
-  if (marker !== undefined) return wrap_inline(content, marker);
-  if (tag === 'a') {
-    const href = el.getAttribute('href');
-    const label = content.trim();
-    if (href && label.length > 0) return `[${label}](${href})`;
-  }
-  // Block children inside a cell stack as soft breaks (`<br>` on serialize).
-  if (tag === 'p' || tag === 'div') return content + '\n';
-  return content;
-}
-
-function cell_markdown(cell: Element): string {
-  return inline_markdown(cell).trim();
-}
-
 // HTML gate (TBL-I-36): the payload must be essentially one <table> — no
-// non-whitespace text outside it, no row/col spans, equal row widths, at
-// least two cells.
+// non-whitespace text outside it; spans, ragged rows, and a lone cell decline
+// in the element converter.
 export function table_markdown_from_html(html: string): string | null {
-  if (typeof DOMParser === 'undefined') return null;
-  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const doc = parse_clipboard_html(html);
+  if (doc === null) return null;
   const tables = doc.querySelectorAll('table');
   if (tables.length !== 1) return null;
   const table = tables[0];
-  // Google Sheets ships a body-level <style>; non-rendered text is not content outside the table.
-  for (const el of Array.from(doc.body.querySelectorAll('style, script'))) el.remove();
   const outside = (doc.body.textContent ?? '').replace(/\s+/g, '');
   const inside = (table.textContent ?? '').replace(/\s+/g, '');
   if (outside !== inside) return null;
-  const rows: string[][] = [];
-  for (const tr of Array.from(table.querySelectorAll('tr'))) {
-    const cells = Array.from(tr.querySelectorAll('td, th'));
-    if (cells.length === 0) continue;
-    for (const cell of cells) {
-      const colspan = cell.getAttribute('colspan') ?? '1';
-      const rowspan = cell.getAttribute('rowspan') ?? '1';
-      if (colspan !== '1' || rowspan !== '1') return null;
-    }
-    rows.push(cells.map(cell_markdown));
-  }
-  if (rows.length === 0) return null;
-  // Ragged rows would silently lose cells to serialize_table's header-wins policy — decline like the TSV gate.
-  if (rows.some((row) => row.length !== rows[0].length)) return null;
-  if (rows.length < 2 && rows[0].length < 2) return null;
-  return serialize_table({
-    rows,
-    alignment: rows[0].map(() => null),
-  });
+  return table_markdown_from_element(table);
 }
 
 export interface PasteClipboardPayload {
