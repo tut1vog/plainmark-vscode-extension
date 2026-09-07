@@ -60,6 +60,8 @@ code `R`.
   _Example:_ caret inside `**bold**` → the `**` glyphs are visible and editable.
 - **MRS-R-9** `[inherits:INV-SP-1]` — Hiding or revealing markers MUST NOT modify document bytes; reveal is a decoration-only transform.
   _Example:_ moving the caret away from `**bold**` → source bytes unchanged.
+- **MRS-R-10** `[smoke]` — Fullwidth CJK punctuation on the two sides of a hidden marker run MUST render with the same half-em trim the browser applies to the pair in plain text. The zero-width inline-block hide (EMPH-R-7) is an atomic inline, so the browser's default `text-spacing-trim` no longer sees the two glyphs as neighbours and both keep their empty half-em. After every handler has run, the builder MUST merge the hidden runs on a line and, for each run whose neighbouring document characters form a trimmed pair, emit a `plainmark-punctuation-trim` mark (`font-feature-settings: "halt"`) on the character the browser would have trimmed: an opening bracket after an opening or closing character trims itself; a closing bracket or CJK comma/period/colon before another closing character trims the one before the run. `！`, `？`, and `…` belong to neither class. A revealed construct emits no trim — its marker is visible text between the two glyphs.
+  _Example:_ `**隔离队列（Quarantine）**，同时` with the caret elsewhere → `），` sits as tight as on the unbolded line.
 
 ## P — Pointer suppression
 

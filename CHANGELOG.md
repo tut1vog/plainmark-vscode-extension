@@ -4,6 +4,10 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ## [Unreleased]
 
+### Fixed
+
+- **Chinese punctuation no longer gaps at the edge of bold, italic, code, or link text** — `），` and similar pairs now sit as tightly as they do in plain text when the marker between them is hidden.
+
 ### Changed
 
 - **Prettify document now leaves one blank line after front matter** — the closing `---` and the first heading or paragraph below it no longer sit on adjacent lines.

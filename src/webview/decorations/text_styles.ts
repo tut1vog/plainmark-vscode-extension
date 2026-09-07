@@ -72,6 +72,11 @@ const text_styles_theme = EditorView.theme({
     // nowrap keeps content on one line; overflow:hidden still clips horizontally.
     whiteSpace: 'nowrap',
   },
+  // `halt` drops a fullwidth punctuation glyph's empty half-em, the same
+  // adjustment the browser's default text-spacing-trim makes.
+  '.plainmark-punctuation-trim': {
+    fontFeatureSettings: '"halt"',
+  },
   '.plainmark-strong': {
     color: 'var(--plainmark-strong-color, inherit)',
     fontWeight: 'var(--plainmark-strong-weight, 600)' as 'bold',

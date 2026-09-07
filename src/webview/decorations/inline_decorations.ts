@@ -12,9 +12,12 @@ import {
 } from '@codemirror/view';
 import type { SyntaxNodeRef } from '@lezer/common';
 import {
+  HIDDEN_MARKER_CLASS,
+  type HiddenRun,
   register_hidden_run_source,
   unregister_hidden_run_source,
 } from './hidden_marker_runs.js';
+import { punctuation_trim_decorations } from './punctuation_trim.js';
 import { pointer_down_field } from './pointer_state.js';
 
 export interface NodeHandler {
@@ -80,6 +83,14 @@ export function build_inline_decorations(
       },
     });
   }
+
+  const hidden_runs: HiddenRun[] = [];
+  for (const { from, to, value } of decorations) {
+    if ((value.spec as { class?: string }).class === HIDDEN_MARKER_CLASS) {
+      hidden_runs.push({ from, to });
+    }
+  }
+  decorations.push(...punctuation_trim_decorations(state, hidden_runs));
 
   return RangeSet.of(decorations, true);
 }

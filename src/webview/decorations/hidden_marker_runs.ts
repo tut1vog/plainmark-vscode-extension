@@ -1,6 +1,6 @@
 import type { DecorationSet, EditorView } from '@codemirror/view';
 
-const HIDDEN_MARKER_CLASS = 'plainmark-inline-marker-hidden';
+export const HIDDEN_MARKER_CLASS = 'plainmark-inline-marker-hidden';
 
 export interface HiddenRunSource {
   readonly decorations: DecorationSet;
