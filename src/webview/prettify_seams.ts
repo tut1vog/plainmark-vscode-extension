@@ -54,9 +54,9 @@ const CLOSED_BY_BLANK: ReadonlySet<Kind> = new Set([
   'definition',
 ]);
 
-// Above a heading a blank reads as the section break; behind these three the
-// break already exists (doc top after frontmatter, a heading stack, a rule).
-const NO_BLANK_ABOVE_HEADING: ReadonlySet<Kind> = new Set(['frontmatter', 'heading', 'rule']);
+// Above a heading a blank reads as the section break; behind these two the
+// break already exists (a heading stack, a rule).
+const NO_BLANK_ABOVE_HEADING: ReadonlySet<Kind> = new Set(['heading', 'rule']);
 
 type Block = LineSpan<Kind>;
 
@@ -104,7 +104,7 @@ function minimum_blanks(above: Block, below: Block, state: EditorState): number 
 // The shipped matrix: what the seam takes when the user has pinned nothing.
 function default_blanks(above: Block, below: Block, state: EditorState): number {
   if (above.kind === 'definition' && below.kind === 'definition') return 0;
-  if (CLOSED_BY_BLANK.has(above.kind)) return 1;
+  if (above.kind === 'frontmatter' || CLOSED_BY_BLANK.has(above.kind)) return 1;
   if (below.kind === 'heading') return NO_BLANK_ABOVE_HEADING.has(above.kind) ? 0 : 1;
   if (above.kind === 'heading') return 0;
   if (above.kind === 'paragraph' && !can_interrupt_paragraph(below, state)) return 1;

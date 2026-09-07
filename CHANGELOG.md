@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Prettify document now leaves one blank line after front matter** — the closing `---` and the first heading or paragraph below it no longer sit on adjacent lines.
+
 ## [1.12.2] - 2026-09-03
 
 ### Added

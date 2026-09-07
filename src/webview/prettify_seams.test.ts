@@ -36,8 +36,7 @@ describe('PARA-I-7 prettify_seams_spec', () => {
       expect(prettify('# a\n## b\n')).toBeNull();
     });
 
-    it('takes no blank above a heading that opens the document body', () => {
-      expect(prettify('---\ntitle: x\n---\n\n# h\n')).toBe('---\ntitle: x\n---\n# h\n');
+    it('takes no blank above a heading behind a rule', () => {
       expect(prettify('***\n\n# h\n')).toBe('***\n# h\n');
     });
 
@@ -116,6 +115,21 @@ describe('PARA-I-7 prettify_seams_spec', () => {
     it('an override cannot thaw an indent-adjacent seam', () => {
       expect(prettify('    code\n\n\npara\n', { '*>*': 0 })).toBeNull();
       expect(prettify('para\n\n    code\n', { '*>*': 0 })).toBeNull();
+    });
+  });
+
+  describe('frontmatter', () => {
+    it('opens one blank below the closing fence', () => {
+      expect(prettify('---\ntitle: x\n---\n# h\n')).toBe('---\ntitle: x\n---\n\n# h\n');
+      expect(prettify('---\ntitle: x\n---\npara\n')).toBe('---\ntitle: x\n---\n\npara\n');
+      expect(prettify('---\ntitle: x\n---\n\n\n# h\n')).toBe('---\ntitle: x\n---\n\n# h\n');
+      expect(prettify('---\ntitle: x\n---\n\n# h\n')).toBeNull();
+    });
+
+    it('lets an override close the seam', () => {
+      expect(prettify('---\ntitle: x\n---\n\n# h\n', { 'frontmatter>*': 0 })).toBe(
+        '---\ntitle: x\n---\n# h\n',
+      );
     });
   });
 
