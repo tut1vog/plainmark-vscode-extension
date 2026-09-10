@@ -48,6 +48,8 @@ import {
   tree_rebuilt_unbounded,
 } from '../region_rebuild.js';
 import { create_logger } from '../../log.js';
+import { getSearchQuery, searchPanelOpen } from '@codemirror/search';
+import { cell_search_extension } from './table_cell_search.js';
 
 const log = create_logger('widget');
 
@@ -1051,6 +1053,9 @@ export class TableWidget extends WidgetType {
           Prec.high(cell_keymap),
           cell_edit_listener,
           range_dismiss_listener,
+          cell_search_extension(
+            searchPanelOpen(main_view.state) ? getSearchQuery(main_view.state) : null,
+          ),
         ]),
       }),
       parent: subview_container,
@@ -1181,6 +1186,8 @@ export class TableWidget extends WidgetType {
       (cc) => cc.row_index === row_index && cc.col_index === col_index,
     );
     if (cell) this.render_cell_contents(td, view, cell);
+    // Re-rendered outside any transaction — let the search highlighter re-paint the cell.
+    td.dispatchEvent(new CustomEvent('plainmark-table-cell-rendered', { bubbles: true }));
     view.dom.removeAttribute('data-plainmark-cell-active');
   }
 }

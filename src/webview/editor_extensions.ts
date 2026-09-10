@@ -69,6 +69,7 @@ import { math_preview_extension } from './widgets/math_preview.js';
 import { mermaid_extension } from './widgets/mermaid.js';
 import { table_completions } from './widgets/table_autocomplete.js';
 import { cell_subview_extensions, table_extension } from './widgets/table.js';
+import { table_search_highlight } from './widgets/table_search_highlight.js';
 import { main_view_table_entry_keymap } from './widgets/table_keymap.js';
 import { table_undo_rebase } from './widgets/table_undo_rebase.js';
 
@@ -395,6 +396,7 @@ export const editor_extensions: Extension[] = [
   prose_column_theme,
   table_extension,
   table_undo_rebase,
+  table_search_highlight,
   // Single autocompletion() call — CM6's completionConfig facet first-defined-wins on the `override` field, so a second autocompletion() would silently drop one source.
   autocompletion({
     override: [table_completions, callout_completions, latex_completions, codeblock_completions],
