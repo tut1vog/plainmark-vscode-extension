@@ -7,7 +7,7 @@
 // not reachable from this harness.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { EditorView } from '@codemirror/view';
+import { EditorView } from '@codemirror/view';
 import {
   findNext,
   getSearchQuery,
@@ -15,7 +15,7 @@ import {
   SearchQuery,
   setSearchQuery,
 } from '@codemirror/search';
-import { mount_editor, next_frame } from './util.js';
+import { frames, mount_editor, next_frame } from './util.js';
 
 // editor_extensions wires the panel with a 200 ms input delay.
 const DEBOUNCE_MS = 200;
@@ -267,5 +267,86 @@ describe('SHELL-X-18: match count in the find panel', () => {
     view.dispatch({ changes: { from: 0, insert: 'alpha ' } });
     await next_frame();
     expect(count_text()).toBe('2 matches');
+  });
+});
+
+describe('SHELL-X-19: initial match selection on a new search', () => {
+  let container: HTMLElement;
+  let view: EditorView | undefined;
+
+  // 'alpha' on lines 5, 30, and 55 of a 60-line document; the host shows ~8 lines.
+  const LINES: string[] = [];
+  for (let i = 0; i < 60; i++)
+    LINES.push([5, 30, 55].includes(i) ? `line ${i} alpha` : `line ${i}`);
+  const DOC = LINES.join('\n\n') + '\n';
+  const line_start = (index: number): number => DOC.indexOf(`line ${index}`);
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    container.style.width = '800px';
+    container.style.height = '200px';
+    document.body.appendChild(container);
+  });
+  afterEach(() => {
+    view?.destroy();
+    container.remove();
+  });
+
+  async function scroll_to_line(index: number): Promise<void> {
+    view!.dispatch({ effects: EditorView.scrollIntoView(line_start(index), { y: 'start' }) });
+    await frames(2);
+  }
+
+  async function search(query: string): Promise<void> {
+    openSearchPanel(view!);
+    await next_frame();
+    type_into(find_field(container), query);
+    await wait_ms(DEBOUNCE_MS + 100);
+  }
+
+  function selected_line(): number {
+    const { from } = view!.state.selection.main;
+    return Number(view!.state.doc.lineAt(from).text.match(/line (\d+)/)![1]);
+  }
+
+  it('selects the first match on screen', async () => {
+    view = mount_editor(container, DOC);
+    await next_frame();
+    await scroll_to_line(4);
+    await search('alpha');
+    expect(selected_line()).toBe(5);
+    expect(container.querySelector('.plainmark-search-count')?.textContent).toBe('1 of 3');
+  });
+
+  it('selects the first match below the screen when none is on it', async () => {
+    view = mount_editor(container, DOC);
+    await next_frame();
+    await scroll_to_line(10);
+    await search('alpha');
+    expect(selected_line()).toBe(30);
+  });
+
+  it('wraps to the first match in the document when none is at or below the screen', async () => {
+    view = mount_editor(container, DOC);
+    await next_frame();
+    await scroll_to_line(56);
+    await search('alpha');
+    expect(selected_line()).toBe(5);
+  });
+
+  it('Enter right after typing stays on the initial match', async () => {
+    view = mount_editor(container, DOC);
+    await next_frame();
+    await scroll_to_line(10);
+    openSearchPanel(view);
+    await next_frame();
+    const field = find_field(container);
+    type_into(field, 'alpha');
+    press(field, 'Enter');
+    await next_frame();
+    expect(selected_line()).toBe(30);
+    press(field, 'Enter');
+    await next_frame();
+    expect(selected_line()).toBe(55);
   });
 });

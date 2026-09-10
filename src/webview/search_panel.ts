@@ -1,4 +1,4 @@
-import type { Extension } from '@codemirror/state';
+import { EditorSelection, type EditorState, type Extension } from '@codemirror/state';
 import { EditorView, type Panel, type ViewUpdate, runScopeHandlers } from '@codemirror/view';
 import {
   SearchQuery,
@@ -37,6 +37,31 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 // Beyond this the count reads "1000+"; the full-document scan stays bounded.
 const COUNT_CAP = 1000;
+
+function same_search(a: SearchQuery, b: SearchQuery): boolean {
+  return (
+    a.search === b.search &&
+    a.caseSensitive === b.caseSensitive &&
+    a.regexp === b.regexp &&
+    a.wholeWord === b.wholeWord
+  );
+}
+
+function first_match_from(
+  query: SearchQuery,
+  state: EditorState,
+  from: number,
+): { from: number; to: number } | null {
+  const step = query.getCursor(state, from).next();
+  return step.done ? null : step.value;
+}
+
+// Document offset at the top of the on-screen area (not CM6's over-rendered viewport).
+function visible_top(view: EditorView): number {
+  const rect = view.scrollDOM.getBoundingClientRect();
+  const height = Math.max(0, rect.top - view.documentTop);
+  return view.lineBlockAtHeight(height).from;
+}
 
 function is_command_key(e: KeyboardEvent): boolean {
   return e.ctrlKey || e.metaKey || e.altKey || e.key === 'Escape' || /^F\d+$/.test(e.key);
@@ -121,8 +146,8 @@ class PlainmarkSearchPanel implements Panel {
       el('div', { class: 'plainmark-search-row' }, [
         this.search_field,
         this.count_el,
-        button('prev', '↑', phrase('Previous match'), () => this.run(findPrevious)),
-        button('next', '↓', phrase('Next match'), () => this.run(findNext)),
+        button('prev', '↑', phrase('Previous match'), () => this.run(findPrevious, true)),
+        button('next', '↓', phrase('Next match'), () => this.run(findNext, true)),
       ]),
     ];
     if (!view.state.readOnly) {
@@ -181,7 +206,7 @@ class PlainmarkSearchPanel implements Panel {
   private keydown(e: KeyboardEvent): void {
     if (e.key === 'Enter' && e.target === this.search_field) {
       e.preventDefault();
-      this.run(e.shiftKey ? findPrevious : findNext);
+      this.run(e.shiftKey ? findPrevious : findNext, true);
       return;
     }
     if (e.key === 'Enter' && e.target === this.replace_field) {
@@ -195,8 +220,11 @@ class PlainmarkSearchPanel implements Panel {
     if (runScopeHandlers(this.view, e, 'search-panel')) e.preventDefault();
   }
 
-  private run(command: (view: EditorView) => boolean): void {
-    this.flush();
+  // `stay_on_initial`: a flush that just applied new text already selected its
+  // initial match; stepping again would skip it.
+  private run(command: (view: EditorView) => boolean, stay_on_initial = false): void {
+    const selected = this.flush();
+    if (selected && stay_on_initial) return;
     command(this.view);
   }
 
@@ -214,13 +242,14 @@ class PlainmarkSearchPanel implements Panel {
     this.pending = null;
   }
 
-  private flush(): void {
-    if (this.pending === null) return;
+  private flush(): boolean {
+    if (this.pending === null) return false;
     this.cancel();
-    this.commit();
+    return this.commit();
   }
 
-  private commit(): void {
+  // Returns whether a new search selected its initial match.
+  private commit(): boolean {
     const query = new SearchQuery({
       search: this.search_field.value,
       caseSensitive: this.case_field.checked,
@@ -228,9 +257,27 @@ class PlainmarkSearchPanel implements Panel {
       wholeWord: this.word_field.checked,
       replace: this.replace_field.value,
     });
-    if (query.eq(this.query)) return;
+    if (query.eq(this.query)) return false;
+    const search_changed = !same_search(query, this.query);
     this.query = query;
     this.view.dispatch({ effects: setSearchQuery.of(query) });
+    return search_changed && query.valid && this.select_initial_match(query);
+  }
+
+  // First match on screen, else the first one below the screen, else the
+  // first in the document.
+  private select_initial_match(query: SearchQuery): boolean {
+    const { state } = this.view;
+    const match =
+      first_match_from(query, state, visible_top(this.view)) ?? first_match_from(query, state, 0);
+    if (!match) return false;
+    const selection = EditorSelection.single(match.from, match.to);
+    this.view.dispatch({
+      selection,
+      effects: EditorView.scrollIntoView(selection.main, { y: 'nearest' }),
+      userEvent: 'select.search',
+    });
+    return true;
   }
 
   private refresh_count(): void {

@@ -6,7 +6,8 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Added
 
-- **Find shows how many matches there are** — the widget reads `3 of 12` as you step through matches, `12 matches` right after typing, or `No results`.
+- **Find shows how many matches there are** — the widget reads `3 of 12` as you step through matches, or `No results`.
+- **Find lands on a nearby match as you type** — the first match on screen is selected as soon as the query applies, or the next one below the screen, wrapping to the top of the document when there is none.
 
 ### Changed
 
