@@ -4,6 +4,10 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ## [Unreleased]
 
+### Added
+
+- **Find shows how many matches there are** — the widget reads `3 of 12` as you step through matches, `12 matches` right after typing, or `No results`.
+
 ### Changed
 
 - **Find is a compact widget in the top-right corner** — the search bar no longer spans the editor with tiny text; it floats over the document at the normal interface size.

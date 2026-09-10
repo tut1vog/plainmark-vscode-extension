@@ -221,3 +221,51 @@ describe('SHELL-X-17: find input delay and current-match styling', () => {
     expect(current_style.outlineColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 });
+
+describe('SHELL-X-18: match count in the find panel', () => {
+  let container: HTMLElement;
+  let view: EditorView | undefined;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    container.style.width = '800px';
+    document.body.appendChild(container);
+  });
+  afterEach(() => {
+    view?.destroy();
+    container.remove();
+  });
+
+  function count_text(): string {
+    return container.querySelector('.plainmark-search-count')?.textContent ?? '';
+  }
+
+  it('reports the total, the current position, and no results', async () => {
+    view = mount_editor(container, 'alpha beta alpha\n\ngamma alpha delta\n');
+    await next_frame();
+    await open_with_query(view, 'alpha');
+    expect(count_text()).toBe('3 matches');
+    findNext(view);
+    await next_frame();
+    expect(count_text()).toBe('1 of 3');
+    findNext(view);
+    await next_frame();
+    expect(count_text()).toBe('2 of 3');
+    view.dispatch({ effects: setSearchQuery.of(new SearchQuery({ search: 'zzz' })) });
+    await next_frame();
+    expect(count_text()).toBe('No results');
+    view.dispatch({ effects: setSearchQuery.of(new SearchQuery({ search: '' })) });
+    await next_frame();
+    expect(count_text()).toBe('');
+  });
+
+  it('follows document edits', async () => {
+    view = mount_editor(container, 'alpha beta\n');
+    await next_frame();
+    await open_with_query(view, 'alpha');
+    expect(count_text()).toBe('1 match');
+    view.dispatch({ changes: { from: 0, insert: 'alpha ' } });
+    await next_frame();
+    expect(count_text()).toBe('2 matches');
+  });
+});

@@ -35,6 +35,9 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
+// Beyond this the count reads "1000+"; the full-document scan stays bounded.
+const COUNT_CAP = 1000;
+
 function is_command_key(e: KeyboardEvent): boolean {
   return e.ctrlKey || e.metaKey || e.altKey || e.key === 'Escape' || /^F\d+$/.test(e.key);
 }
@@ -49,6 +52,7 @@ class PlainmarkSearchPanel implements Panel {
   private readonly case_field: HTMLInputElement;
   private readonly re_field: HTMLInputElement;
   private readonly word_field: HTMLInputElement;
+  private readonly count_el: HTMLElement;
 
   constructor(
     private readonly view: EditorView,
@@ -111,9 +115,12 @@ class PlainmarkSearchPanel implements Panel {
     const option = (box: HTMLInputElement, label: string): HTMLLabelElement =>
       el('label', { class: 'plainmark-search-option' }, [box, label]);
 
+    this.count_el = el('span', { class: 'plainmark-search-count', 'aria-live': 'polite' });
+
     const rows: HTMLElement[] = [
       el('div', { class: 'plainmark-search-row' }, [
         this.search_field,
+        this.count_el,
         button('prev', '↑', phrase('Previous match'), () => this.run(findPrevious)),
         button('next', '↓', phrase('Next match'), () => this.run(findNext)),
       ]),
@@ -144,6 +151,7 @@ class PlainmarkSearchPanel implements Panel {
 
     this.dom = el('div', { class: 'cm-search' }, [...rows, close]);
     this.dom.addEventListener('keydown', (e) => this.keydown(e));
+    this.refresh_count();
   }
 
   get pos(): number {
@@ -155,11 +163,15 @@ class PlainmarkSearchPanel implements Panel {
   }
 
   update(update: ViewUpdate): void {
+    let query_changed = false;
     for (const tr of update.transactions) {
       for (const effect of tr.effects) {
-        if (effect.is(setSearchQuery) && !effect.value.eq(this.query)) this.set_query(effect.value);
+        if (!effect.is(setSearchQuery)) continue;
+        query_changed = true;
+        if (!effect.value.eq(this.query)) this.set_query(effect.value);
       }
     }
+    if (query_changed || update.docChanged || update.selectionSet) this.refresh_count();
   }
 
   destroy(): void {
@@ -219,6 +231,32 @@ class PlainmarkSearchPanel implements Panel {
     if (query.eq(this.query)) return;
     this.query = query;
     this.view.dispatch({ effects: setSearchQuery.of(query) });
+  }
+
+  private refresh_count(): void {
+    const { state } = this.view;
+    const query = getSearchQuery(state);
+    if (!query.valid) {
+      this.count_el.textContent = '';
+      this.count_el.classList.remove('plainmark-search-count-none');
+      return;
+    }
+    const { from, to } = state.selection.main;
+    let total = 0;
+    let current = 0;
+    const cursor = query.getCursor(state);
+    for (let step = cursor.next(); !step.done && total < COUNT_CAP; step = cursor.next()) {
+      total++;
+      if (step.value.from === from && step.value.to === to) current = total;
+    }
+    const total_text = total >= COUNT_CAP ? `${COUNT_CAP}+` : String(total);
+    this.count_el.textContent =
+      total === 0
+        ? this.view.state.phrase('No results')
+        : current > 0
+          ? `${current} of ${total_text}`
+          : `${total_text} ${total === 1 ? 'match' : 'matches'}`;
+    this.count_el.classList.toggle('plainmark-search-count-none', total === 0);
   }
 
   private set_query(query: SearchQuery): void {
@@ -283,6 +321,15 @@ export const search_panel_theme: Extension = EditorView.theme({
   '.cm-panel.cm-search .cm-textfield, .cm-panel.cm-search .cm-button, .cm-panel.cm-search label': {
     font: 'inherit',
     margin: '0',
+  },
+  '.cm-panel.cm-search .plainmark-search-count': {
+    minWidth: '5.5em',
+    whiteSpace: 'nowrap',
+    textAlign: 'center',
+    color: 'var(--vscode-descriptionForeground, inherit)',
+  },
+  '.cm-panel.cm-search .plainmark-search-count-none': {
+    color: 'var(--vscode-errorForeground, #f14c4c)',
   },
   '.cm-panel.cm-search input[type="checkbox"]': {
     margin: '0',
