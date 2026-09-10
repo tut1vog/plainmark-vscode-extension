@@ -2,6 +2,18 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Find is a compact widget in the top-right corner** — the search bar no longer spans the editor with tiny text; it floats over the document at the normal interface size.
+- **Find waits for a pause in typing** — matches light up once you stop typing for a moment instead of on every letter.
+
+### Fixed
+
+- **The current find match stands out** — the match you jump to with Enter or F3 gets a distinct color and outline instead of blending in with the others.
+- **Find matches inside tables and inline code are highlighted** — they were found and scrolled to but never colored.
+
 ## [1.12.3] - 2026-09-07
 
 ### Fixed

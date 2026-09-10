@@ -37,7 +37,7 @@ Plainmark runs as a custom editor in both the desktop app and the browser — op
 - **Outline view** — jump around the document from the Explorer sidebar.
 - **Word count** — the status bar shows a live word count while a Plainmark tab is active.
 - **CJK-aware** — the word count, `Ctrl/Alt+Arrow` word jumps, and `Ctrl/Alt+Backspace` word deletion all understand unspaced Chinese and Japanese text.
-- **Find** — press `Ctrl/Cmd+F` to search the whole document — next/previous, highlight all, and replace — including text scrolled out of view.
+- **Find** — press `Ctrl/Cmd+F` for a compact find-and-replace widget that searches the whole document, including text scrolled out of view and inside tables; matches light up once you pause typing, and the current one is outlined.
 - **Theming** — built-in light/dark themes plus your own CSS.
 
 ![Tables, math, and callouts in Plainmark](https://raw.githubusercontent.com/tut1vog/plainmark-vscode-extension/main/media/features.png)
