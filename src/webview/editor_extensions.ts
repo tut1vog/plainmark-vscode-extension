@@ -5,6 +5,7 @@ import { insertNewlineContinueMarkupCommand, markdown } from '@codemirror/lang-m
 import { type Extension, Prec } from '@codemirror/state';
 import { EditorView, drawSelection, keymap } from '@codemirror/view';
 import { search, searchKeymap } from '@codemirror/search';
+import { plainmark_search_panel, search_panel_theme } from './search_panel.js';
 import { oracle_line_height_pin } from './oracle_line_height_pin.js';
 import { cjk_word_motion_keymap } from './cjk_word_motion.js';
 import { vertical_arrow_collapse_keymap } from './vertical_arrow_collapse.js';
@@ -337,54 +338,6 @@ const find_keymap = searchKeymap.filter(
   (b) => !['Mod-d', 'Mod-Alt-g', 'Mod-Shift-l'].includes(b.key ?? ''),
 );
 
-// CM6's panel + search-match colors come from its light baseTheme (the
-// darkTheme facet is unset), ignoring the VS Code theme — route through
-// --vscode-* vars, mirroring autocomplete_theme.
-const search_panel_theme: Extension = EditorView.theme({
-  '.cm-panels': {
-    backgroundColor:
-      'var(--vscode-editorWidget-background, var(--vscode-editor-background, #ffffff))',
-    color: 'var(--vscode-editorWidget-foreground, var(--vscode-foreground, inherit))',
-  },
-  '.cm-panels.cm-panels-top': {
-    borderBottom:
-      '1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border, transparent))',
-  },
-  '.cm-panel.cm-search .cm-textfield': {
-    backgroundColor: 'var(--vscode-input-background, #ffffff)',
-    color: 'var(--vscode-input-foreground, inherit)',
-    border: '1px solid var(--vscode-input-border, var(--vscode-editorWidget-border, transparent))',
-    borderRadius: '2px',
-  },
-  '.cm-panel.cm-search .cm-textfield:focus': {
-    outline: '1px solid var(--vscode-focusBorder, #0090f1)',
-    outlineOffset: '-1px',
-  },
-  '.cm-panel.cm-search .cm-button': {
-    backgroundImage: 'none',
-    backgroundColor:
-      'var(--vscode-button-secondaryBackground, var(--vscode-button-background, #5f6a79))',
-    color: 'var(--vscode-button-secondaryForeground, var(--vscode-button-foreground, #ffffff))',
-    border: '1px solid var(--vscode-button-border, transparent)',
-    borderRadius: '2px',
-  },
-  '.cm-panel.cm-search .cm-button:hover': {
-    backgroundColor:
-      'var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground, #4c5561))',
-  },
-  '.cm-panel.cm-search [name="close"]': {
-    color: 'var(--vscode-icon-foreground, var(--vscode-editorWidget-foreground, inherit))',
-  },
-  '.cm-searchMatch': {
-    backgroundColor: 'var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33))',
-    outline: '1px solid var(--vscode-editor-findMatchHighlightBorder, transparent)',
-  },
-  '.cm-searchMatch-selected': {
-    backgroundColor: 'var(--vscode-editor-findMatchBackground, rgba(81, 92, 106, 0.8))',
-    outline: '1px solid var(--vscode-editor-findMatchBorder, transparent)',
-  },
-});
-
 // Make .cm-scroller the scroll container (fill the height-bounded #editor host)
 // rather than letting the page body scroll — CM6's scroll-stabilization measure
 // loop only fires when it owns the scroller, so without this a fast scrollbar
@@ -449,7 +402,7 @@ export const editor_extensions: Extension[] = [
   autocomplete_theme,
   // In-document find. Main view only — table cell subviews share no panel; a
   // cell's Ctrl+F bubbles to the main view's search, which scans the whole doc.
-  search({ top: true }),
+  search({ top: true, createPanel: plainmark_search_panel({ debounce_ms: 200 }) }),
   // Prec.high so Ctrl+F opens search ahead of defaultKeymap's emacs Ctrl-f
   // (Mod-f resolves to Ctrl-f on Win/Linux) and its Escape (simplifySelection).
   Prec.high(keymap.of(find_keymap)),
