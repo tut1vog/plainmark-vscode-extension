@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language';
 import { type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
-import { count_ancestors } from '../tree_ancestors.js';
+import { ancestor, count_ancestors } from '../tree_ancestors.js';
 import type { NodeHandler } from './inline_decorations.js';
 import { marker_end_with_space } from './marker_end.js';
 
@@ -58,6 +58,47 @@ function list_item_line(depth: number): Decoration {
   return deco;
 }
 
+// Paragraph lines of an item after its marker line — an indented or lazy
+// wrap of the first paragraph, or a later paragraph of a loose item — hang at
+// the item's text column: depth padding without the marker line's negative
+// text-indent, and the source's leading whitespace hidden (CommonMark strips
+// it from paragraph continuation lines). Quoted lines keep the status quo,
+// like nested fences: the quote's inline net-to-zero indent owns geometry.
+const list_continuation_lines = new Map<number, Decoration>();
+function list_continuation_line(depth: number): Decoration {
+  let deco = list_continuation_lines.get(depth);
+  if (!deco) {
+    deco = Decoration.line({
+      class: 'plainmark-list-continuation',
+      attributes: { style: `--plainmark-list-depth: ${depth}` },
+    });
+    list_continuation_lines.set(depth, deco);
+  }
+  return deco;
+}
+
+function continuation_decorations(
+  item: SyntaxNode,
+  state: EditorState,
+  depth: number,
+  marker_line_from: number,
+): Range<Decoration>[] {
+  const decorations: Range<Decoration>[] = [];
+  const doc = state.doc;
+  for (let c = item.firstChild; c; c = c.nextSibling) {
+    if (c.name !== 'Paragraph') continue;
+    const last = doc.lineAt(c.to).number;
+    for (let i = doc.lineAt(c.from).number; i <= last; i++) {
+      const line = doc.line(i);
+      if (line.from === marker_line_from) continue;
+      decorations.push(list_continuation_line(depth).range(line.from));
+      const ws = /^[ \t]*/.exec(line.text)![0].length;
+      if (ws > 0) decorations.push(hide_marker.range(line.from, line.from + ws));
+    }
+  }
+  return decorations;
+}
+
 export class ListBulletWidget extends WidgetType {
   eq(): boolean {
     return true;
@@ -92,6 +133,9 @@ const list_item_handler: NodeHandler = {
     // No list construct reveals (Typora B2): a source-true indent on the caret line shifts the line on enter/leave, since depth·indent-unit ≠ the source spaces' advance (LIST-I-3).
     const depth = count_ancestors(n, 'ListItem');
     const decorations: Range<Decoration>[] = [list_item_line(depth).range(line_from)];
+    if (ancestor(n, 'Blockquote') === null) {
+      decorations.push(...continuation_decorations(n, state, depth, line_from));
+    }
     if (!mark) return decorations;
 
     // Hide the source's leading whitespace so nesting comes purely from the
@@ -195,6 +239,10 @@ const lists_theme = EditorView.theme({
     paddingLeft:
       'calc((var(--plainmark-list-depth, 0) + 1) * var(--plainmark-list-indent, 1em))',
     textIndent: 'calc(-1 * var(--plainmark-list-indent, 1em))',
+  },
+  '.plainmark-list-continuation': {
+    paddingLeft:
+      'calc((var(--plainmark-list-depth, 0) + 1) * var(--plainmark-list-indent, 1em))',
   },
   '.plainmark-list-marker': {
     color:

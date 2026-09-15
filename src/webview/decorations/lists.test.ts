@@ -337,6 +337,52 @@ describe('nested list LIST-R-1 LIST-R-8 LIST-I-1', () => {
   });
 });
 
+describe('item continuation lines LIST-R-12', () => {
+  const cont = (from: number): DecoSnapshot => line(from, 'plainmark-list-continuation');
+  const cont_lines = (state: EditorState): DecoSnapshot[] =>
+    snapshot(state).filter((d) => d.kind === 'line' && d.class === 'plainmark-list-continuation');
+
+  it('hangs an indented wrap of the first paragraph at the text column and hides its indent', () => {
+    const decos = snapshot(make_state('- a\n  b', 0));
+    expect(decos).toContainEqual(cont(4));
+    expect(decos).toContainEqual(replace(4, 6));
+    expect(line_depths(make_state('- a\n  b', 0))).toContainEqual({ from: 4, depth: 0 });
+  });
+
+  it('hangs a lazy continuation line with nothing to hide', () => {
+    const decos = snapshot(make_state('- a\nlazy', 0));
+    expect(decos).toContainEqual(cont(4));
+    expect(decos.filter((d) => d.kind === 'replace')).toEqual([]);
+  });
+
+  it('hangs a later paragraph of a loose item and leaves the blank line alone', () => {
+    const decos = snapshot(make_state('- a\n\n  second', 0));
+    expect(cont_lines(make_state('- a\n\n  second', 0))).toEqual([cont(5)]);
+    expect(decos).toContainEqual(replace(5, 7));
+  });
+
+  it('hangs a paragraph after a nested fenced block without touching the fence lines', () => {
+    const state = make_state('- a\n  ```\n  x\n  ```\n  after', 0);
+    expect(cont_lines(state)).toEqual([cont(20)]);
+    expect(snapshot(state)).toContainEqual(replace(20, 22));
+  });
+
+  it('hangs a nested item continuation at the nested depth', () => {
+    const state = make_state('- a\n  - n\n    cont', 0);
+    expect(cont_lines(state)).toEqual([cont(10)]);
+    expect(line_depths(state)).toContainEqual({ from: 10, depth: 1 });
+    expect(snapshot(state)).toContainEqual(replace(10, 14));
+  });
+
+  it('is identical with the caret on the continuation line (never reveals)', () => {
+    expect(snapshot(make_state('- a\n  b', 5))).toEqual(snapshot(make_state('- a\n  b', 0)));
+  });
+
+  it('emits nothing for a quoted item continuation', () => {
+    expect(cont_lines(make_state('> - a\n>   b', 0))).toEqual([]);
+  });
+});
+
 describe('deeply nested list LIST-R-8', () => {
   // three levels, each indented under the previous
   const doc = '- a\n  - b\n    - c\n\nzz\n';

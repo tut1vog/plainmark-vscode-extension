@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **A list item's later paragraphs line up with its text** — a paragraph that continues an item, including one after a code block inside the item, now starts at the item's text column and wraps there instead of dropping back to the left margin.
+
 ## [1.13.0] - 2026-09-10
 
 ### Added
