@@ -4,6 +4,10 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ## [Unreleased]
 
+### Changed
+
+- **A numbered item directly under a line of text is a list whatever its number** — `5. item` right below a paragraph line used to render as plain text continuing that paragraph, because standard Markdown only lets a list starting at 1 interrupt a paragraph; Plainmark now shows it as a list item. Other Markdown renderers still read it as text unless a blank line separates them, and **Convert to CommonMark** now inserts that blank line.
+
 ### Fixed
 
 - **One Backspace joins a list continuation line to the line above** — with the caret at the start of a paragraph line that continues a list item, the first press used to remove only the hidden indentation, which showed nothing on screen; now that press joins the lines, and Delete at the end of the line above joins the same way.

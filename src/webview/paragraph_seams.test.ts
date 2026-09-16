@@ -33,10 +33,14 @@ describe('PARA-I-5 expand_paragraph_seams_spec', () => {
     expect(expand('a  \nb\nc\n')).toBe('a  \nb\n\nc\n');
   });
 
+  it('an ordered item with content below a paragraph line is a block seam and takes the blank', () => {
+    expect(expand('a\n2. item\n')).toBe('a\n\n2. item\n');
+  });
+
   it('skips seams whose next line would re-parse as another block after a blank', () => {
     expect(expand('a\n    indented\n')).toBeNull();
     expect(expand('a\n\tindented\n')).toBeNull();
-    expect(expand('a\n2. not-a-list\n')).toBeNull();
+    expect(expand('a\n2.\n')).toBeNull();
     expect(expand('a\n<custom>\n')).toBeNull();
     expect(expand('a\n| row |\n')).toBeNull();
   });

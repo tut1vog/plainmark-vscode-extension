@@ -20,10 +20,11 @@ import {
 
 // Lines that sit inside a paragraph as plain text but would re-parse as a
 // different block if a blank line came to precede them (CommonMark
-// can't-interrupt constructs): indented code, non-1 ordered markers, HTML
-// type 7, GFM table rows. Expanding at such a seam would change what other
+// can't-interrupt constructs): indented code, bare ordered markers (an
+// ordered item with content already starts a list in-house), HTML type 7,
+// GFM table rows. Expanding at such a seam would change what other
 // renderers see.
-const REPARSE_TRAP = /^ {0,3}(\d{1,9}[.)][ \t]|<|\|)|^( {4,}|\t)/;
+const REPARSE_TRAP = /^ {0,3}(\d{1,9}[.)][ \t]*$|<|\|)|^( {4,}|\t)/;
 
 // An empty `+`/`*` bullet cannot interrupt a paragraph but is a valid list
 // item at block start, so a blank line would turn the text line into a list
