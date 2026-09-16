@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **One Backspace joins an indented list continuation line to the line above** — with the caret at the start of a paragraph line that continues a list item, the first press used to remove only the hidden indentation, which showed nothing on screen; now that press joins the lines.
+
 ## [1.13.1] - 2026-09-15
 
 ### Fixed

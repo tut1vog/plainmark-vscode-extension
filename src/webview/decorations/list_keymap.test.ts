@@ -5,6 +5,7 @@ import type { EditorView } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import {
+  list_continuation_indent_backspace,
   list_dangling_indent_backspace,
   list_empty_bullet_backspace,
   quoted_list_tab_dedent,
@@ -231,6 +232,112 @@ describe('list_dangling_indent_backspace LIST-I-13 LIST-SP-2 LIST-SP-3', () => {
     expect(list_dangling_indent_backspace(view)).toBe(true);
     expect(doc()).toBe('- a');
     expect(head()).toBe(3);
+  });
+});
+
+describe('list_continuation_indent_backspace LIST-I-16 LIST-SP-3', () => {
+  it('(a) caret after the hidden indent joins the line to the item above', () => {
+    // '- a\n  b' — caret at col 2 of line 2, right before `b`
+    const { view, applied, doc, head } = make_view('- a\n  b', 6);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(applied).toHaveLength(1);
+    expect(doc()).toBe('- ab');
+    expect(head()).toBe(3);
+  });
+
+  it('(b) fires with the caret inside the indent run', () => {
+    const { view, doc, head } = make_view('- a\n  b', 5);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(doc()).toBe('- ab');
+    expect(head()).toBe(3);
+  });
+
+  it('(c) fires at column 0 and drops the indent with the newline', () => {
+    const { view, doc, head } = make_view('- a\n  b', 4);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(doc()).toBe('- ab');
+    expect(head()).toBe(3);
+  });
+
+  it('(d) ordered item continuation with a three-space indent', () => {
+    const { view, doc, head } = make_view('5. abc\n   我们', 10);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(doc()).toBe('5. abc我们');
+    expect(head()).toBe(6);
+  });
+
+  it('(e) deeper-than-content indent is removed whole', () => {
+    const { view, doc, head } = make_view('- a\n      b', 10);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(doc()).toBe('- ab');
+    expect(head()).toBe(3);
+  });
+
+  it('(f) a nested item continuation joins to the nested item', () => {
+    const { view, doc, head } = make_view('- a\n  - b\n    c', 14);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(doc()).toBe('- a\n  - bc');
+    expect(head()).toBe(9);
+  });
+
+  it("(g) a loose item's later paragraph joins onto the blank line", () => {
+    const { view, doc, head } = make_view('- a\n\n  b', 7);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(doc()).toBe('- a\nb');
+    expect(head()).toBe(4);
+  });
+
+  it('(h) emits a single transaction annotated as a delete', () => {
+    const { view, applied, transactions } = make_view('- a\n  b', 6);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(applied).toHaveLength(1);
+    const spec = applied[0] as { changes?: { from: number; to: number; insert: string } };
+    expect(spec.changes).toEqual({ from: 3, to: 6, insert: '' });
+    expect(transactions[0].isUserEvent('delete')).toBe(true);
+  });
+
+  it('(i) returns false with the caret past the indent', () => {
+    const { view, applied } = make_view('- a\n  bc', 7);
+    expect(list_continuation_indent_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(j) returns false on a continuation line with no indent', () => {
+    // '- a\nb' — lazy continuation, nothing hidden, default join applies
+    const { view, applied } = make_view('- a\nb', 4);
+    expect(list_continuation_indent_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it("(k) returns false on an item's marker line", () => {
+    const { view, applied } = make_view('- a\n  - b', 6);
+    expect(list_continuation_indent_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(l) returns false on an indented paragraph line outside a list', () => {
+    const { view, applied } = make_view('hello\n   world', 9);
+    expect(list_continuation_indent_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(m) returns false on a quoted item continuation', () => {
+    // '> - a\n>   b' — quoted continuation whitespace stays in flow
+    const { view, applied } = make_view('> - a\n>   b', 10);
+    expect(list_continuation_indent_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(n) returns false on an indent-only line', () => {
+    const { view, applied } = make_view('- a\n  ', 6);
+    expect(list_continuation_indent_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+
+  it('(o) returns false on a non-empty selection', () => {
+    const { view, applied } = make_view('- a\n  b', 4, 6);
+    expect(list_continuation_indent_backspace(view)).toBe(false);
+    expect(applied).toHaveLength(0);
   });
 });
 

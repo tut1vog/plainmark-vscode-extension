@@ -3,13 +3,14 @@ import type { EditorState } from '@codemirror/state';
 import { type ChangeSpec, Transaction } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { selected_lines } from '../selected_lines.js';
-import { enclosing } from '../tree_ancestors.js';
+import { ancestor, enclosing } from '../tree_ancestors.js';
 
 // Checkbox form kept in lockstep with marker_aware_backspace's
 // MARKER_PREFIX_RE — an empty `- [ ] ` must take the same two-stage exit as
 // an empty `- `.
 const EMPTY_BULLET_LINE_RE = /^[ \t]*[-*+](?: {1,4}\[[ xX]\])?[ \t]*$/;
 const INDENT_ONLY_LINE_RE = /^[ \t]+$/;
+const LEADING_WS_RE = /^[ \t]*/;
 
 // A quoted list line, split at the two positions Tab/Shift-Tab care about:
 // group 1 — the quote prefix (every `>` plus the one optional space that
@@ -123,6 +124,35 @@ export function list_dangling_indent_backspace(view: EditorView): boolean {
   if (!in_list_item(state, prev_line.from)) return false;
   view.dispatch({
     changes: { from: prev_line.to, to: line.to, insert: '' },
+    selection: { anchor: prev_line.to },
+    annotations: [Transaction.userEvent.of('delete')],
+  });
+  return true;
+}
+
+// Backspace with the caret at or inside a list continuation line's leading
+// whitespace joins the line to the one above in a single press. That
+// whitespace is display-hidden (LIST-R-12), so the default's first press —
+// deleting the spaces — has no visible effect, and the caret reads as sitting
+// at the line's start regardless of its column inside the run.
+export function list_continuation_indent_backspace(view: EditorView): boolean {
+  const { state } = view;
+  const { main } = state.selection;
+  if (!main.empty) return false;
+  const line = state.doc.lineAt(main.head);
+  if (line.number === 1) return false;
+  const ws = LEADING_WS_RE.exec(line.text)![0].length;
+  if (ws === 0 || main.head > line.from + ws) return false;
+  if (!/\S/.test(line.text)) return false;
+  const paragraph = enclosing(syntaxTree(state).resolveInner(line.from + ws, 1), 'Paragraph');
+  const item = paragraph?.parent;
+  if (!item || item.name !== 'ListItem') return false;
+  if (state.doc.lineAt(item.from).from === line.from) return false;
+  // A quoted item's continuation whitespace stays in flow (LIST-R-12).
+  if (ancestor(item, 'Blockquote') !== null) return false;
+  const prev_line = state.doc.line(line.number - 1);
+  view.dispatch({
+    changes: { from: prev_line.to, to: line.from + ws, insert: '' },
     selection: { anchor: prev_line.to },
     annotations: [Transaction.userEvent.of('delete')],
   });
