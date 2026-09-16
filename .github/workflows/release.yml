@@ -7,8 +7,9 @@ name: Release
 # renames the CHANGELOG's [Unreleased] block.
 #
 # Re-running a failed run is safe: publish is skipped when the Marketplace
-# already lists the version, and the release step attaches the .vsix to an
-# existing release instead of failing on it.
+# already lists the version, the publish step itself retries and tolerates
+# a duplicate, and the release step attaches the .vsix to an existing
+# release instead of failing on it.
 
 on:
   workflow_run:
@@ -92,13 +93,29 @@ jobs:
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # The Marketplace intermittently accepts the upload and never answers;
+      # vsce's HTTP client then fails after its hard-coded 3-minute idle
+      # timeout ("Request timeout: /_apis/gallery"), and vsce only retries
+      # the signed-package path, not this one. Retry here. --skip-duplicate
+      # turns the "already exists" a late-accepted upload would produce on the
+      # next attempt into a success instead of a failure.
       - name: Publish to the VS Code Marketplace
         if: steps.gate.outputs.new == 'true' && steps.marketplace.outputs.published == 'false'
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: >-
-          pnpm exec vsce publish --no-dependencies
-          --packagePath "plainmark-${{ steps.gate.outputs.version }}.vsix"
+        run: |
+          for attempt in 1 2 3; do
+            if pnpm exec vsce publish --no-dependencies --skip-duplicate \
+                --packagePath "plainmark-${{ steps.gate.outputs.version }}.vsix"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Publish attempt $attempt failed — retrying in 30s." >&2
+              sleep 30
+            fi
+          done
+          echo "Publish failed after 3 attempts." >&2
+          exit 1
 
       - name: Create tag and GitHub release
         if: steps.gate.outputs.new == 'true'
