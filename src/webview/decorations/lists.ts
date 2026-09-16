@@ -4,6 +4,7 @@ import { Decoration, EditorView, WidgetType } from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
 import { ancestor, count_ancestors } from '../tree_ancestors.js';
 import type { NodeHandler } from './inline_decorations.js';
+import { item_content_column, list_continuation_caret_filter } from './list_continuation.js';
 import { marker_end_with_space } from './marker_end.js';
 
 function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
@@ -12,7 +13,8 @@ function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
 }
 
 const list_marker_mark = Decoration.mark({ class: 'plainmark-list-marker' });
-const hide_marker = Decoration.replace({});
+// Shared by both list whitespace hides so inline_bundle can make them atomic.
+export const list_indent_hide = Decoration.replace({});
 const task_marker_hidden = Decoration.mark({ class: 'plainmark-list-marker-hidden' });
 
 // Where the marker hide starts. Outside a quote: LINE START — leading nesting
@@ -85,6 +87,7 @@ function continuation_decorations(
 ): Range<Decoration>[] {
   const decorations: Range<Decoration>[] = [];
   const doc = state.doc;
+  const content_column = item_content_column(state, item) ?? Infinity;
   for (let c = item.firstChild; c; c = c.nextSibling) {
     if (c.name !== 'Paragraph') continue;
     const last = doc.lineAt(c.to).number;
@@ -92,8 +95,8 @@ function continuation_decorations(
       const line = doc.line(i);
       if (line.from === marker_line_from) continue;
       decorations.push(list_continuation_line(depth).range(line.from));
-      const ws = /^[ \t]*/.exec(line.text)![0].length;
-      if (ws > 0) decorations.push(hide_marker.range(line.from, line.from + ws));
+      const hide = Math.min(/^[ \t]*/.exec(line.text)![0].length, content_column);
+      if (hide > 0) decorations.push(list_indent_hide.range(line.from, line.from + hide));
     }
   }
   return decorations;
@@ -144,7 +147,7 @@ const list_item_handler: NodeHandler = {
     // flow (see marker_hide_from).
     const hide_from = marker_hide_from(state, line_from, mark.from);
     if (is_ordered) {
-      if (mark.from > hide_from) decorations.push(hide_marker.range(hide_from, mark.from));
+      if (mark.from > hide_from) decorations.push(list_indent_hide.range(hide_from, mark.from));
       decorations.push(list_marker_mark.range(mark.from, mark.to));
     } else if (is_task) {
       // Hide the raw "- " with a zero-font-size mark, not Decoration.replace — a line-leading replace widget flickers drawSelection.
@@ -336,4 +339,4 @@ const lists_theme = EditorView.theme({
 
 // The decoration plugin and the bullet atomic-ranges provider live in
 // inline_bundle.ts — the latter reads the shared plugin's decorations.
-export const lists_extension = [lists_theme];
+export const lists_extension = [lists_theme, list_continuation_caret_filter];

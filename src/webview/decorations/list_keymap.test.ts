@@ -5,7 +5,10 @@ import type { EditorView } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import { describe, expect, it } from 'vitest';
 import {
+  list_continuation_arrow_left,
+  list_continuation_arrow_right,
   list_continuation_indent_backspace,
+  list_continuation_indent_delete,
   list_dangling_indent_backspace,
   list_empty_bullet_backspace,
   quoted_list_tab_dedent,
@@ -266,10 +269,11 @@ describe('list_continuation_indent_backspace LIST-I-16 LIST-SP-3', () => {
     expect(head()).toBe(6);
   });
 
-  it('(e) deeper-than-content indent is removed whole', () => {
-    const { view, doc, head } = make_view('- a\n      b', 10);
+  it('(e) only the hidden indent goes with the join; extra visible spaces stay', () => {
+    // '- a\n      b' — two hidden, four visible; caret at the hidden end
+    const { view, doc, head } = make_view('- a\n      b', 6);
     expect(list_continuation_indent_backspace(view)).toBe(true);
-    expect(doc()).toBe('- ab');
+    expect(doc()).toBe('- a    b');
     expect(head()).toBe(3);
   });
 
@@ -296,10 +300,13 @@ describe('list_continuation_indent_backspace LIST-I-16 LIST-SP-3', () => {
     expect(transactions[0].isUserEvent('delete')).toBe(true);
   });
 
-  it('(i) returns false with the caret past the indent', () => {
+  it('(i) returns false with the caret past the hidden indent', () => {
     const { view, applied } = make_view('- a\n  bc', 7);
     expect(list_continuation_indent_backspace(view)).toBe(false);
     expect(applied).toHaveLength(0);
+    const extra = make_view('- a\n      b', 10);
+    expect(list_continuation_indent_backspace(extra.view)).toBe(false);
+    expect(extra.applied).toHaveLength(0);
   });
 
   it('(j) returns false on a continuation line with no indent', () => {
@@ -338,6 +345,66 @@ describe('list_continuation_indent_backspace LIST-I-16 LIST-SP-3', () => {
     const { view, applied } = make_view('- a\n  b', 4, 6);
     expect(list_continuation_indent_backspace(view)).toBe(false);
     expect(applied).toHaveLength(0);
+  });
+});
+
+describe('list_continuation_indent_delete LIST-I-16 LIST-SP-3', () => {
+  it('(a) Delete at the line end swallows the newline and the hidden indent', () => {
+    const { view, applied, doc, head, transactions } = make_view('- a\n  b', 3);
+    expect(list_continuation_indent_delete(view)).toBe(true);
+    expect(applied).toHaveLength(1);
+    expect(doc()).toBe('- ab');
+    expect(head()).toBe(3);
+    expect(transactions[0].isUserEvent('delete')).toBe(true);
+  });
+
+  it('(b) leaves visible extra spaces in place', () => {
+    const { view, doc } = make_view('- a\n      b', 3);
+    expect(list_continuation_indent_delete(view)).toBe(true);
+    expect(doc()).toBe('- a    b');
+  });
+
+  it('(c) returns false away from the line end, on the last line, and before a non-continuation line', () => {
+    expect(list_continuation_indent_delete(make_view('- a\n  b', 2).view)).toBe(false);
+    expect(list_continuation_indent_delete(make_view('- a\n  b', 7).view)).toBe(false);
+    expect(list_continuation_indent_delete(make_view('- a\n- b', 3).view)).toBe(false);
+    expect(list_continuation_indent_delete(make_view('- a\nb', 3).view)).toBe(false);
+  });
+
+  it('(d) returns false on a non-empty selection', () => {
+    const { view, applied } = make_view('- a\n  b', 2, 3);
+    expect(list_continuation_indent_delete(view)).toBe(false);
+    expect(applied).toHaveLength(0);
+  });
+});
+
+describe('list_continuation_arrow_left / arrow_right LIST-I-17', () => {
+  it('(a) ArrowLeft at the hidden end lands at the previous line end without a document change', () => {
+    const { view, doc, head, transactions } = make_view('- a\n  b', 6);
+    expect(list_continuation_arrow_left(view)).toBe(true);
+    expect(head()).toBe(3);
+    expect(doc()).toBe('- a\n  b');
+    expect(transactions[0].docChanged).toBe(false);
+  });
+
+  it('(b) ArrowLeft inside the hidden run also lands at the previous line end', () => {
+    const { view, head } = make_view('- a\n  b', 4);
+    expect(list_continuation_arrow_left(view)).toBe(true);
+    expect(head()).toBe(3);
+  });
+
+  it('(c) ArrowRight at the previous line end lands at the hidden end', () => {
+    const { view, head } = make_view('- a\n  b', 3);
+    expect(list_continuation_arrow_right(view)).toBe(true);
+    expect(head()).toBe(6);
+  });
+
+  it('(d) both decline elsewhere', () => {
+    expect(list_continuation_arrow_left(make_view('- a\n  bc', 7).view)).toBe(false);
+    expect(list_continuation_arrow_left(make_view('- a\nb', 4).view)).toBe(false);
+    expect(list_continuation_arrow_right(make_view('- a\n  b', 2).view)).toBe(false);
+    expect(list_continuation_arrow_right(make_view('- a\n- b', 3).view)).toBe(false);
+    expect(list_continuation_arrow_left(make_view('- a\n  b', 4, 6).view)).toBe(false);
   });
 });
 

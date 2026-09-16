@@ -9,7 +9,7 @@ import { heading_handlers } from './headings.js';
 import { horizontal_rule_handlers } from './horizontal_rule.js';
 import { html_handlers } from './html.js';
 import { link_handlers } from './links.js';
-import { ListBulletWidget, list_handlers } from './lists.js';
+import { ListBulletWidget, list_handlers, list_indent_hide } from './lists.js';
 import { text_style_handlers } from './text_styles.js';
 
 // ONE ViewPlugin over the concatenated registry. Each construct module used to
@@ -37,13 +37,17 @@ const inline_decorations_plugin = make_inline_decorations_plugin(
 // The bullet marker is never revealed (B2), so its replaced source span —
 // leading whitespace + ListMark + trailing space — must navigate as one atomic
 // unit, or the caret would step through hidden bytes one keypress at a time.
-// Lives here (not lists.ts) because it reads this plugin's decorations.
+// The widgetless list whitespace hides (ordered-marker indent, continuation
+// indent) are atomic for the same reason. Lives here (not lists.ts) because
+// it reads this plugin's decorations.
 const list_atomic_ranges = EditorView.atomicRanges.of((view) => {
   const plugin = view.plugin(inline_decorations_plugin);
   if (!plugin) return RangeSet.empty;
   const ranges: Range<Decoration>[] = [];
   plugin.decorations.between(0, view.state.doc.length, (from, to, deco) => {
-    if (deco.spec.widget instanceof ListBulletWidget) ranges.push(deco.range(from, to));
+    if (deco === list_indent_hide || deco.spec.widget instanceof ListBulletWidget) {
+      ranges.push(deco.range(from, to));
+    }
   });
   // Pass sort=true defensively — `between` iterates the source RangeSet in
   // `from` order, but two adjacent ListBulletWidget replace ranges can share

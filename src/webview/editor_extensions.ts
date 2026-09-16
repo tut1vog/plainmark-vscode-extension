@@ -44,7 +44,10 @@ import { horizontal_rule_extension } from './decorations/horizontal_rule.js';
 import { html_extension } from './decorations/html.js';
 import { links_extension } from './decorations/links.js';
 import {
+  list_continuation_arrow_left,
+  list_continuation_arrow_right,
   list_continuation_indent_backspace,
+  list_continuation_indent_delete,
   list_dangling_indent_backspace,
   list_empty_bullet_backspace,
   quoted_list_tab_dedent,
@@ -219,6 +222,9 @@ const editor_extensions_core: Extension[] = [
       { key: 'Backspace', run: list_empty_bullet_backspace },
       { key: 'Backspace', run: list_dangling_indent_backspace },
       { key: 'Backspace', run: list_continuation_indent_backspace },
+      { key: 'Delete', run: list_continuation_indent_delete },
+      { key: 'ArrowLeft', run: list_continuation_arrow_left },
+      { key: 'ArrowRight', run: list_continuation_arrow_right },
       { key: 'Backspace', run: block_empty_backspace },
       { key: 'Backspace', run: codeblock_backspace },
       { key: 'Backspace', run: marker_aware_backspace },

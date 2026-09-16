@@ -6,7 +6,9 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
-- **One Backspace joins an indented list continuation line to the line above** — with the caret at the start of a paragraph line that continues a list item, the first press used to remove only the hidden indentation, which showed nothing on screen; now that press joins the lines.
+- **One Backspace joins a list continuation line to the line above** — with the caret at the start of a paragraph line that continues a list item, the first press used to remove only the hidden indentation, which showed nothing on screen; now that press joins the lines, and Delete at the end of the line above joins the same way.
+- **The caret no longer stops on invisible positions before a list continuation line** — arrow keys cross from the item's text to the continuation line in one press, and a click at the line's start lands before its first character.
+- **A space typed at the start of a list continuation line is visible** — it used to disappear into the hidden indentation; now only the indentation that aligns the line with the item is hidden.
 
 ## [1.13.1] - 2026-09-15
 
