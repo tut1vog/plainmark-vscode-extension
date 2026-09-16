@@ -133,7 +133,9 @@ export function list_dangling_indent_backspace(view: EditorView): boolean {
 // A list continuation line's indent is display-hidden (LIST-R-12), so the
 // caret reads as sitting at the line's start anywhere in that run. Backspace
 // there joins the line to the one above in one press — deleting only the
-// hidden spaces would show nothing.
+// hidden spaces would show nothing. In the visible whitespace past the run
+// it deletes one character: lang-markdown's default strips all of it as
+// "extra space after the marker", but on this line it is content.
 export function list_continuation_indent_backspace(view: EditorView): boolean {
   const { state } = view;
   const { main } = state.selection;
@@ -141,7 +143,16 @@ export function list_continuation_indent_backspace(view: EditorView): boolean {
   const line = state.doc.lineAt(main.head);
   if (line.number === 1) return false;
   const hidden = continuation_hidden_indent(state, line);
-  if (!hidden || main.head > hidden.to) return false;
+  if (!hidden) return false;
+  if (main.head > hidden.to) {
+    if (/\S/.test(state.doc.sliceString(hidden.to, main.head))) return false;
+    view.dispatch({
+      changes: { from: main.head - 1, to: main.head },
+      selection: { anchor: main.head - 1 },
+      annotations: [Transaction.userEvent.of('delete')],
+    });
+    return true;
+  }
   const prev_line = state.doc.line(line.number - 1);
   view.dispatch({
     changes: { from: prev_line.to, to: hidden.to, insert: '' },

@@ -300,13 +300,24 @@ describe('list_continuation_indent_backspace LIST-I-16 LIST-SP-3', () => {
     expect(transactions[0].isUserEvent('delete')).toBe(true);
   });
 
-  it('(i) returns false with the caret past the hidden indent', () => {
+  it('(i) returns false with content between the hidden indent and the caret', () => {
     const { view, applied } = make_view('- a\n  bc', 7);
     expect(list_continuation_indent_backspace(view)).toBe(false);
     expect(applied).toHaveLength(0);
-    const extra = make_view('- a\n      b', 10);
-    expect(list_continuation_indent_backspace(extra.view)).toBe(false);
-    expect(extra.applied).toHaveLength(0);
+  });
+
+  it('(p) in the visible whitespace past the hidden indent it deletes one space', () => {
+    // '- a\n      b' — two hidden, four visible; caret after the visible run
+    const { view, doc, head, transactions } = make_view('- a\n      b', 10);
+    expect(list_continuation_indent_backspace(view)).toBe(true);
+    expect(doc()).toBe('- a\n     b');
+    expect(head()).toBe(9);
+    expect(transactions[0].isUserEvent('delete')).toBe(true);
+    // caret in the middle of the visible run
+    const mid = make_view('- a\n      b', 8);
+    expect(list_continuation_indent_backspace(mid.view)).toBe(true);
+    expect(mid.doc()).toBe('- a\n     b');
+    expect(mid.head()).toBe(7);
   });
 
   it('(j) returns false on a continuation line with no indent', () => {

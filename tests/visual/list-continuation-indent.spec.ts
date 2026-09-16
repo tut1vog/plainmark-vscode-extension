@@ -71,9 +71,12 @@ describe('list continuation indent — LIST-I-16 LIST-I-17 LIST-R-12', () => {
     expect(v.state.selection.main.head).toBe(6);
   });
 
-  it('LIST-R-12 a space typed at the text start is visible, and one Backspace removes it', async () => {
+  it('LIST-R-12 spaces typed at the text start are visible, and Backspace removes one at a time', async () => {
     const v = await mount('5. abc\n   我们', 10);
-    await userEvent.keyboard(' ');
+    await userEvent.keyboard('  ');
+    expect(v.state.doc.toString()).toBe('5. abc\n     我们');
+    expect(get_line_text(v, 1)).toBe('  我们');
+    await userEvent.keyboard('{Backspace}');
     expect(v.state.doc.toString()).toBe('5. abc\n    我们');
     expect(get_line_text(v, 1)).toBe(' 我们');
     await userEvent.keyboard('{Backspace}');
