@@ -307,8 +307,8 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.96.0",
-    "@vitest/browser": "^4.1.10",
-    "@vitest/browser-playwright": "^4.1.10",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/test-web": "^0.0.80",
     "@vscode/vsce": "^3.9.2",
@@ -323,7 +323,7 @@
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.0.0",
     "vite": "^7.3.6",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.0",
