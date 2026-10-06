@@ -12,5 +12,8 @@ patchedDependencies:
   '@lezer/markdown': patches/@lezer__markdown.patch
 # mocha pins serialize-javascript ^6.x, which is vulnerable (GHSA: RCE via
 # RegExp.flags); force the patched 7.x line until mocha moves upstream.
+# mermaid pins katex ^0.16.x, which has no backport of the trust-bypass fix
+# (patched in 0.18.2); force the 0.18 line until mermaid's range reaches it.
 overrides:
+  katex: ^0.18.2
   serialize-javascript: ^7.0.5

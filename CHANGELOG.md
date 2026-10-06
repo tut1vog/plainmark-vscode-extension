@@ -7,6 +7,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 ### Security
 
 - **Updated the bundled diagram sanitizer** — DOMPurify, which cleans Mermaid diagram output before it reaches the editor, picks up upstream fixes for two script-injection issues in a sanitizing mode Plainmark does not use.
+- **Updated the math renderer inside diagrams** — KaTeX, which Mermaid uses for `$$…$$` labels, moves to a release that closes a way to bypass its trust restrictions.
 
 ## [1.13.2] - 2026-09-16
 
