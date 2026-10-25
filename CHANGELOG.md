@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.13.4] - 2026-10-25
+
+### Changed
+
+- **Maintenance release with no user-visible changes** — refreshes the development and packaging tooling behind the extension; the editor behaves exactly as in 1.13.3.
+
 ## [1.13.3] - 2026-10-06
 
 ### Security
