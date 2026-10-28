@@ -457,7 +457,7 @@ function find_table_just_above(
   return result;
 }
 
-// Skip non-widgetized tables (IL1 nested-in-list/blockquote): DOM presence under the rendered widget is the canonical check.
+// Skip non-widgetized tables (list-nested, TBL-R-12): DOM presence under the rendered widget is the canonical check.
 function table_widget_rendered(view: EditorView, table_from: number): boolean {
   return (
     view.dom.querySelector(`.plainmark-table-block[data-table-from="${table_from}"]`) !== null

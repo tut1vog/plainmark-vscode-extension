@@ -283,19 +283,23 @@ function extract_table_full(table_node: SyntaxNode, doc: Text): TableExtraction 
   };
 }
 
-// IL1: only a blockquote-nested table needs this line guard — the decoration
-// walk never descends into a list item, so a list-nested table never reaches it.
-const BLOCKQUOTE_PREFIX = /^>/;
-
-function is_in_blockquote(state: EditorState, from: number): boolean {
-  const line = state.doc.lineAt(from);
-  return BLOCKQUOTE_PREFIX.test(line.text);
+// A quote-nested table starts after the line's `> ` prefix, and a block
+// replace may only cover whole lines (a partial-line block widget splits a stub
+// line and mis-maps DOM edits — see math.ts), so it takes display math's
+// whole-line, non-block shape (MATH-E-13, TBL-R-20): the quote line's chrome
+// stays on the .cm-line and the widget div reads as a block inside it.
+export function quoted_table_span(state: EditorState, info: TableInfo): OffsetRange | null {
+  const first = state.doc.lineAt(info.from);
+  const before = state.doc.sliceString(first.from, info.from);
+  if (!before.includes('>') || !/^[ \t>]*$/.test(before)) return null;
+  const last = state.doc.lineAt(info.to);
+  const after = state.doc.sliceString(info.to, last.to);
+  return { from: first.from, to: /\S/.test(after) ? info.to : last.to };
 }
 
-// IL1 asymmetry: this returns list/blockquote-nested tables too — only
-// build_table_decorations applies the IL1 guards — so a
-// returned table may have no widget. Callers must defend (table_widget_rendered)
-// before assuming a rendered table. A unit test pins this contract deliberately.
+// Returns every table the decoration walk reaches: document-level and
+// quote-nested ones. A list-nested table is never reached (the walk does not
+// enter a ListItem), so it is neither returned nor widgeted (TBL-R-12).
 export function find_tables(state: EditorState): TableInfo[] {
   const tables: TableInfo[] = [];
   syntaxTree(state).iterate({
@@ -320,8 +324,7 @@ export function find_tables(state: EditorState): TableInfo[] {
   return tables;
 }
 
-// Inherits find_tables' IL1 asymmetry: may resolve a cell in a widget-less
-// nested table. Runs per cell activation — resolves the one table at
+// Same descent rule as find_tables. Runs per cell activation — resolves the one table at
 // table_from instead of scanning every table in the document.
 export function lookup_cell_range(
   state: EditorState,
@@ -567,6 +570,8 @@ export class TableWidget extends WidgetType {
     // does not. In eq() so an edit that moves the table across the doc-top
     // boundary redraws the widget.
     readonly gap_above: boolean = false,
+    // TBL-R-20: inside a quote the widget is a non-block whole-line replace.
+    readonly quoted: boolean = false,
   ) {
     super();
   }
@@ -581,7 +586,8 @@ export class TableWidget extends WidgetType {
       alignment_signature(other.table.alignment) === alignment_signature(this.table.alignment) &&
       other.math_fingerprint === this.math_fingerprint &&
       other.content_signature === this.content_signature &&
-      other.gap_above === this.gap_above
+      other.gap_above === this.gap_above &&
+      other.quoted === this.quoted
     );
   }
 
@@ -593,9 +599,9 @@ export class TableWidget extends WidgetType {
 
   toDOM(view: EditorView): HTMLElement {
     const container = document.createElement('div');
-    container.className = this.gap_above
-      ? 'plainmark-table-block plainmark-block-gap-above'
-      : 'plainmark-table-block';
+    container.className = 'plainmark-table-block';
+    if (this.gap_above) container.classList.add('plainmark-block-gap-above');
+    if (this.quoted) container.classList.add('plainmark-table-quoted');
     container.dataset.tableFrom = String(this.table.from);
     set_container_widget(container, this);
     try {
@@ -1232,7 +1238,6 @@ export function request_cell_focus(
   });
 }
 
-// Like find_tables, skips the IL1 guard — may locate a widget-less nested table.
 // Bounded to the table's own offset: this sits on the per-keystroke and
 // per-hop paths (cell edits, nav guards, activation), where a from-doc-start
 // scan is O(document) each call. The bounded iterate visits only the ancestor
@@ -1277,11 +1282,6 @@ function build_table_ranges(
       if (node.name === 'Document') return;
       if (node.name === 'Table') {
         try {
-          // IL1: the sole gate that suppresses widgets for quote-nested tables; the
-          // find_tables/locate_table_extraction extract path does not mirror it.
-          if (is_in_blockquote(state, node.from)) {
-            return false;
-          }
           const info = extract_table_info(node.node, state.doc);
           const fingerprint = math_fingerprint_for_range(
             cache,
@@ -1291,12 +1291,23 @@ function build_table_ranges(
             info.to,
           );
           const csig = content_signature(info.cells, state.doc);
-          const gap_above = state.doc.lineAt(info.from).number > 1;
+          const quoted = quoted_table_span(state, info);
+          // The quote's own first-line logic carries the paragraph gap for a
+          // quote-nested table (BQ-R-13) — no widget gap there.
+          const gap_above = !quoted && state.doc.lineAt(info.from).number > 1;
           ranges.push(
             Decoration.replace({
-              block: true,
-              widget: new TableWidget(info, cache, image_base, fingerprint, csig, gap_above),
-            }).range(info.from, info.to),
+              block: !quoted,
+              widget: new TableWidget(
+                info,
+                cache,
+                image_base,
+                fingerprint,
+                csig,
+                gap_above,
+                quoted !== null,
+              ),
+            }).range(quoted?.from ?? info.from, quoted?.to ?? info.to),
           );
         } catch (reason) {
           log.warn('table widget skipped', {
@@ -1324,6 +1335,54 @@ export const table_widgets_field = StateField.define<DecorationSet>({
       return RangeSet.of(build_table_ranges(tr.state), true);
     }
     let mapped = tr.docChanged ? value.map(tr.changes) : value;
+    // RangeSet.map moves ranges only — a widget keeping its pre-edit offsets would miss toDOM's exact-offset tree lookup and render every cell empty. Runs before the region rebuild so every widget here still holds pre-edit offsets.
+    if (tr.docChanged) {
+      const shifted: Range<Decoration>[] = [];
+      const map = (pos: number): number => tr.changes.mapPos(pos);
+      // Insertion right at the table start moves it (assoc 1), as the replace range's own mapping does.
+      const stale = (widget: TableWidget): boolean =>
+        tr.changes.mapPos(widget.table.from, 1) !== widget.table.from;
+      mapped.between(0, tr.state.doc.length, (from, to, deco) => {
+        const widget = deco.spec.widget;
+        if (!(widget instanceof TableWidget) || !stale(widget)) return;
+        const info: TableInfo = {
+          from: tr.changes.mapPos(widget.table.from, 1),
+          to: tr.changes.mapPos(widget.table.to, -1),
+          cells: widget.table.cells.map((c) => ({
+            ...c,
+            cell_from: map(c.cell_from),
+            cell_to: map(c.cell_to),
+          })),
+          row_count: widget.table.row_count,
+          col_count: widget.table.col_count,
+          alignment: widget.table.alignment,
+        };
+        shifted.push(
+          Decoration.replace({
+            block: !widget.quoted,
+            widget: new TableWidget(
+              info,
+              widget.math_cache,
+              widget.image_base,
+              widget.math_fingerprint,
+              widget.content_signature,
+              !widget.quoted && tr.state.doc.lineAt(info.from).number > 1,
+              widget.quoted,
+            ),
+          }).range(from, to),
+        );
+      });
+      if (shifted.length) {
+        mapped = mapped.update({
+          filter: (_from, _to, deco) => {
+            const widget = deco.spec.widget;
+            return !(widget instanceof TableWidget) || !stale(widget);
+          },
+          add: shifted,
+          sort: true,
+        });
+      }
+    }
     const regions: OffsetRange[] = [];
     if (tr.docChanged) {
       for (const pair of doc_change_regions(tr.startState, tr.state, tr.changes)) {
@@ -1351,50 +1410,6 @@ export const table_widgets_field = StateField.define<DecorationSet>({
         add: build_table_ranges(tr.state, region),
         sort: true,
       });
-    }
-    // RangeSet.map moves ranges only — a widget keeping its pre-edit offsets would miss toDOM's exact-offset tree lookup and render every cell empty.
-    if (tr.docChanged) {
-      const shifted: Range<Decoration>[] = [];
-      mapped.between(0, tr.state.doc.length, (from, to, deco) => {
-        const widget = deco.spec.widget;
-        if (!(widget instanceof TableWidget) || widget.table.from === from) return;
-        const map = (pos: number): number => tr.changes.mapPos(pos);
-        const info: TableInfo = {
-          from,
-          to,
-          cells: widget.table.cells.map((c) => ({
-            ...c,
-            cell_from: map(c.cell_from),
-            cell_to: map(c.cell_to),
-          })),
-          row_count: widget.table.row_count,
-          col_count: widget.table.col_count,
-          alignment: widget.table.alignment,
-        };
-        shifted.push(
-          Decoration.replace({
-            block: true,
-            widget: new TableWidget(
-              info,
-              widget.math_cache,
-              widget.image_base,
-              widget.math_fingerprint,
-              widget.content_signature,
-              tr.state.doc.lineAt(from).number > 1,
-            ),
-          }).range(from, to),
-        );
-      });
-      if (shifted.length) {
-        mapped = mapped.update({
-          filter: (from, _to, deco) => {
-            const widget = deco.spec.widget;
-            return !(widget instanceof TableWidget) || widget.table.from === from;
-          },
-          add: shifted,
-          sort: true,
-        });
-      }
     }
     return mapped;
   },

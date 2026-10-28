@@ -6,6 +6,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Added
 
+- **Tables render inside quotes and callouts** — a pipe table nested in a blockquote or callout body now gets the same visual table editor as a top-level one, drawn inside the quote's bar and tint; cell edits and row or column operations keep every row's `>` prefix. Put a bare `>` line between quoted text and the table's header row, as Obsidian does, for the table to form.
 - **Callouts can fold** — `> [!NOTE]-` now opens collapsed and `> [!NOTE]+` open, matching Obsidian; a chevron after the title collapses or expands the body, and moving the caret into a hidden body expands it automatically. The marker byte is never rewritten by a toggle.
 
 ## [1.13.5] - 2026-10-25

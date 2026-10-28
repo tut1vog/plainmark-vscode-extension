@@ -62,6 +62,7 @@ const editable_fixtures = [
   'multi-line-cell.md',
   'adjacent-paragraph.md',
   'escapes.md',
+  'quoted.md',
 ];
 
 describe('INV-SP-1 INV-SP-2 TBL-SP-1 table edit-cycle: bytes outside the edited table are preserved', () => {
@@ -130,6 +131,50 @@ describe('INV-SP-1 INV-SP-2 TBL-SP-1 table edit-cycle: bytes outside the edited 
     ]) {
       expect(result).toContain(literal);
     }
+  });
+});
+
+describe('TBL-SP-13 TBL-R-20 quote-nested tables keep every row prefix (quoted.md)', () => {
+  it('both quoted tables are found; an edit keeps each row\'s literal `>` run and bytes outside', () => {
+    const doc = read_fixture('quoted.md');
+    const tables = find_tables(make_state(doc));
+    expect(tables).toHaveLength(2);
+
+    const { result, from, to } = apply_edit_cycle(doc, tables[0].from, (model) => {
+      model.rows[1][1] += ' edited';
+    });
+    expect(result.slice(0, from)).toBe(doc.slice(0, from));
+    expect(result.slice(result.length - (doc.length - to))).toBe(doc.slice(to));
+    const rows = result.slice(from, result.length - (doc.length - to)).split('\n');
+    expect(rows).toHaveLength(4);
+    expect(rows[0].startsWith('| ')).toBe(true);
+    for (const row of rows.slice(1)) expect(row.startsWith('> | ')).toBe(true);
+    expect(result).toContain('`sts::3f8a` edited');
+  });
+
+  it('a callout-body table re-applies each row\'s own prefix variant (`>`, `>  `) and a new row takes the header\'s', () => {
+    const doc = read_fixture('quoted.md');
+    const tables = find_tables(make_state(doc));
+    const { result, from, to } = apply_edit_cycle(doc, tables[1].from, (model) => {
+      model.rows.push(['3', '4']);
+    });
+    const rows = result.slice(from, result.length - (doc.length - to)).split('\n');
+    expect(rows.map((r) => /^[ >]*/.exec(r)?.[0])).toEqual(['', '>', '>  ', '> ']);
+    expect(rows[3]).toBe('> | 3   | 4   |');
+    expect(result.slice(0, from)).toBe(doc.slice(0, from));
+    expect(result.endsWith('\n\nOutro paragraph.\n')).toBe(true);
+  });
+
+  it('a quoted table re-extracts with the same shape after the edit', () => {
+    const doc = read_fixture('quoted.md');
+    const tables = find_tables(make_state(doc));
+    const { result } = apply_edit_cycle(doc, tables[0].from, (model) => {
+      model.rows[1][0] += 'x';
+    });
+    const reparsed = find_tables(make_state(result));
+    expect(reparsed).toHaveLength(2);
+    expect(reparsed[0].row_count).toBe(tables[0].row_count);
+    expect(reparsed[0].col_count).toBe(tables[0].col_count);
   });
 });
 

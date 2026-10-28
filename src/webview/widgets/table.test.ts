@@ -14,6 +14,7 @@ import {
   locate_table_extraction,
   lookup_cell_range,
   table_widgets_field,
+  quoted_table_span,
 } from './table.js';
 import { serialize_table } from './table_serialize.js';
 
@@ -254,7 +255,7 @@ describe('TBL-E-15 upstream: delimiter row with trailing spaces', () => {
   });
 });
 
-describe('TBL-R-12 TBL-E-1 IL1 — table nested inside list or blockquote', () => {
+describe('TBL-R-12 TBL-E-1 TBL-R-20 — table nested inside list or blockquote', () => {
   it('find_tables skips a table nested in a list item (IL1 — only document-level tables are widgets)', () => {
     const doc = '- list item before\n  | A | B |\n  |---|---|\n  | 1 | 2 |\n';
     // find_tables descends only into Document-level blocks, so the nested
@@ -282,14 +283,42 @@ describe('TBL-R-12 TBL-E-1 IL1 — table nested inside list or blockquote', () =
     expect(count).toBe(0);
   });
 
-  it('produces zero decorations for a table inside a blockquote', () => {
-    const doc = '> | A | B |\n> |---|---|\n> | 1 | 2 |\n';
+  it('TBL-R-20: a table inside a blockquote gets one non-block widget spanning its whole lines', () => {
+    const doc = 'para\n> | A | B |\n> |---|---|\n> | 1 | 2 |\n> after';
+    const state = make_state(doc);
+    const spans: { from: number; to: number; block: boolean; quoted: boolean }[] = [];
+    state.field(table_widgets_field).between(0, state.doc.length, (from, to, deco) => {
+      const widget = deco.spec.widget as TableWidget;
+      spans.push({ from, to, block: deco.spec.block === true, quoted: widget.quoted });
+    });
+    // From the first row's line start (the `> ` prefix included) to the last
+    // row's line end; the absorbed `> after` line stays outside (TBL-E-7).
+    expect(spans).toEqual([
+      { from: 5, to: doc.indexOf('\n> after'), block: false, quoted: true },
+    ]);
+    const [info] = find_tables(state);
+    expect(info.from).toBe(doc.indexOf('| A'));
+    expect(quoted_table_span(state, info)).toEqual({ from: 5, to: doc.indexOf('\n> after') });
+  });
+
+  it('TBL-R-20: a table in a callout body is widgeted the same way', () => {
+    const doc = '> [!NOTE] t\n>\n> | A | B |\n> |---|---|\n> | 1 | 2 |';
     const state = make_state(doc);
     let count = 0;
-    state.field(table_widgets_field).between(0, state.doc.length, () => {
+    state.field(table_widgets_field).between(0, state.doc.length, (_f, _t, deco) => {
       count += 1;
+      expect(deco.spec.block).not.toBe(true);
     });
-    expect(count).toBe(0);
+    expect(count).toBe(1);
+  });
+
+  it('TBL-R-20: an unquoted table keeps the block shape', () => {
+    const state = make_state('para\n| A | B |\n|---|---|\n| 1 | 2 |');
+    const [info] = find_tables(state);
+    expect(quoted_table_span(state, info)).toBeNull();
+    state.field(table_widgets_field).between(0, state.doc.length, (_f, _t, deco) => {
+      expect(deco.spec.block).toBe(true);
+    });
   });
 
   it('produces exactly one decoration for a top-level table at offset 0', () => {

@@ -410,36 +410,39 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
     };
   }
 
-  // A quote line whose content is a quote-nested math widget (MATH-E-13) has
-  // its `>` markers inside the replaced range — the per-marker bars above
+  // A quote line whose content is a quote-nested math or table widget
+  // (MATH-E-13, TBL-R-20) has its `>` markers inside the replaced range — the per-marker bars above
   // cannot draw. The LINE's own ::before carries the bars instead, one per
   // depth, stepped by `--plainmark-quote-bar-step` — the measured `> `
   // advance the line decoration publishes (indent_line_decoration) — so each
   // bar lands at the SAME x as neighboring lines' per-marker bars; the em
   // grid is only the pre-measure fallback. `:has()` is supported by both
   // hosts (Electron / evergreen browsers).
+  // One rule per widget class: style-mod splits selectors on commas, which
+  // would cut a `:has(a, b)` list in two.
   const bar_step = `var(--plainmark-quote-bar-step, ${indent})`;
+  const widget_classes = ['plainmark-math-block', 'plainmark-table-block'];
   for (let n = 1; n <= MAX_DEPTH; n++) {
-    rules[
-      `.plainmark-blockquote[data-blockquote-depth="${n}"]:has(> .plainmark-math-block)::before`
-    ] = {
-      content: '""',
-      position: 'absolute',
-      top: '0',
-      bottom: '0',
-      left: '0',
-      width: `calc(${n - 1} * ${bar_step} + ${bar_width})`,
-      background: `repeating-linear-gradient(to right, ${bar_color} 0, ${bar_color} ${bar_width}, transparent ${bar_width}, transparent ${bar_step})`,
-      'pointer-events': 'none',
-    };
+    for (const cls of widget_classes) {
+      rules[`.plainmark-blockquote[data-blockquote-depth="${n}"]:has(> .${cls})::before`] = {
+        content: '""',
+        position: 'absolute',
+        top: '0',
+        bottom: '0',
+        left: '0',
+        width: `calc(${n - 1} * ${bar_step} + ${bar_width})`,
+        background: `repeating-linear-gradient(to right, ${bar_color} 0, ${bar_color} ${bar_width}, transparent ${bar_width}, transparent ${bar_step})`,
+        'pointer-events': 'none',
+      };
+    }
   }
   // First-line paragraph gap (PARA-R-7): the widget-line bar starts below the
   // clear gap, mirroring the per-marker rule further down.
-  rules[
-    '.plainmark-blockquote-first.plainmark-paragraph-gap:has(> .plainmark-math-block)::before'
-  ] = {
-    top: gap,
-  };
+  for (const cls of widget_classes) {
+    rules[`.plainmark-blockquote-first.plainmark-paragraph-gap:has(> .${cls})::before`] = {
+      top: gap,
+    };
+  }
 
   // PARA-R-7: the outermost quote's first line carries the paragraph gap ABOVE
   // the block. Because .cm-line padding sits inside the background (and margins
