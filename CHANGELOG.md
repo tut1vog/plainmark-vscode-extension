@@ -11,7 +11,7 @@ All notable changes to the Plainmark extension are documented here. The format f
 
 ### Fixed
 
-- **Code blocks inside callouts keep their shaded background** — a fenced block in a callout body used to lose its code tint to the callout's own coloring and read as plain monospace text.
+- **Code blocks inside quotes and callouts shade the quote instead of painting over it** — a fenced block in a callout body used to lose its code tint to the callout's own coloring and read as plain monospace text, and in themes with a solid code background a quoted block sat on the quote's tint as a slab of editor color; quoted code now darkens the tint behind it.
 
 ## [1.13.5] - 2026-10-25
 

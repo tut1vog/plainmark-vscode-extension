@@ -462,14 +462,20 @@ function build_blockquote_theme(): Record<string, Record<string, string>> {
       'background-position': '0 bottom',
       'background-repeat': 'no-repeat',
     };
-  // A quote-first FENCE header loses its code tint to the repaint above,
-  // reading as the ``` line sitting outside the block — restack the code
-  // background (chain duplicated from the code-block theme) over the quote
-  // tint at (0,6,0); size/position/repeat carry over from the (0,5,0) rule.
-  // currentColor fallback keeps the layer list valid if --vscode-foreground
-  // is absent (one failed var() voids the whole background-image).
-  const code_bg =
-    'var(--plainmark-code-background, var(--vscode-textCodeBlock-background, var(--vscode-textPreformat-background, transparent)))';
+  // Quoted code shades the tint behind it instead of painting the theme's
+  // code background, which may be opaque (tuned for the editor background) and
+  // would sit on the quote tint as a foreign slab (CBLK-E-8). (0,2,0) beats the
+  // fence rule's (0,1,0); size/position carry over from it.
+  const code_bg = 'color-mix(in srgb, currentColor 7%, transparent)';
+  rules['.plainmark-blockquote.plainmark-fenced-code'] = {
+    'background-image': `linear-gradient(${code_bg}, ${code_bg})`,
+  };
+  // A quote-first FENCE header loses its code shade to the repaint above,
+  // reading as the ``` line sitting outside the block — restack the shade over
+  // the quote tint at (0,6,0); size/position/repeat carry over from the (0,5,0)
+  // rule. currentColor fallback keeps the layer list valid if
+  // --vscode-foreground is absent (one failed var() voids the whole
+  // background-image).
   const quote_layer =
     'var(--plainmark-blockquote-background, color-mix(in srgb, var(--vscode-foreground, currentColor) 5%, transparent))';
   rules[

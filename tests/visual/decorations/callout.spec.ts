@@ -353,7 +353,7 @@ describe('CALL-E-4: extra whitespace after `>` is prefix, not title', () => {
   });
 });
 
-describe('CBLK-E-8: fenced code inside a callout keeps its code shading', () => {
+describe('CBLK-E-8: fenced code inside a quote or callout shades the tint, not the theme code color', () => {
   let h: SetupHandle;
   let style: HTMLStyleElement;
   beforeEach(() => {
@@ -369,7 +369,13 @@ describe('CBLK-E-8: fenced code inside a callout keeps its code shading', () => 
     style.remove();
   });
 
-  it('stacks the code tint between the accent bar and the callout tint on every fence line', async () => {
+  function translucent_layers(line: HTMLElement): string[] {
+    return getComputedStyle(line)
+      .backgroundImage.split(/\)\s*,\s*(?=linear)/)
+      .filter((layer) => /\/ 0\.\d+\)|rgba\([^)]*, 0\.\d+\)/.test(layer));
+  }
+
+  it('callout: bar over translucent code shade over tint on every fence line; the opaque code color never shows', async () => {
     const doc = '> [!NOTE] t\n> body\n>\n> ```js\n> x\n> ```\n> tail';
     h.view = mount_editor(h.container, doc);
     move_cursor(h.view, 0);
@@ -379,11 +385,29 @@ describe('CBLK-E-8: fenced code inside a callout keeps its code shading', () => 
     );
     expect(code_lines).toHaveLength(3);
     for (const line of code_lines) {
-      const layers = getComputedStyle(line).backgroundImage.split(/\)\s*,\s*linear/);
-      expect(layers).toHaveLength(3);
-      expect(getComputedStyle(line).backgroundImage).toContain('rgb(255, 204, 0)');
+      const image = getComputedStyle(line).backgroundImage;
+      expect(image.split(/\)\s*,\s*(?=linear)/)).toHaveLength(3);
+      expect(image).not.toContain('rgb(255, 204, 0)');
+      expect(translucent_layers(line).length).toBeGreaterThanOrEqual(2);
     }
-    const body = h.container.querySelector<HTMLElement>('.plainmark-callout-body:not(.plainmark-fenced-code)')!;
-    expect(getComputedStyle(body).backgroundImage).not.toContain('rgb(255, 204, 0)');
+  });
+
+  it('plain quote: the fence paints a translucent shade over the quote tint, not the theme code color', async () => {
+    const doc = 'para\n> q\n>\n> ```js\n> x\n> ```\n> tail\n\n```js\ny\n```';
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 0);
+    await next_frame();
+    const quoted = Array.from(
+      h.container.querySelectorAll<HTMLElement>('.cm-line.plainmark-blockquote.plainmark-fenced-code'),
+    );
+    expect(quoted).toHaveLength(3);
+    for (const line of quoted) {
+      expect(getComputedStyle(line).backgroundImage).not.toContain('rgb(255, 204, 0)');
+      expect(translucent_layers(line).length).toBeGreaterThanOrEqual(1);
+    }
+    const top_level = h.container.querySelector<HTMLElement>(
+      '.cm-line.plainmark-fenced-code:not(.plainmark-blockquote)',
+    )!;
+    expect(getComputedStyle(top_level).backgroundImage).toContain('rgb(255, 204, 0)');
   });
 });

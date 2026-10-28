@@ -295,8 +295,11 @@ function build_callout_theme(): Record<string, Record<string, string>> {
     },
   };
 
-  const code_bg =
-    'var(--plainmark-code-background, var(--vscode-textCodeBlock-background, var(--vscode-textPreformat-background, transparent)))';
+  // Quoted code shades the tint behind it instead of painting the theme's code
+  // background, which may be opaque (tuned for the editor background) and would
+  // sit on the quote tint as a foreign slab. currentColor keeps the shade a
+  // contrast step in light and dark themes alike.
+  const code_bg = 'color-mix(in srgb, currentColor 7%, transparent)';
 
   const chart_color_by_type: Record<CalloutType, string> = {
     note: 'var(--vscode-charts-blue, #4dafff)',
@@ -341,7 +344,7 @@ function build_callout_theme(): Record<string, Record<string, string>> {
     };
     rules[`.plainmark-callout-body[data-callout-type="${type}"]`] = chrome;
     // A fenced-code body line: the per-type rule above outranks the code
-    // block's own background-image, so restack bar over code tint over
+    // block's own background-image, so restack bar over code shade over
     // callout tint rather than losing the code shading (CBLK-E-8).
     rules[`.plainmark-callout-body.plainmark-fenced-code[data-callout-type="${type}"]`] = {
       'background-image': `${bar_grad}, linear-gradient(${code_bg}, ${code_bg}), ${bg_grad}`,
