@@ -26,6 +26,7 @@ import {
   blockquote_plain_backspace,
 } from './decorations/blockquote_keymap.js';
 import { callout_theme } from './decorations/callout.js';
+import { callout_fold_extension } from './decorations/callout_fold.js';
 import { callout_completions } from './decorations/callout_autocomplete.js';
 import { clipped_selection_layer } from './decorations/clipped_selection.js';
 import { codeblock_completions } from './decorations/codeblock_autocomplete.js';
@@ -398,6 +399,8 @@ export const editor_extensions: Extension[] = [
   quote_paste_extension,
   // Main view only — table cells own their contextmenu; prose right-clicks open the editor menu.
   editor_context_menu_extension,
+  // Main view only — a cell subview holds no multi-line callout to fold.
+  callout_fold_extension,
   scroller_theme,
   // Main view only — cell subviews don't own a scroller, so they can't scroll-snap.
   oracle_line_height_pin,

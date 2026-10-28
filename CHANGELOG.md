@@ -2,6 +2,12 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Callouts can fold** — `> [!NOTE]-` now opens collapsed and `> [!NOTE]+` open, matching Obsidian; a chevron after the title collapses or expands the body, and moving the caret into a hidden body expands it automatically. The marker byte is never rewritten by a toggle.
+
 ## [1.13.5] - 2026-10-25
 
 ### Security

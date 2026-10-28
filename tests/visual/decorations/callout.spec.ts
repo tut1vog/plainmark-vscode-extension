@@ -260,18 +260,18 @@ describe('callout decorations — fold marker', () => {
     h.container.remove();
   });
 
-  it('renders ▸ chevron for `> [!NOTE]-` with no click handler attached', async () => {
+  it('renders a chevron button for `> [!NOTE]-`', async () => {
     const doc = '> [!NOTE]-\n> body';
     h.view = mount_editor(h.container, doc);
     move_cursor(h.view, doc.length);
     await next_frame();
     const chev = h.container.querySelector('.plainmark-callout-fold-marker');
     expect(chev).not.toBeNull();
-    expect(chev!.textContent).toBe('▸');
-    expect(chev!.getAttribute('title')).toContain('Collapsibility');
+    expect(chev!.textContent).toBe('▾');
+    expect(chev!.getAttribute('role')).toBe('button');
   });
 
-  it('renders ▾ chevron for `> [!NOTE]+`', async () => {
+  it('renders the chevron for `> [!NOTE]+` too', async () => {
     const doc = '> [!NOTE]+\n> body';
     h.view = mount_editor(h.container, doc);
     move_cursor(h.view, doc.length);

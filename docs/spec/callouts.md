@@ -20,7 +20,7 @@ marker-insert redirect, marker-only caret-anchor widgets, and the BQ-I-9
 lazy-continuation trap filter were retired by the per-line-reveal rework — see `blockquotes.md`.) This
 document specifies only the callout-specific layer: marker detection, the header
 widget (icon + title), per-type styling, the type-autocomplete affordance, and
-the static fold marker.
+the fold toggle.
 
 Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README §2).
 
@@ -47,8 +47,11 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CALL-R-7** — When the marker line carries no title (empty or whitespace-only trailing text), the header MUST synthesize one: the canonical title (`Note`/`Tip`/`Important`/`Warning`/`Caution`) for a known type, or the raw type with first letter capitalized for an `unknown` type.
   _Example:_ `> [!note]` → "Note"; `> [!HINT]` → "Hint"; `> [!FOO]` → "Foo".
 
-- **CALL-R-8** `[smoke]` — When a fold marker (`-`/`+`) is present, the widget MUST append a static `plainmark-callout-fold-marker` glyph (`▸` for `-`, `▾` for `+`) with `aria-hidden="true"` and `title="Collapsibility coming in a later release"`. The glyph MUST have no click handler and MUST NOT collapse the body.
-  _Example:_ `> [!TIP]- Hidden` → header shows tip icon + "Hidden" + a `▸` glyph; the body still renders fully.
+- **CALL-R-8** `[smoke]` — When a fold marker (`-`/`+`) is present, the widget MUST append a `plainmark-callout-fold-marker` chevron (`▾`, `role="button"`, `aria-label="Toggle callout body"`) after the title. The chevron MUST reflect the live fold state, not the marker byte: the theme rotates it −90° (`▸`-wise) whenever the header line carries `plainmark-callout-folded` (CALL-R-13), so a toggle (CALL-I-8) re-orients it without rebuilding the widget. Clicking it toggles the fold (CALL-I-8).
+  _Example:_ `> [!TIP]- Hidden` → header shows tip icon + "Hidden" + a rotated chevron, body hidden; `> [!TIP]+ Shown` → upright chevron, body shown.
+
+- **CALL-R-13** `[smoke]` — A folded callout MUST hide every body line and keep the header: the fold is a CodeMirror code-fold replace spanning the header line's end through the node's last line's end, marked by an empty `plainmark-callout-fold-placeholder` span (no `…`). The header line MUST additionally carry class `plainmark-callout-folded`, which restores the symmetric bottom padding its hidden last line would have carried (CALL-R-4), so the folded box stays a complete band. Callout folds are the only folds in the editor (no fold gutter, no fold keymap).
+  _Example:_ `> [!NOTE]- t\n> a\n> b` folded → one header line with `plainmark-callout-folded`, no `plainmark-callout-body` line in the DOM; unfolded → the usual header + two body lines.
 
 - **CALL-R-9** — Body lines MUST render as ordinary blockquote content under the callout's line chrome; only the first line carries the header widget. A marker-only body line (`> ` with no content) follows the inherited per-line reveal (BQ-R-2 / BQ-E-11): its `>` hides when the caret is elsewhere and reveals when the caret is on it. No caret-anchor widget is emitted (retired by the per-line-reveal rework).
   _Example:_ `> [!NOTE]\n> **bold**\n> ` → header on line 1; line 2 bold; line 3 empty shows depth chrome, and `> ` when the caret is on it.
@@ -84,10 +87,16 @@ Example notation: `|` = caret, `→` = action/result, `\n` = newline (see README
 - **CALL-I-7** `[accepted]` — Exit/continuation MUST be inherited from the blockquote keymap (BQ-I-1 / BQ-I-2 / BQ-I-4); no callout-specific exit keymap ships. The empty-`> `-line single-keypress exit fires on callout body lines too. No `Mod-Shift-B`-style callout-wrap shortcut and no interactive type-change menu ship in the MVP (deferred).
   _Example:_ `> [!NOTE]\n> |` → Enter (on empty body line) → `> [!NOTE]\n\n|` (single keypress exit).
 
+- **CALL-I-8** `[smoke]` — A primary click on the fold chevron MUST toggle the callout's fold: folded → unfolded, unfolded → folded (a bare header with no body line toggles nothing). The press MUST NOT move the caret or start a selection — the widget swallows the chevron's `mousedown` and reports the chevron's events as ignored to the editor — so the header stays un-revealed and the widget survives the click. Keyboard focus is not offered on the chevron.
+  _Example:_ `> [!NOTE]- t\n> body` with the caret elsewhere → click chevron → body shown, caret unchanged, chevron upright → click again → body hidden.
+
+- **CALL-I-9** `[smoke]` — The marker sets the DEFAULT state only (Obsidian): a `-` callout MUST start folded the first time its header appears — on document load, after an edit that writes the `-`, or when parse progress first reaches it — and `+` or no marker starts open. The default is applied once per header, so a user toggle sticks for the session; removing the `-` and writing it again re-arms the default. The fold MUST unfold on its own when the selection head lands strictly inside the hidden body (a click, arrow motion, search match, or host-driven caret move) and when a deletion touches the fold's boundary — CodeMirror's fold semantics — so no content is ever unreachable; it MUST stay folded while the caret merely sits at the header line's end or on the header line (the header reveals raw per CALL-I-1, the body stays hidden).
+  _Example:_ open a file holding `> [!NOTE]- t\n> body` → folded; move the caret into `body` (Find, outline, or host sync) → unfolded; type `-` after `[!NOTE]` on an open callout → folds; Backspace it away and retype it → folds again.
+
 ## SP · Source-preservation
 
-- **CALL-SP-1** `[inherits:INV-SP-1]` — All callout rendering (header widget, icon, fold glyph, per-type line/marker decorations, accent chrome) MUST be decoration-only and MUST NOT modify document bytes. The fold `-`/`+` byte is preserved verbatim and is never mutated by a fold toggle (no toggle exists).
-  _Example:_ render `> [!NOTE]- Hi\n> body` then re-read the buffer → bytes byte-for-byte unchanged.
+- **CALL-SP-1** `[inherits:INV-SP-1]` — All callout rendering (header widget, icon, fold chevron, per-type line/marker decorations, accent chrome, the fold itself) MUST be decoration-only and MUST NOT modify document bytes. The fold `-`/`+` byte is preserved verbatim: a fold toggle (CALL-I-8) changes view state only and never writes the marker.
+  _Example:_ render `> [!NOTE]- Hi\n> body`, toggle it open and closed, then re-read the buffer → bytes byte-for-byte unchanged.
 
 - **CALL-SP-2** — Accepting a `> [` completion (CALL-I-3 / CALL-I-4) is a legitimate user-initiated edit, not a render-time mutation; it inserts `!<TYPE>] ` at the caret via a normal CM6 transaction subject to undo. This MUST NOT be conflated with the decoration-only render path of CALL-SP-1.
   _Example:_ choosing "Note" at `> [|` inserts `!NOTE] ` → one undoable edit; one Ctrl+Z reverts it.

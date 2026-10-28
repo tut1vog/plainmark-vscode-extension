@@ -28,7 +28,7 @@ Plainmark runs as a custom editor in both the desktop app and the browser — op
 - **Tables** — visual editing with insert / delete / move row and column, whole-table delete, per-column alignment, multi-cell selection (drag or Shift+click across cells, then clear, copy, or cut the block), and configurable keyboard shortcuts.
 - **Math** — LaTeX rendered with MathJax, inline and block.
 - **Diagrams** — Mermaid flowcharts, sequence diagrams, and more.
-- **Callouts** — Obsidian-style `> [!NOTE]` admonitions.
+- **Callouts** — Obsidian-style `> [!NOTE]` admonitions; `[!NOTE]-` folds the body behind a chevron, `[!NOTE]+` starts it open.
 - **Footnotes, autolinks, images, frontmatter, HTML** — full Markdown coverage.
 - **Paste images** — paste a screenshot or an image file (PNG, JPEG, GIF, WebP, or SVG) from the clipboard and Plainmark saves it into your workspace and inserts the image link.
 - **Paste tables** — paste a range copied from Excel, Google Sheets, or a table rendered on a web page and it becomes a Markdown table, bold/links included; tab-separated plain text converts too.

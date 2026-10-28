@@ -95,7 +95,7 @@ conforming* and need a smoke check at the spec close-out (those also tagged
 | IMG-I-4 | Caret/arrow behavior into the `contenteditable=false` image block widget reveals source rather than trapping the caret (`[smoke]`). | pending |
 | FN-E-8 | Footnote reference inside callout/blockquote/table-cell — reveal interaction with the surrounding construct's reveal model. | pending |
 | CALL-E-3 | Nested callouts (`> > [!NOTE]`) rendering. | pending |
-| CALL-E-5 | Collapsed callout (`-`) actually hides its body in the live webview. | pending |
+| CALL-I-9 | Collapsed callout (`-`) hides its body in the live webview and the chevron toggles it. | pending |
 
 ## Conformance-unknown — smoke to confirm (batch 4)
 

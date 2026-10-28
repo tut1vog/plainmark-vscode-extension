@@ -16,6 +16,7 @@ import {
   type CalloutType,
   synthesize_title,
 } from './callout_detect.js';
+import { toggle_callout_fold } from './callout_fold.js';
 import { ICON_SVG_BY_TYPE } from './callout_icons.js';
 import { marker_end_with_space } from './marker_end.js';
 import { line_revealed } from './quote_reveal.js';
@@ -34,7 +35,7 @@ class CalloutTitleWidget extends WidgetType {
     );
   }
 
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
     const root = document.createElement('span');
     root.className = 'plainmark-callout-title';
 
@@ -52,16 +53,26 @@ class CalloutTitleWidget extends WidgetType {
     if (this.info.fold !== null) {
       const chev = document.createElement('span');
       chev.className = 'plainmark-callout-fold-marker';
-      chev.setAttribute('aria-hidden', 'true');
-      chev.setAttribute('title', 'Collapsibility coming in a later release');
-      chev.textContent = this.info.fold === '-' ? '▸' : '▾';
+      chev.setAttribute('role', 'button');
+      chev.setAttribute('aria-label', 'Toggle callout body');
+      chev.setAttribute('title', 'Collapse or expand');
+      // One glyph; the folded header's class rotates it (CALL-R-8).
+      chev.textContent = '▾';
+      // mousedown is swallowed so the press neither moves the caret onto the
+      // header (which would drop this widget) nor starts a drag selection.
+      chev.addEventListener('mousedown', (event) => event.preventDefault());
+      chev.addEventListener('click', (event) => {
+        event.preventDefault();
+        toggle_callout_fold(view, view.posAtDOM(root));
+      });
       root.appendChild(chev);
     }
     return root;
   }
 
-  ignoreEvent(): boolean {
-    return false;
+  ignoreEvent(event: Event): boolean {
+    const target = event.target;
+    return target instanceof Element && target.closest('.plainmark-callout-fold-marker') !== null;
   }
 }
 
@@ -230,6 +241,10 @@ function build_callout_theme(): Record<string, Record<string, string>> {
     '.plainmark-callout-last': {
       'padding-bottom': padding_y,
     },
+    // A folded callout hides its last line, so the header carries that padding.
+    '.plainmark-callout-folded': {
+      'padding-bottom': padding_y,
+    },
     // DIRECT-child text-indent reset: Chromium leaks the line's negative indent into the inline-flex title, collapsing its icon/label gap (Firefox#1682380); a descendant `*` reset would also kill the body's first-line hang.
     '.plainmark-callout > *': {
       'text-indent': '0',
@@ -253,6 +268,15 @@ function build_callout_theme(): Record<string, Record<string, string>> {
     '.plainmark-callout-fold-marker': {
       'margin-left': '0.25em',
       opacity: '0.6',
+      cursor: 'pointer',
+      display: 'inline-block',
+      transition: 'transform 120ms ease',
+    },
+    '.plainmark-callout-fold-marker:hover': {
+      opacity: '1',
+    },
+    '.plainmark-callout-folded .plainmark-callout-fold-marker': {
+      transform: 'rotate(-90deg)',
     },
     // PARA-R-7: a callout header (the block's first line) carries the
     // paragraph gap above the box. The gap stacks on the header's own
