@@ -352,3 +352,38 @@ describe('CALL-E-4: extra whitespace after `>` is prefix, not title', () => {
     expect(getComputedStyle(header).paddingLeft).toBe(getComputedStyle(body).paddingLeft);
   });
 });
+
+describe('CBLK-E-8: fenced code inside a callout keeps its code shading', () => {
+  let h: SetupHandle;
+  let style: HTMLStyleElement;
+  beforeEach(() => {
+    h = make_setup();
+    document.body.appendChild(h.container);
+    style = document.createElement('style');
+    style.textContent = ':root{--plainmark-code-background:#ffcc00;}';
+    document.head.appendChild(style);
+  });
+  afterEach(() => {
+    h.view?.destroy();
+    h.container.remove();
+    style.remove();
+  });
+
+  it('stacks the code tint between the accent bar and the callout tint on every fence line', async () => {
+    const doc = '> [!NOTE] t\n> body\n>\n> ```js\n> x\n> ```\n> tail';
+    h.view = mount_editor(h.container, doc);
+    move_cursor(h.view, 0);
+    await next_frame();
+    const code_lines = Array.from(
+      h.container.querySelectorAll<HTMLElement>('.cm-line.plainmark-fenced-code'),
+    );
+    expect(code_lines).toHaveLength(3);
+    for (const line of code_lines) {
+      const layers = getComputedStyle(line).backgroundImage.split(/\)\s*,\s*linear/);
+      expect(layers).toHaveLength(3);
+      expect(getComputedStyle(line).backgroundImage).toContain('rgb(255, 204, 0)');
+    }
+    const body = h.container.querySelector<HTMLElement>('.plainmark-callout-body:not(.plainmark-fenced-code)')!;
+    expect(getComputedStyle(body).backgroundImage).not.toContain('rgb(255, 204, 0)');
+  });
+});

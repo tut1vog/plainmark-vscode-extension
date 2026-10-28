@@ -150,7 +150,7 @@
 | CBLK-E-5 | tier-a | unknown | `language_aliases.test.ts` |
 | CBLK-E-6 | smoke | conforming | — |
 | CBLK-E-7 | smoke | conforming | — |
-| CBLK-E-8 | tier-a + accepted | accepted | `code_block.test.ts` |
+| CBLK-E-8 | tier-a + tier-b + accepted | accepted | `code_block.test.ts`, `callout.spec.ts` |
 | CBLK-I-1 | tier-a | conforming | `code_block.test.ts` |
 | CBLK-I-2 | tier-a | conforming | `code_block.test.ts` |
 | CBLK-I-3 | tier-a | conforming | `code_block.test.ts` |
