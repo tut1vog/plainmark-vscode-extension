@@ -66,6 +66,9 @@ export function build_inline_decorations(
   // byte-accurate — no marker hiding or inline styling inside a `$$` pair.
   const suppress_ranges = closed_math_fence_regions(state);
 
+  // A fold splits the viewport, so a node spanning the fold is visited once
+  // per range; its handlers must still run once.
+  const handled = new Set<string>();
   for (const { from, to } of visible_ranges) {
     tree.iterate({
       from,
@@ -73,6 +76,9 @@ export function build_inline_decorations(
       enter(node) {
         const handlers = registry.get(node.name);
         if (!handlers) return;
+        const key = `${node.name}:${node.from}:${node.to}`;
+        if (handled.has(key)) return;
+        handled.add(key);
         if (suppress_ranges.some((r) => ranges_overlap(node, r))) return;
         const revealed = reveal_ranges.some((r) => ranges_overlap(node, r));
         for (const handler of handlers) {

@@ -71,6 +71,12 @@ describe('callout folding', () => {
     expect(header(container)?.classList.contains('plainmark-callout-folded')).toBe(false);
     expect(container.querySelector('.plainmark-callout-title')).not.toBeNull();
     expect(view.state.selection.main.head).toBe(head_before);
+    // The fold split the viewport into two ranges around the callout; its
+    // handlers must not have run once per range (no doubled line classes).
+    for (const line of Array.from(container.querySelectorAll('.cm-line'))) {
+      const classes = Array.from(line.classList);
+      expect(new Set(classes).size).toBe(classes.length);
+    }
 
     click(chevron(container));
     await frames(2);
