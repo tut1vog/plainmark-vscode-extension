@@ -1431,6 +1431,21 @@ const table_theme = EditorView.theme({
   '.plainmark-table-block.plainmark-block-gap-above': {
     paddingTop: 'calc(var(--plainmark-paragraph-gap, 0.75em) + 0.5em)',
   },
+  // TBL-R-20: inside a quote line the widget is inline content between CM6's
+  // zero-width widget-buffer images; as a block it would push each buffer
+  // into its own empty line box above and below the table. Inline-block keeps
+  // all three on one line box, sized by the table.
+  '.plainmark-table-block.plainmark-table-quoted': {
+    display: 'inline-block',
+    verticalAlign: 'top',
+  },
+  // The quote line's net-to-zero hanging indent (inline `text-indent:-Npx`,
+  // BQ-R-12 / CALL-R-10) would drag an inline-block first child back over the
+  // bar; the line holds nothing but the widget, so zero it. `!important`
+  // outranks the inline style.
+  '.cm-line:has(> .plainmark-table-quoted)': {
+    textIndent: '0 !important',
+  },
   '.plainmark-table-block table': {
     borderCollapse: 'collapse',
     width: 'var(--plainmark-table-width, 100%)',
@@ -1453,6 +1468,12 @@ const table_theme = EditorView.theme({
   '.plainmark-table-block tbody tr:nth-child(even)': {
     background:
       'var(--plainmark-table-row-alt-background, color-mix(in srgb, var(--vscode-foreground) 4%, transparent))',
+  },
+  // A theme's stripe may be opaque (tuned for the editor background); on a
+  // quote or callout tint it reads as a hole, so the quoted stripe is always a
+  // translucent darkening of the tint instead.
+  '.plainmark-table-block.plainmark-table-quoted tbody tr:nth-child(even)': {
+    background: 'color-mix(in srgb, currentColor 5%, transparent)',
   },
   '.plainmark-table-block img': {
     maxWidth: '100%',

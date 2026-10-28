@@ -6,7 +6,7 @@ import { frames, get_cell, get_table_block, mount_editor, move_cursor, next_fram
 // widget inside the quote's own line chrome, and cell edits keep every row's
 // `> ` prefix (TBL-SP-13).
 
-const QUOTED = 'para\n> intro\n>\n> | A | B |\n> |---|---|\n> | 1 | 2 |\n> after';
+const QUOTED = 'para\n> intro\n>\n> | A | B |\n> |---|---|\n> | 1 | 2 |\n> | 3 | 4 |\n> after';
 const CALLOUT = '> [!NOTE] Title\n>\n> | A | B |\n> |---|---|\n> | 1 | 2 |\n> after';
 
 function active_subview(): EditorView {
@@ -55,6 +55,21 @@ describe('table inside a blockquote or callout', () => {
     const texts = Array.from(container.querySelectorAll('.cm-line')).map((l) => l.textContent);
     expect(texts[texts.length - 1]).toContain('after');
     expect(block.getAttribute('data-table-from')).toBe(String(QUOTED.indexOf('| A')));
+    // Inline-block widget between CM6's widget buffers: no empty line box above
+    // or below, and the table starts at the line's content column, not under
+    // the bar (the line's hanging text-indent is zeroed).
+    const lb = line.getBoundingClientRect();
+    const bb = block.getBoundingClientRect();
+    expect(bb.top - lb.top).toBeLessThan(8);
+    expect(lb.bottom - bb.bottom).toBeLessThan(8);
+    expect(Math.round(bb.left)).toBe(
+      Math.round(lb.left + parseFloat(getComputedStyle(line).paddingLeft)),
+    );
+    // The stripe is translucent so the quote tint shows through it.
+    const stripe = getComputedStyle(block.querySelector('tbody tr:nth-child(even)')!).backgroundColor;
+    const alpha = /(?:\/\s*|,\s*)([\d.]+)\)$/.exec(stripe)?.[1];
+    expect(alpha, stripe).toBeDefined();
+    expect(parseFloat(alpha!)).toBeLessThan(0.2);
   });
 
   it('renders the widget inside a callout body line', async () => {
@@ -80,7 +95,7 @@ describe('table inside a blockquote or callout', () => {
     await next_frame();
     await frames(2);
     expect(view.state.doc.toString()).toBe(
-      'para\n> intro\n>\n> | A   | B   |\n> | --- | --- |\n> | 1   | 2x  |\n> after',
+      'para\n> intro\n>\n> | A   | B   |\n> | --- | --- |\n> | 1   | 2x  |\n> | 3   | 4   |\n> after',
     );
     expect(get_cell(container, 1, 1).textContent).toBe('2x');
   });
