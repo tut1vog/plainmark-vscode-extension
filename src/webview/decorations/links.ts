@@ -10,7 +10,7 @@ import { create_logger } from '../../log.js';
 
 const log = create_logger('widget');
 
-const HREF_ATTR = 'data-plainmark-href';
+export const HREF_ATTR = 'data-plainmark-href';
 
 function find_first_child(node: SyntaxNode, name: string): SyntaxNode | null {
   for (let c = node.firstChild; c; c = c.nextSibling) if (c.name === name) return c;

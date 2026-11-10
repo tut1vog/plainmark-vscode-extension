@@ -3,6 +3,8 @@ import type { SyntaxNode } from '@lezer/common';
 import { math_cache_key, type MathResult } from './math.js';
 import { resolve_image_url } from './image.js';
 import { BR_HTML_SOURCE } from './table_serialize.js';
+import { HREF_ATTR } from '../decorations/links.js';
+import { effective_destination } from '../link_destination.js';
 
 // lezer-markdown emits no Text nodes inside a TableCell — plain prose is the gaps between explicit inline children.
 
@@ -93,7 +95,10 @@ function emit_link(parent: Node, node: SyntaxNode, doc: Text, cache: Map<string,
   }
   const effective_label_to = label_to ?? node.to;
   const label_from = first && first.name === 'LinkMark' ? first.to : node.from;
-  if (url_node) a.setAttribute('href', doc.sliceString(url_node.from, url_node.to));
+  // no live href: the webview opens any clicked href, bypassing the Cmd/Ctrl-only rule
+  if (url_node) {
+    a.setAttribute(HREF_ATTR, effective_destination(doc.sliceString(url_node.from, url_node.to)));
+  }
 
   emit_span(a, first?.nextSibling ?? null, label_from, effective_label_to, doc, cache, image_base);
   parent.appendChild(a);

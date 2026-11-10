@@ -575,7 +575,8 @@ describe('table — inline emitter renders bold / italic / code / link / image /
 
     const links = container.querySelectorAll('.plainmark-table-block td a');
     expect(links.length).toBeGreaterThan(0);
-    expect((links[0] as HTMLAnchorElement).getAttribute('href')).toBe('https://b.test');
+    expect((links[0] as HTMLAnchorElement).getAttribute('data-plainmark-href')).toBe('https://b.test');
+    expect(container.querySelectorAll('.plainmark-table-block td a[href]').length).toBe(0);
 
     const imgs = container.querySelectorAll('.plainmark-table-block td img');
     expect(imgs.length).toBeGreaterThan(0);

@@ -136,14 +136,21 @@ describe('TBL-R-3: emit_table_cell — inline formatting', () => {
 });
 
 describe('TBL-R-3: emit_table_cell — links and images', () => {
-  it('emits [label](url) as <a href> with label as descendant text', () => {
+  it('LINK-I-7: emits [label](url) as <a> with the destination in data-plainmark-href and no live href', () => {
     const frag = emit('| [click](https://example.com) |\n|---|\n| body |\n', (t) => t.includes('[click]'));
     const h = host(frag);
     const a = h.querySelector('a');
     expect(a).not.toBeNull();
-    expect(a?.getAttribute('href')).toBe('https://example.com');
+    expect(a?.hasAttribute('href')).toBe(false);
+    expect(a?.getAttribute('data-plainmark-href')).toBe('https://example.com');
     expect(a?.textContent).toBe('click');
     expect(a?.className).toBe('plainmark-link');
+  });
+
+  it('strips the <> delimiters of an angle-bracket destination', () => {
+    const frag = emit('| [doc](<a b.pdf>) |\n|---|\n| body |\n', (t) => t.includes('[doc]'));
+    const a = host(frag).querySelector('a');
+    expect(a?.getAttribute('data-plainmark-href')).toBe('a b.pdf');
   });
 
   it('renders nested **bold** inside a link label as <a><strong>...', () => {

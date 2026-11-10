@@ -159,6 +159,19 @@ function ensure_mermaid_theme(mermaid: MermaidApi, theme: string): void {
   configured_theme = theme;
 }
 
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+// Strict mode keeps `click … href` anchors, and the webview opens any live href on a plain click.
+function strip_svg_links(svg: string): string {
+  const template = document.createElement('template');
+  template.innerHTML = svg;
+  for (const a of Array.from(template.content.querySelectorAll('a'))) {
+    a.removeAttribute('href');
+    a.removeAttributeNS(XLINK_NS, 'href');
+  }
+  return template.innerHTML;
+}
+
 export function mermaid_cache_key(theme: string, src: string): string {
   return `${theme}:${src}`;
 }
@@ -291,9 +304,10 @@ function render_block_preview(
         .render(`plainmark-mermaid-preview-${preview_render_seq++}`, src)
         .then((out) => {
           if (state.destroyed || gen !== state.generation) return;
-          state.last_good = out.svg;
+          const svg = strip_svg_links(out.svg);
+          state.last_good = svg;
           const diagram = document.createElement('div');
-          diagram.innerHTML = out.svg;
+          diagram.innerHTML = svg;
           dom.replaceChildren(diagram);
           view.requestMeasure();
         })
@@ -570,7 +584,7 @@ const mermaid_render_plugin = ViewPlugin.fromClass(
               effects: set_mermaid_result.of({
                 theme,
                 src,
-                result: { ok: true, svg: out.svg },
+                result: { ok: true, svg: strip_svg_links(out.svg) },
               }),
             });
           })
