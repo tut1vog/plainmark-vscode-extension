@@ -230,11 +230,13 @@ export class MathBlockPreviewWidget extends BlockPreviewWidget<string> {
   }
 }
 
-export const set_typeset_effect = StateEffect.define<{
+interface TypesetPayload {
   display: boolean;
   src: string;
   result: MathResult;
-}>();
+}
+
+export const set_typeset_effect = StateEffect.define<TypesetPayload>();
 
 export const math_cache_field = StateField.define<Map<string, MathResult>>({
   create: () => new Map(),
@@ -542,9 +544,38 @@ const math_typeset_plugin = ViewPlugin.fromClass(
   class implements MathTypesetPluginValue {
     in_flight = new Set<string>();
     load_requested = false;
+    landed: StateEffect<TypesetPayload>[] = [];
+    flush_frame: number | null = null;
+    destroyed = false;
 
     constructor(readonly view: EditorView) {
       this.schedule(view.state);
+    }
+
+    destroy(): void {
+      this.destroyed = true;
+      if (this.flush_frame !== null) cancelAnimationFrame(this.flush_frame);
+      this.flush_frame = null;
+      this.landed = [];
+    }
+
+    // Each typeset transaction rebuilds every math and table decoration: batch per frame.
+    private land(effect: StateEffect<TypesetPayload>): void {
+      if (this.destroyed) return;
+      this.landed.push(effect);
+      if (this.flush_frame === null) {
+        this.flush_frame = requestAnimationFrame(() => this.flush());
+      }
+    }
+
+    private flush(): void {
+      this.flush_frame = null;
+      const effects = this.landed;
+      this.landed = [];
+      for (const { value } of effects) {
+        this.in_flight.delete(math_cache_key(value.display, value.src));
+      }
+      this.view.dispatch({ effects });
     }
 
     // First math encounter: inject the lazy bundle, then re-schedule so the
@@ -588,8 +619,6 @@ const math_typeset_plugin = ViewPlugin.fromClass(
     }
 
     private schedule(state: EditorState): void {
-      // requestAnimationFrame defers dispatch out of the StateField update cycle;
-      // CM6 forbids dispatching from inside an update.
       const pending = pending_from_field(state);
       const mathjax = window.MathJax;
       if (!mathjax || !mathjax.tex2chtmlPromise) {
@@ -605,25 +634,23 @@ const math_typeset_plugin = ViewPlugin.fromClass(
         mathjax.texReset?.();
         tex2chtml(src, { display })
           .then((node) => {
-            this.in_flight.delete(key);
             ensure_chtml_stylesheet();
-            this.view.dispatch({
-              effects: set_typeset_effect.of({
+            this.land(
+              set_typeset_effect.of({
                 display,
                 src,
                 result: { ok: true, html: node.outerHTML },
               }),
-            });
+            );
           })
           .catch((err: unknown) => {
-            this.in_flight.delete(key);
             log.warn('math typeset failed', {
               display,
               src_len: src.length,
               err,
             });
-            this.view.dispatch({
-              effects: set_typeset_effect.of({
+            this.land(
+              set_typeset_effect.of({
                 display,
                 src,
                 result: {
@@ -631,7 +658,7 @@ const math_typeset_plugin = ViewPlugin.fromClass(
                   message: err instanceof Error ? err.message : String(err),
                 },
               }),
-            });
+            );
           });
       }
     }
