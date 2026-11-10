@@ -30,7 +30,7 @@ concurrency:
 jobs:
   static:
     name: Lint + type-check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -43,7 +43,7 @@ jobs:
 
   unit-and-source:
     name: Unit + source-preservation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -53,7 +53,7 @@ jobs:
 
   fuzz:
     name: Fuzz suite
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     # Blocking — promoted from soft-fail. The
     # initial run is clean (no new regressions; allowlisted upstream
@@ -65,7 +65,7 @@ jobs:
 
   visual:
     name: Visual + browser fuzz (Playwright Chromium)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -76,7 +76,7 @@ jobs:
 
   integration-desktop:
     name: Integration — VS Code Desktop
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -88,7 +88,7 @@ jobs:
 
   integration-web:
     name: Integration — VS Code Web
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
