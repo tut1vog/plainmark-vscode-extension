@@ -725,10 +725,11 @@ export class TableWidget extends WidgetType {
     bump_activation_token(dom as TableContainer);
     const owner = this.active ? this : live?.active ? live : null;
     if (!owner?.active) return;
-    const main_view = owner.active.main_view;
+    const { main_view, view: sub } = owner.active;
     owner.active.detach();
-    owner.active.view.destroy();
+    sub.destroy();
     owner.active = null;
+    if (get_active_cell_snapshot(main_view)?.sub_view !== sub) return;
     set_active_cell_snapshot(main_view, null);
     main_view.dom.removeAttribute('data-plainmark-cell-active');
   }
@@ -1186,7 +1187,9 @@ export class TableWidget extends WidgetType {
     detach();
     sub.destroy();
     this.active = null;
-    set_active_cell_snapshot(view, null);
+    // a deferred blur teardown can land after another table's cell has claimed the per-view state
+    const owns_view_state = get_active_cell_snapshot(view)?.sub_view === sub;
+    if (owns_view_state) set_active_cell_snapshot(view, null);
     while (td.firstChild) td.removeChild(td.firstChild);
     const cell = this.table.cells.find(
       (cc) => cc.row_index === row_index && cc.col_index === col_index,
@@ -1194,7 +1197,7 @@ export class TableWidget extends WidgetType {
     if (cell) this.render_cell_contents(td, view, cell);
     // Re-rendered outside any transaction — let the search highlighter re-paint the cell.
     td.dispatchEvent(new CustomEvent('plainmark-table-cell-rendered', { bubbles: true }));
-    view.dom.removeAttribute('data-plainmark-cell-active');
+    if (owns_view_state) view.dom.removeAttribute('data-plainmark-cell-active');
   }
 }
 
