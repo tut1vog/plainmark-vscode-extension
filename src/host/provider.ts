@@ -223,7 +223,10 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         // Every tracked panel is registered in panel_documents on resolve.
         const uri = PlainmarkEditorProvider.panel_documents.get(panel)!.uri;
         const { resolved, warnings } = read_prettify_seams(uri);
-        for (const warning of warnings) init_log.warn(warning);
+        for (const warning of warnings) {
+          init_log.warn(warning);
+          void vscode.window.showWarningMessage(warning);
+        }
         void panel.webview.postMessage({
           type: 'prettify_seams',
           seams: resolved,
@@ -429,9 +432,15 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
       return resolved;
     };
 
-    const compute_keybindings = (): ResolvedTableKeybindings => {
+    const compute_keybindings = (
+      change?: vscode.ConfigurationChangeEvent,
+    ): ResolvedTableKeybindings => {
       const { resolved, warnings } = read_table_keybindings(document.uri);
-      for (const warning of warnings) init_log.warn(warning);
+      for (const warning of warnings) {
+        init_log.warn(warning);
+        if (change && !first_warning_for(change, warning)) continue;
+        void vscode.window.showWarningMessage(warning);
+      }
       return resolved;
     };
 
@@ -446,11 +455,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         .get<boolean>('paste.convertRichText', true);
 
     let current_styles = install_styles();
-    const initial_keybindings = compute_keybindings();
+    let current_keybindings = compute_keybindings();
     webviewPanel.webview.html = this.getHtml(
       webviewPanel.webview,
       current_styles,
-      initial_keybindings,
+      current_keybindings,
       compute_paste_table_conversion(),
       compute_paste_rich_text(),
     );
@@ -602,13 +611,13 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
         paste_changed,
       });
       if (styles_changed) current_styles = install_styles(e);
-      const next_keybindings = compute_keybindings();
+      if (keys_changed) current_keybindings = compute_keybindings(e);
       // Full webview-html reload per THEME-R-8: re-setting `webview.html` reboots
       // the webview process; CM6 state is rebuilt via the `ready` handshake.
       webviewPanel.webview.html = this.getHtml(
         webviewPanel.webview,
         current_styles,
-        next_keybindings,
+        current_keybindings,
         compute_paste_table_conversion(),
         compute_paste_rich_text(),
       );
@@ -692,7 +701,7 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
   }
 }
 
-// Every open panel re-resolves styles on the same change event, so an identical warning is shown once per event, not once per panel.
+// Every open panel re-resolves its settings on the same change event, so an identical warning is shown once per event, not once per panel.
 const warned_per_change = new WeakMap<vscode.ConfigurationChangeEvent, Set<string>>();
 
 function first_warning_for(change: vscode.ConfigurationChangeEvent, warning: string): boolean {

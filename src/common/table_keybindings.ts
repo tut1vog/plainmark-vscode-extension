@@ -100,7 +100,7 @@ const KNOWN_IDS: ReadonlySet<string> = new Set(TABLE_ACTION_IDS);
 
 export interface TableKeybindingResolution {
   resolved: ResolvedTableKeybindings;
-  /** Operator-visible warnings; the caller logs them (console.warn, no modal). */
+  /** Operator-visible warnings; the caller shows them as non-modal warning notifications. */
   warnings: string[];
 }
 
