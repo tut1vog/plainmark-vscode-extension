@@ -90,6 +90,11 @@ export class PlainmarkEditorProvider implements vscode.CustomTextEditorProvider 
 
   static get_panel_for_uri(uri: vscode.Uri): vscode.WebviewPanel | null {
     const uri_string = uri.toString();
+    // One document split into two Plainmark editors has two panels; target the one the user last focused.
+    const last = PlainmarkEditorProvider.last_active_panel;
+    if (last && PlainmarkEditorProvider.panel_documents.get(last)?.uri.toString() === uri_string) {
+      return last;
+    }
     for (const panel of PlainmarkEditorProvider.active_panels) {
       if (PlainmarkEditorProvider.panel_documents.get(panel)?.uri.toString() === uri_string) {
         return panel;
