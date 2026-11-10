@@ -609,8 +609,8 @@ function measure_marker(
   return { gt, space };
 }
 
-// Frames the probe keeps retrying a zero measurement before giving up — covers a
-// slow first paint without busy-looping when the doc simply has no blockquote.
+// Frames the probe keeps retrying a visible marker's zero measurement before
+// giving up — covers a slow first paint without busy-looping on a collapsed one.
 const MAX_MARKER_MEASURE_RETRIES = 10;
 
 const blockquote_marker_width_probe = ViewPlugin.fromClass(
@@ -631,14 +631,18 @@ const blockquote_marker_width_probe = ViewPlugin.fromClass(
     }
     private measure(view: EditorView, attempts = MAX_MARKER_MEASURE_RETRIES): void {
       view.requestMeasure({
-        read: (): MarkerMetrics => {
-          for (const qm of visible_quote_marks(view)) {
+        read: (): MarkerMetrics | null => {
+          const marks = visible_quote_marks(view);
+          // No marker in view: nothing to wait for — a later scroll-in or edit re-triggers.
+          if (marks.length === 0) return null;
+          for (const qm of marks) {
             const m = measure_marker(view, qm);
             if (m) return m;
           }
           return { gt: 0, space: 0 };
         },
-        write: (m: MarkerMetrics) => {
+        write: (m: MarkerMetrics | null) => {
+          if (!m) return;
           if (m.gt <= 0) {
             // The marker has no rendered box yet (first-paint race) — retry next
             // frame so the indent lands on its own. Without this the line sticks
