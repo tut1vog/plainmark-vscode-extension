@@ -69,7 +69,7 @@
 | BQ-R-9 | smoke | conforming | — |
 | BQ-R-10 | tier-b + smoke | conforming | `selection-alignment.spec.ts` |
 | BQ-R-11 | tier-b + smoke | conforming | `blockquote-caret.spec.ts`, `selection-alignment.spec.ts` |
-| BQ-R-12 | tier-a + tier-b + smoke | conforming | `blockquote_indent.test.ts`, `selection-alignment.spec.ts` |
+| BQ-R-12 | tier-a + tier-b + smoke | conforming | `blockquote_indent.test.ts`, `blockquote-marker-probe.spec.ts`, `selection-alignment.spec.ts` |
 | BQ-R-13 | tier-b | conforming | `code_block.spec.ts`, `paragraph-gap-blockquote.spec.ts`, `paragraph-gap-blocks.spec.ts` |
 | BQ-R-14 | tier-a + tier-b + smoke | conforming | `blockquote_nest.test.ts`, `list-nested-quote-geometry.spec.ts` |
 | BQ-R-15 | tier-b | conforming | `blockquote-marker-probe.spec.ts` |
@@ -548,8 +548,8 @@
 | LINK-I-3 | tier-a | conforming | `links.test.ts` |
 | LINK-I-4 | tier-a | conforming | `links.test.ts` |
 | LINK-I-5 | tier-a + smoke | conforming | `links.test.ts` |
-| LINK-I-6 | smoke | conforming | — |
-| LINK-I-7 | smoke | conforming | — |
+| LINK-I-6 | tier-b + smoke | conforming | `table_cell_link.spec.ts` |
+| LINK-I-7 | tier-b + smoke | conforming | `table_cell_link.spec.ts`, `table_inline_emit.spec.ts` |
 | LINK-I-8 | smoke | conforming | — |
 | LINK-I-9 | tier-a + smoke | conforming | `link_click.test.ts` |
 | LINK-I-10 | UNCOVERED | conforming | — |
@@ -704,7 +704,7 @@
 | MATH-R-1 | tier-a | conforming | `math.test.ts` |
 | MATH-R-2 | tier-a + tier-b | conforming | `math.test.ts`, `math-geometry.spec.ts`, `math-in-quote.spec.ts` |
 | MATH-R-3 | tier-a + tier-b + smoke | conforming | `math.test.ts`, `math-geometry.spec.ts` |
-| MATH-R-4 | tier-a + smoke | conforming | `math.test.ts` |
+| MATH-R-4 | tier-a + tier-b + smoke | conforming | `math.test.ts`, `math-typeset-batch.spec.ts` |
 | MATH-R-5 | tier-a + smoke | conforming | `mathjax_loader.test.ts` |
 | MATH-R-6 | tier-a + smoke | conforming | `math.test.ts` |
 | MATH-R-7 | tier-b + smoke | conforming | `paragraph-gap-blocks.spec.ts`, `math-geometry.spec.ts` |
@@ -736,7 +736,7 @@
 | MMD-I-2 | smoke | conforming | — |
 | MMD-I-3 | smoke | conforming | — |
 | MMD-I-4 | UNCOVERED | conforming | — |
-| MMD-I-5 | tier-a + tier-b + accepted | accepted | `mermaid.test.ts`, `mermaid-scrollbar-press.spec.ts` |
+| MMD-I-5 | tier-a + tier-b + accepted | accepted | `mermaid.test.ts`, `mermaid-links.spec.ts`, `mermaid-scrollbar-press.spec.ts` |
 | MMD-I-6 | tier-a + tier-b | conforming | `mermaid.test.ts`, `mermaid-scrollbar-press.spec.ts` |
 | MMD-R-1 | tier-a | conforming | `mermaid.test.ts` |
 | MMD-R-2 | tier-a | conforming | `mermaid.test.ts` |
@@ -898,7 +898,7 @@
 | TBL-I-15 | UNCOVERED | conforming | — |
 | TBL-I-16 | tier-a + tier-b | conforming | `table_autocomplete.test.ts`, `table_autocomplete.spec.ts` |
 | TBL-I-17 | tier-b + smoke | conforming | `table_command.spec.ts` |
-| TBL-I-18 | tier-b + smoke | conforming | `table_undo_history.spec.ts`, `table_undo_rebase.spec.ts` |
+| TBL-I-18 | tier-b + smoke | conforming | `table_cross_table_activation.spec.ts`, `table_undo_history.spec.ts`, `table_undo_rebase.spec.ts` |
 | TBL-I-19 | accepted | accepted | — |
 | TBL-I-20 | tier-b | conforming | `table_edge_nav.spec.ts`, `table_keymap.spec.ts` |
 | TBL-I-21 | tier-b | conforming | `table_edge_nav.spec.ts`, `table_keymap.spec.ts` |
@@ -926,7 +926,7 @@
 | TBL-I-43 | tier-a + tier-b + smoke | conforming | `table_cell_range.test.ts`, `table_cell_range.spec.ts` |
 | TBL-R-1 | tier-a | conforming | `table.test.ts` |
 | TBL-R-2 | tier-b + smoke | conforming | `table-geometry.spec.ts`, `table.spec.ts` |
-| TBL-R-3 | tier-b + smoke | conforming | `table.spec.ts`, `table_inline_emit.spec.ts`, `table_keymap.spec.ts` |
+| TBL-R-3 | tier-b + smoke | conforming | `table.spec.ts`, `table_cell_link.spec.ts`, `table_inline_emit.spec.ts`, `table_keymap.spec.ts` |
 | TBL-R-4 | tier-a + tier-b | conforming | `table.test.ts`, `table.spec.ts`, `table_inline_emit.spec.ts` |
 | TBL-R-5 | tier-b + smoke | conforming | `table_inline_emit.spec.ts` |
 | TBL-R-6 | tier-a | conforming | `table.test.ts` |
