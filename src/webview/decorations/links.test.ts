@@ -519,6 +519,19 @@ describe('LINK-E-2 reference links `[text][ref]` / `[text][]`', () => {
     ]);
   });
 
+  it('LINK-E-2: resolves definitions at top level, inside a blockquote, and inside a nested list item', () => {
+    const doc =
+      'see [t][a] [t][b] [t][d]\n\n' +
+      '[a]: https://a.io\n\n' +
+      '> [b]: https://b.io\n\n' +
+      '- one\n  - two\n\n    [d]: https://d.io\n';
+    const state = make_state(doc, 0);
+    const hrefs = snapshot(state)
+      .filter((d) => d.kind === 'link')
+      .map((d) => d.href);
+    expect(hrefs).toEqual(['https://a.io', 'https://b.io', 'https://d.io']);
+  });
+
   it('LINK-E-2: unresolved full ref (no matching definition) stays raw — no decoration', () => {
     const doc = 'see [text][missing] end\n';
     const state = make_state(doc, 22);

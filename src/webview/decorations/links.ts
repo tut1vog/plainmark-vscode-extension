@@ -55,18 +55,31 @@ function normalize_label(label: string): string {
 // naturally invalidate the cache.
 const definitions_by_tree = new WeakMap<Tree, Map<string, string>>();
 
+// A definition is a leaf block, so it only ever sits directly inside one of these.
+const DEFINITION_CONTAINERS = new Set([
+  'Document',
+  'Blockquote',
+  'BulletList',
+  'OrderedList',
+  'ListItem',
+]);
+
+function add_definition(state: EditorState, node: SyntaxNode, map: Map<string, string>): void {
+  const label = find_first_child(node, 'LinkLabel');
+  const url = find_first_child(node, 'URL');
+  if (!label || !url) return;
+  // LinkLabel spans `[label]`; strip the outer brackets before normalizing.
+  const key = normalize_label(state.doc.sliceString(label.from + 1, label.to - 1));
+  if (!key || map.has(key)) return; // first definition wins (CommonMark)
+  map.set(key, effective_destination(state.doc.sliceString(url.from, url.to)));
+}
+
 function collect_definitions(state: EditorState): Map<string, string> {
   const map = new Map<string, string>();
   syntaxTree(state).iterate({
     enter(node) {
-      if (node.name !== 'LinkReference') return;
-      const label = find_first_child(node.node, 'LinkLabel');
-      const url = find_first_child(node.node, 'URL');
-      if (!label || !url) return;
-      // LinkLabel spans `[label]`; strip the outer brackets before normalizing.
-      const key = normalize_label(state.doc.sliceString(label.from + 1, label.to - 1));
-      if (!key || map.has(key)) return; // first definition wins (CommonMark)
-      map.set(key, effective_destination(state.doc.sliceString(url.from, url.to)));
+      if (node.name === 'LinkReference') add_definition(state, node.node, map);
+      return DEFINITION_CONTAINERS.has(node.name);
     },
   });
   return map;
