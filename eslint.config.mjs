@@ -53,7 +53,7 @@ export default tseslint.config(
     },
   },
   {
-    // CR-P9: all logging goes through src/log.ts (create_logger). Ban raw
+    // All logging goes through src/log.ts (create_logger). Ban raw
     // console in src so the logger stays the single chokepoint; log.ts itself
     // and test files (which spy on console) are exempt.
     files: ['src/**/*.ts'],

@@ -145,7 +145,7 @@ describe('insert_table_at_caret — ED command webview path', () => {
     await next_frame();
 
     // One change-bearing dispatch (the table insert); the re-focus activation
-    // adds a selection-only seed (RC3) that must not be counted.
+    // adds a selection-only seed that must not be counted.
     const change_calls = dispatch_spy.mock.calls.filter(
       (c) => (c[0] as { changes?: unknown }).changes !== undefined,
     );

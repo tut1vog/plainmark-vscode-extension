@@ -352,7 +352,7 @@ describe('TBL-I-11 immutability across all operations', () => {
   });
 });
 
-describe('TBL-I-32: structural_op_target (RC2)', () => {
+describe('TBL-I-32: structural_op_target', () => {
   // Active cell (2, 1) in a post-op 4-row × 3-col grid unless noted.
   it.each([
     ['insert_row_above', 2, 1, 4, 3, { row: 2, col: 1 }],

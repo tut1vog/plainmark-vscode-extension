@@ -211,7 +211,7 @@ export const table_undo_rebase = ViewPlugin.fromClass(
       const pre_ext = locate_table_extraction(pre, pre_table_from);
       const post_ext = locate_post_table(pre_ext, pre_table_from, tr.changes, post);
       if (post_ext === null) {
-        // Table no longer exists post-undo (e.g., reverting EB autocomplete).
+        // Table no longer exists post-undo (e.g., reverting the TBL-I-16 autocomplete).
         // TableWidget.destroy clears the snapshot during the decoration update.
         return;
       }
@@ -229,7 +229,7 @@ export const table_undo_rebase = ViewPlugin.fromClass(
         same_table && diff.row === snapshot.row && diff.col === snapshot.col;
 
       // A dimension-changing undo/redo (e.g. reverting an insert/delete row/col
-      // — reachable while a cell is active since RC2 re-focuses after structural
+      // — reachable while a cell is active since TBL-I-32 re-focuses after structural
       // ops) rebuilds the widget: updateDOM bails on a row/col-count change, so
       // toDOM destroys the active subview. An in-place rebase can't survive
       // that, so reactivate the landing cell after the rebuild instead.

@@ -241,9 +241,9 @@ describe('rebase-on-undo ViewPlugin', () => {
     expect(active_cell_coords()).toEqual({ row: 1, col: 0, table_from: 0 });
   });
 
-  // Scenario (e) — EB autocomplete inserts a table; Mod-z reverts the insertion.
+  // Scenario (e) — `|` autocomplete inserts a table; Mod-z reverts the insertion.
   // No table → no widget → subview destroyed; no reactivation possible.
-  it('TBL-I-18: (e) Mod-z after EB autocomplete reverts the table; subview is destroyed, no reactivation', async () => {
+  it('TBL-I-18: (e) Mod-z after `|` autocomplete reverts the table; subview is destroyed, no reactivation', async () => {
     view = mount_editor(container, '|');
     fire_accept(view);
     // Several frames for request_cell_focus → activate_cell.
@@ -574,7 +574,7 @@ describe('cell keymap resolves table.from live after a position shift', () => {
   });
 });
 
-describe('activation seeds the main caret into the cell (RC3)', () => {
+describe('activation seeds the main caret into the cell', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -589,7 +589,7 @@ describe('activation seeds the main caret into the cell (RC3)', () => {
     container.remove();
   });
 
-  it('TBL-I-1 (RC3): activating a cell pins the main selection inside that cell', async () => {
+  it('TBL-I-1: activating a cell pins the main selection inside that cell', async () => {
     view = mount_editor(container, PREFIXED_TABLE);
     // Real-product condition: main caret at document start, before the table.
     view.dispatch({ selection: { anchor: 0 } });
@@ -603,7 +603,7 @@ describe('activation seeds the main caret into the cell (RC3)', () => {
     expect(head).toBeLessThanOrEqual(range!.cell_to);
   });
 
-  it('TBL-I-18 (RC3): undo of a cell edit restores the caret into the table and re-activates a cell', async () => {
+  it('TBL-I-1 TBL-I-18: undo of a cell edit restores the caret into the table and re-activates a cell', async () => {
     view = mount_editor(container, PREFIXED_TABLE);
     view.dispatch({ selection: { anchor: 0 } });
     await activate_cell(container, 1, 0);

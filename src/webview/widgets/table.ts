@@ -882,7 +882,7 @@ export class TableWidget extends WidgetType {
       // undo landing, structural re-focus). Selection-only → no undo step
       // (INV-UNDO-1) and no source write (TBL-SP-2). This makes the first
       // in-cell keystroke's history startSelection table-local, so undo restores
-      // a caret into the table instead of doc offset 0 (RC3); and on a focus
+      // a caret into the table instead of doc offset 0 (TBL-I-1); and on a focus
       // drop the main caret renders in-cell (TableWidget.coordsAt) rather than at
       // document start. The data-plainmark-cell-active CSS hides the main cursor
       // while the cell is active, so there is no visible double caret.

@@ -70,7 +70,7 @@ export type StyleWatchHandle = Disposable;
  * matching `<link>` query string while preserving CM6 cursor / selection state.
  * Returns a disposable that releases all watchers.
  *
- * Web-target caveat (THEME-R-9): `${userHome}` paths aren't watchable on
+ * Web-target caveat (THEME-R-9): some paths aren't watchable on
  * `vscode.dev`. We attempt the watcher unconditionally; failures are swallowed
  * (no operator-visible error — manual reload is the documented fallback).
  */

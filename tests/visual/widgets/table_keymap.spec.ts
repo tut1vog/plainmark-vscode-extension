@@ -106,7 +106,7 @@ describe('table keymap — navigation', () => {
     await next_frame();
 
     // The auto-row-create is one change-bearing dispatch; the re-focus
-    // activation adds a selection-only seed (RC3) that must not be counted.
+    // activation adds a selection-only seed that must not be counted.
     const change_calls = dispatch_spy.mock.calls.filter(
       (c) => (c[0] as { changes?: unknown }).changes !== undefined,
     );
@@ -249,7 +249,7 @@ describe('table keymap — structural ops', () => {
     container.remove();
   });
 
-  it('TBL-I-8 TBL-I-29 TBL-I-32 (RC2): Mod-Enter inserts a row below and re-focuses the new row’s cell', async () => {
+  it('TBL-I-8 TBL-I-29 TBL-I-32: Mod-Enter inserts a row below and re-focuses the new row’s cell', async () => {
     view = mount_editor(container, SAMPLE_TABLE);
     await activate_cell(container, 1, 0);
     const before_lines = view.state.doc.lines;
@@ -264,7 +264,7 @@ describe('table keymap — structural ops', () => {
     expect(blocks.length).toBe(1);
     const trs = blocks[0].querySelectorAll('tbody tr');
     expect(trs.length).toBe(3);
-    // RC2: the destination cell (new row at index 2, same column) is now active.
+    // TBL-I-32: the destination cell (new row at index 2, same column) is now active.
     expect(active_subview_container()).not.toBeNull();
     expect(get_cell(container, 2, 0).querySelector('.plainmark-table-cell-edit')).not.toBeNull();
   });
@@ -297,13 +297,13 @@ describe('table keymap — structural ops', () => {
     expect(view.state.doc.toString()).toBe(before_doc);
   });
 
-  it('TBL-I-8 TBL-R-11 TBL-I-32 (RC2): Alt+ArrowDown swap re-focuses the destination cell with fresh content', async () => {
+  it('TBL-I-8 TBL-R-11 TBL-I-32: Alt+ArrowDown swap re-focuses the destination cell with fresh content', async () => {
     view = mount_editor(
       container,
       '| a | b | c |\n|---|---|---|\n| r1c0 | r1c1 | r1c2 |\n| r2c0 | r2c1 | r2c2 |\n',
     );
     // Activating (1, 0) then swapping row down: the active cell now FOLLOWS the
-    // content to (2, 0) (RC2 — reverses the old "commit point; user re-focuses"
+    // content to (2, 0) (TBL-I-32 — reverses the old "commit point; user re-focuses"
     // design). The swapped subview shows fresh content (the stale-swap fix).
     await activate_cell(container, 1, 0);
 
@@ -311,7 +311,7 @@ describe('table keymap — structural ops', () => {
     await next_frame();
     await next_frame();
 
-    // RC2: active cell follows the swap to (2, 0)...
+    // TBL-I-32: active cell follows the swap to (2, 0)...
     expect(get_cell(container, 2, 0).querySelector('.plainmark-table-cell-edit')).not.toBeNull();
     // ...showing fresh (swapped) content, not the stale pre-swap text.
     expect(active_subview_view().state.doc.toString()).toBe('r1c0');
@@ -332,7 +332,7 @@ describe('table keymap — structural ops', () => {
     await next_frame();
     await next_frame();
 
-    // Inserted row lives at index 2. RC2 re-focuses its first cell (2, 0), so
+    // Inserted row lives at index 2. TBL-I-32 re-focuses its first cell (2, 0), so
     // that cell now hosts an (empty) subview; the row's other cells are empty in
     // source — the ZWSP fallback ensures they have one line-height of content.
     expect(get_cell(container, 2, 0).querySelector('.plainmark-table-cell-edit')).not.toBeNull();
@@ -352,7 +352,7 @@ describe('table keymap — structural ops', () => {
     await next_frame();
     await next_frame();
 
-    // RC2's re-focus + RC3's activation seed add selection-only main-view
+    // TBL-I-32's re-focus + the activation seed add selection-only main-view
     // dispatches; the structural op itself must remain exactly ONE
     // change-bearing dispatch (TBL-SP-2, INV-UNDO-1).
     const change_calls = dispatch_spy.mock.calls.filter(
@@ -374,7 +374,7 @@ describe('table keymap — structural ops', () => {
     // Real-product condition: main caret seeded at document start.
     view.dispatch({ selection: { anchor: 0 } });
     expect(view.state.selection.main.head).toBe(0);
-    // Activation seeds the main caret into the cell (RC3), so it is no longer 0
+    // Activation seeds the main caret into the cell, so it is no longer 0
     // even before the op fires.
     await activate_cell(container, 1, 0);
 
@@ -404,7 +404,7 @@ describe('table keymap — structural ops', () => {
   const BIG_TABLE =
     '| a | b | c |\n|---|---|---|\n| r1c0 | r1c1 | r1c2 |\n| r2c0 | r2c1 | r2c2 |\n| r3c0 | r3c1 | r3c2 |\n';
 
-  // Each keyboard-bound op re-activates its destination cell (RC2). Fired from
+  // Each keyboard-bound op re-activates its destination cell (TBL-I-32). Fired from
   // the active cell (2, 1); targets per structural_op_target's map.
   it.each([
     ['insert_row_above', { key: 'ArrowUp', altKey: true, shiftKey: true }, { row: 2, col: 1 }],
@@ -416,7 +416,7 @@ describe('table keymap — structural ops', () => {
     ['swap_row_down', { key: 'ArrowDown', altKey: true }, { row: 3, col: 1 }],
     ['swap_column_left', { key: 'ArrowLeft', altKey: true }, { row: 2, col: 0 }],
     ['swap_column_right', { key: 'ArrowRight', altKey: true }, { row: 2, col: 2 }],
-  ] as const)('TBL-I-8 TBL-I-32 (RC2): %s re-focuses its destination cell', async (_label, init, target) => {
+  ] as const)('TBL-I-8 TBL-I-32: %s re-focuses its destination cell', async (_label, init, target) => {
     view = mount_editor(container, BIG_TABLE);
     view.dispatch({ selection: { anchor: 0 } });
     await activate_cell(container, 2, 1);
@@ -612,7 +612,7 @@ describe('table keymap — undo/redo routing (Fix A)', () => {
     ).toBe(true);
   });
 
-  it('TBL-I-9: Mod-z after EB autocomplete (empty-doc table insertion) reverts the doc to "|"', async () => {
+  it('TBL-I-9: Mod-z after `|` autocomplete (empty-doc table insertion) reverts the doc to "|"', async () => {
     view = mount_editor(container, '|');
     const { table_completions } = await import(
       '../../../src/webview/widgets/table_autocomplete.js'

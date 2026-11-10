@@ -301,7 +301,7 @@ export function make_cell_keymap(ctx: CellKeymapContext): KeyBinding[] {
           ctx.table_from,
           mutator_for(action, active.row_index, active.col_index),
         );
-        // RC2: a content-changing op re-activates the destination cell so the
+        // TBL-I-32: a content-changing op re-activates the destination cell so the
         // caret follows the content; align ops + no-ops return null → no focus.
         if (out.changed && out.new_model) {
           const target = structural_op_target(

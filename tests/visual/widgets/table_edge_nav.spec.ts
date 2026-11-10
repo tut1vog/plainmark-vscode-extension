@@ -235,7 +235,7 @@ describe('table edge navigation — keymap-driven adjacency injection', () => {
     expect(coords!.top).toBeGreaterThanOrEqual(block.bottom - 1);
   });
 
-  it('EB autocomplete on empty doc produces "\\n + STARTER + \\n" (Fix 5 + Fix B1)', async () => {
+  it('`|` autocomplete on empty doc produces "\\n + STARTER + \\n" (Fix 5 + Fix B1)', async () => {
     view = mount_editor(container, '|');
     fire_accept(view);
     await next_frame();

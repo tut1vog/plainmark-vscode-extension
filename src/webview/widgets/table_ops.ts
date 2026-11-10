@@ -171,7 +171,7 @@ export function mutator_for(
   }
 }
 
-// The cell to re-activate after a content-changing structural op (RC2): lands
+// The cell to re-activate after a content-changing structural op (TBL-I-32): lands
 // in the new/destination cell, same column where sensible, clamped to the
 // POST-op dims (`new_rows`/`new_cols`). Align ops return null — they change no
 // content or position, so the surviving subview already shows correct content

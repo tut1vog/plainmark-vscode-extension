@@ -790,7 +790,7 @@ async function handle_paste_image(
     return;
   }
 
-  // Every throwable step must reply from the catch — the webview awaits the reply with no timeout, so a missing reply wedges all later image pastes.
+  // Every throwable step must reply from the catch — a missing reply stalls every later image paste until the webview gives up after 15 s.
   try {
     const template =
       vscode.workspace

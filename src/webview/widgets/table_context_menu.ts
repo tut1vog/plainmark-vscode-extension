@@ -88,7 +88,7 @@ export function show_table_context_menu(args: ShowMenuArgs): () => void {
       return;
     }
     const out = dispatch_table_edit(args.main_view, args.table_from, entry.mutate);
-    // RC2: re-activate the destination cell after a content-changing op (also
+    // TBL-I-32: re-activate the destination cell after a content-changing op (also
     // fixes "right-click op → caret to 0"); align ops + no-ops skip re-focus.
     if (out.changed && out.new_model) {
       const target = structural_op_target(

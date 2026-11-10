@@ -55,7 +55,7 @@ function fire_accept(view: EditorView): void {
 
 const SAMPLE_TABLE = '| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n';
 
-describe('table autocomplete — EB completion gating', () => {
+describe('table autocomplete — completion gating', () => {
   let container: HTMLElement;
   let view: EditorView | undefined;
 
@@ -254,7 +254,7 @@ describe('table autocomplete — accept path', () => {
     await next_frame();
 
     // The apply callback produces exactly one change-bearing main-view dispatch;
-    // the re-focus activation adds a selection-only seed (RC3) that must not be
+    // the re-focus activation adds a selection-only seed that must not be
     // counted (request_cell_focus itself uses requestMeasure, no dispatch).
     const change_calls = dispatch_spy.mock.calls.filter(
       (c) => (c[0] as { changes?: unknown }).changes !== undefined,

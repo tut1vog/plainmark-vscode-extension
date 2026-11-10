@@ -127,7 +127,7 @@ describe('table context menu — DOM behavior', () => {
     item!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     await next_frame();
 
-    // RC2's re-focus + RC3's activation seed add selection-only dispatches; the
+    // TBL-I-32's re-focus + the activation seed add selection-only dispatches; the
     // structural op stays exactly ONE change-bearing dispatch (TBL-SP-2).
     const change_calls = dispatch_spy.mock.calls.filter(
       (c) => (c[0] as { changes?: unknown }).changes !== undefined,
@@ -235,7 +235,7 @@ describe('table context menu — DOM behavior', () => {
     expect(swap_up!.getAttribute('aria-keyshortcuts')).toBe('Control+Alt+u');
   });
 
-  it('TBL-I-8 TBL-I-32 (RC2): clicking an enabled structural item re-activates the destination cell', async () => {
+  it('TBL-I-8 TBL-I-32: clicking an enabled structural item re-activates the destination cell', async () => {
     view = mount_editor(container, SAMPLE_TABLE);
     // No cell active and the main caret at document start (the "right-click op →
     // caret to 0" condition).
@@ -257,7 +257,7 @@ describe('table context menu — DOM behavior', () => {
     expect(Number(td!.dataset.colIndex)).toBe(2);
   });
 
-  it('TBL-I-32 (RC2): clicking an align item does NOT activate a cell (no re-focus)', async () => {
+  it('TBL-I-32: clicking an align item does NOT activate a cell (no re-focus)', async () => {
     view = mount_editor(container, SAMPLE_TABLE);
     view.dispatch({ selection: { anchor: 0 } });
     right_click(get_cell(container, 1, 1));

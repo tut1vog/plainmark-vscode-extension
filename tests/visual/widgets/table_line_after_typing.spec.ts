@@ -52,7 +52,7 @@ describe('Bug B: typing on the line after a freshly-inserted table', () => {
     document.querySelectorAll('.cm-tooltip-autocomplete').forEach((el) => el.remove());
   });
 
-  it('TBL-R-7 TBL-SP-7: after EB autocomplete on empty doc, the line after the table is outside the block-replace decoration', async () => {
+  it('TBL-R-7 TBL-SP-7: after `|` autocomplete on empty doc, the line after the table is outside the block-replace decoration', async () => {
     view = mount_editor(container, '|');
     fire_accept(view);
     await next_frame();
