@@ -179,6 +179,7 @@ export const clipped_selection_layer = layer({
   },
   markers(view: EditorView) {
     const markers: RectangleMarker[] = [];
+    if (view.state.selection.ranges.every((r) => r.empty)) return markers;
     const stub_width = Math.max(2, view.defaultCharacterWidth * STUB_WIDTH_RATIO);
     const base = layer_base(view);
     // Content-column right edge in the same client space — the full-width bound
