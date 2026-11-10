@@ -2,6 +2,19 @@
 
 All notable changes to the Plainmark extension are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Math-heavy documents open without a long freeze** — a document with thousands of formulas, especially one that also has tables, no longer stops responding while its math renders.
+
+### Fixed
+
+- **Switching between tables no longer undoes outside edits** — clicking straight from a cell in one table into a cell of another used to let your next keystroke overwrite changes made to that cell outside the editor, such as in a side-by-side text editor.
+- **Links in diagrams and table cells no longer open on a plain click** — table-cell links now need Ctrl/Cmd+click like every other link, and links in Mermaid diagrams no longer open at all.
+- **Invalid table keybinding and Prettify seam settings now show a warning** — both settings promised a warning for the entries they ignore, but none appeared; a notification now explains what was ignored.
+- **Outline clicks scroll the split you are working in** — with one document open in two side-by-side Plainmark editors, clicking a heading in the outline used to scroll the other split.
+
 ## [1.14.0] - 2026-10-28
 
 ### Added
